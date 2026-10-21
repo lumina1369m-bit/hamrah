@@ -1,0 +1,17 @@
+# وابستگی‌ها و خروجی‌های ساخته‌شده
+node_modules/
+__pycache__/
+*.pyc
+
+# پایگاه داده‌ی محلی و لاگ‌ها (داده‌ی واقعی نباید در گیت باشد)
+server/data/*.sqlite
+server/data/*.sqlite-*
+*.log
+tests/assets/last_*
+tests/assets/bad.txt
+
+# فایل‌های محیطی و رمز
+.env
+.env.*
+*.pem
+*.key

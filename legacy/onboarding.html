@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#005182">
+<title>ورود و ثبت‌نام مترجم - همراه (هم‌زبان)</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="row">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><span class="material-symbols-outlined">translate</span></div>
+      <div><b>همراه مترجم</b><small>سامانه سنجش صلاحیت چندبُعدی مترجمان حضوری و همراهی هیئت‌های خارجی</small></div>
+    </div>
+    <span class="chip teal hide-sm">ناوگان رسمی بین‌المللی</span>
+  </div>
+</header>
+
+<main id="root" class="auth-wrap" tabindex="-1"></main>
+<div id="hz-toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script src="ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  const H = window.HZ, C = H.CONFIG;
+  const root = document.getElementById('root');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let state = H.load();
+  let timers = [];
+  const clearTimers = () => { timers.forEach((f) => f()); timers = []; };
+  const persist = () => H.save(state);
+
+  // ---------- مسیریابی ----------
+  function render() {
+    clearTimers();
+    root.className = 'auth-wrap';
+    if (!H.requireSession(state)) { state = H.load(); return renderLogin(); }
+    if (state.status === 'deleted') { root.innerHTML = '<section class="neu-card" role="status"><h1 style="font-size:19px;color:var(--primary)">حساب شما حذف شده است</h1><p class="ink2">برای ثبت‌نام مجدد از همین شماره وارد شوید.</p><button class="btn btn-primary btn-block" id="btn-restart">ثبت‌نام مجدد</button></section>'; byId('btn-restart').onclick = () => { state = H.defaultState(); state.session = null; persist(); render(); }; return; }
+    if (state.status === 'active_general' || state.status === 'active_specialized') { location.replace('app.html'); return; }
+    if (['pending_review', 'rejected', 'suspended'].includes(state.status)) return renderStatus();
+    renderOnboarding();
+  }
+  const byId = (id) => document.getElementById(id);
+  const focusMain = () => { root.focus(); };
+
+  // ---------- ورود (بر پایه‌ی code.html، گام ۱ از ۵) ----------
+  function loginShell(inner) {
+    root.className = 'login-wrap';
+    const stepNames = ['پیامک', 'هویت', 'زبان', 'تخصص', 'شبا'];
+    root.innerHTML = `
+      <div class="l-grid">
+        <nav class="l-steps" aria-label="روند احراز صلاحیت">
+          ${stepNames.map((n, i) => `<div class="l-step ${i === 0 ? 'on' : ''}" ${i === 0 ? 'aria-current="step"' : 'aria-disabled="true"'}><span class="material-symbols-outlined" aria-hidden="true">${['phone_iphone', 'badge', 'forum', 'psychology', 'account_balance'][i]}</span><span>${H.toFa(i + 1)}. ${n}</span></div>`).join('')}
+        </nav>
+        <section class="l-main" aria-live="polite">${inner}</section>
+        <aside class="l-cap" aria-label="مدل ارزیابی شایستگی">
+          <h2><span class="material-symbols-outlined" aria-hidden="true">hub</span> مدل ارزیابی شایستگی ۴بعدی (CAP-100)</h2>
+          <p class="muted">مترجمان در پلتفرم «همراه» بر مبنای توانمندی زبانی زنده، حسن سابقه و خودرو ارزیابی می‌شوند:</p>
+          <div class="cap-grid">
+            <div class="cap-item"><span class="material-symbols-outlined" aria-hidden="true">fingerprint</span><b>۱. تطابق هویت</b><small>ثبت‌احوال و مدارک</small></div>
+            <div class="cap-item"><span class="material-symbols-outlined" aria-hidden="true">forum</span><b>۲. آزمون گفتاری</b><small>مصاحبه ۱۰ دقیقه‌ای</small></div>
+            <div class="cap-item"><span class="material-symbols-outlined" aria-hidden="true">psychology</span><b>۳. صلاحیت حوزه</b><small>درمانی، بازرگانی، حقوقی-اداری و گردشگری</small></div>
+            <div class="cap-item"><span class="material-symbols-outlined" aria-hidden="true">directions_car</span><b>۴. ناوگان خودرو</b><small>سواره یا پیاده</small></div>
+          </div>
+        </aside>
+      </div>
+      <p class="l-foot">امنیت داده‌ها بر طبق بندهای سند حریم خصوصی همراه تضمین می‌گردد.</p>`;
+    return root.querySelector('.l-main');
+  }
+
+  function renderLogin() {
+    const main = loginShell(`
+      <div class="l-card">
+        <div class="l-head">
+          <div class="l-ico" aria-hidden="true"><span class="material-symbols-outlined">verified_user</span></div>
+          <div>
+            <h1 id="l-title">ورود اختصاصی متقاضیان مترجمی</h1>
+            <p>بر اساس پروتکل ITP-200 اعتبارسنجی اولیه با شماره معتبر همراه انجام می‌شود</p>
+          </div>
+          <span class="chip info" style="margin-inline-start:auto">گام ۱ از ۵</span>
+        </div>
+        <label class="field" for="l-phone"><span>شماره تلفن همراه متقاضی</span></label>
+        <div class="phone-box">
+          <span class="cc" aria-hidden="true">+98</span>
+          <input id="l-phone" class="dir-ltr" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="11" placeholder="09123456789" aria-describedby="l-phone-hint l-phone-err">
+        </div>
+        <div class="hint" id="l-phone-hint">پنل و ابلاغ مأموریت‌های اعزام بین‌المللی به این خط ارسال می‌شود.</div>
+        <div id="l-phone-err" class="err" role="alert"></div>
+        <fieldset class="consents">
+          <legend class="sr-only">تأییدها پیش از ارسال کد</legend>
+          <label class="check"><input type="checkbox" id="c-age"><span>تأیید می‌کنم حداقل ۱۸ سال سن دارم.</span></label>
+          <label class="check"><input type="checkbox" id="c-terms"><span>شرایط همکاری مترجم همراه را خوانده‌ام و می‌پذیرم.</span></label>
+        </fieldset>
+        <button class="btn btn-primary btn-block" id="btn-send" disabled>دریافت کد تأیید</button>
+      </div>`);
+    const phone = byId('l-phone'), age = byId('c-age'), terms = byId('c-terms'), btn = byId('btn-send');
+    const sync = () => { btn.disabled = !(age.checked && terms.checked); };
+    age.onchange = sync; terms.onchange = sync;
+    phone.oninput = () => { phone.value = H.toEn(phone.value).replace(/\D/g, '').slice(0, 11); phone.classList.remove('invalid'); byId('l-phone-err').textContent = ''; };
+    btn.onclick = () => {
+      let p = phone.value.replace(/^0/, '');
+      if (!/^9\d{9}$/.test(p)) { byId('l-phone-err').textContent = 'شماره‌ی موبایل معتبر نیست. مثلاً ۰۹۱۲۳۴۵۶۷۸۹.'; phone.classList.add('invalid'); phone.focus(); return; }
+      state.otp = { phone: p, code: C.TEST_OTP, sentAt: Date.now() };
+      state.otpFails = 0;
+      persist();
+      H.toast('کد ارسال شد');
+      renderOtp();
+    };
+    focusMain();
+  }
+
+  // ---------- کد پیامک ----------
+  function renderOtp() {
+    const otp = state.otp || {};
+    const locked = state.lock && state.lock > Date.now();
+    const main = loginShell(`
+      <div class="l-card">
+        <div class="l-head">
+          <div class="l-ico" aria-hidden="true"><span class="material-symbols-outlined">lock</span></div>
+          <div>
+            <h1 id="o-title">کد تأیید ۶ رقمی پیامک‌شده</h1>
+            <p>کد به <span class="num">+98 ${esc(H.toFa(otp.phone || ''))}</span> ارسال شد. <button class="link" id="o-edit" type="button">ویرایش شماره</button></p>
+          </div>
+          <span class="chip info" style="margin-inline-start:auto">گام ۱ از ۵</span>
+        </div>
+        <div class="otp-top">
+          <span class="timer" id="o-timer" aria-live="off"></span>
+          <button class="link" id="o-resend" type="button" disabled>ارسال مجدد</button>
+        </div>
+        <div class="otp" role="group" aria-labelledby="o-title">
+          ${Array.from({ length: C.OTP_LENGTH }, (_, i) => `<input inputmode="numeric" maxlength="1" autocomplete="${i === 0 ? 'one-time-code' : 'off'}" aria-label="رقم ${H.toFa(i + 1)} از ${H.toFa(C.OTP_LENGTH)}" data-i="${i}" ${locked ? 'disabled' : ''}>`).join('')}
+        </div>
+        <div id="o-err" class="err" role="alert" style="text-align:center"></div>
+        <div id="o-status" class="hint" style="text-align:center" role="status"></div>
+        <p class="hint" style="text-align:center;margin-top:10px">با پر شدن خانه‌ی ششم، کد خودکار بررسی می‌شود.</p>
+        <div class="test-box" style="margin-top:14px"><b>کد نمونه (فقط محیط آزمایش)</b> <span class="num">${esc(H.toFa(C.TEST_OTP))}</span></div>
+      </div>`);
+    const inputs = [...root.querySelectorAll('.otp input')];
+    const timerEl = byId('o-timer');
+    byId('o-edit').onclick = () => { state.otp = null; persist(); renderLogin(); };
+    byId('o-resend').onclick = () => { state.otp = { ...state.otp, sentAt: Date.now() }; persist(); H.toast('کد دوباره ارسال شد'); renderOtp(); };
+
+    if (locked) {
+      const tick = () => {
+        const left = Math.max(0, Math.ceil((state.lock - Date.now()) / 1000));
+        byId('o-err').textContent = `به‌دلیل ${H.toFa(C.OTP_MAX_FAILS)} تلاش ناموفق، ورود تا ${H.toFa(C.OTP_LOCK_MINUTES)} دقیقه قفل شده است.`;
+        timerEl.textContent = `زمان باقی‌مانده: ${H.toFa(Math.floor(left / 60))}:${H.toFa(H.pad2(left % 60))}`;
+        if (left <= 0) { state.lock = null; state.otpFails = 0; persist(); renderOtp(); }
+      };
+      tick(); timers.push(H.countdown(3600, tick, () => {}));
+      return;
+    }
+
+    const endAt = (otp.sentAt || Date.now()) + C.OTP_RESEND_SECONDS * 1000;
+    const tickResend = () => {
+      const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+      byId('o-resend').disabled = left > 0;
+      timerEl.textContent = left > 0 ? H.toFa(Math.floor(left / 60)) + ':' + H.toFa(H.pad2(left % 60)) : '';
+      byId('o-status').textContent = left > 0 ? 'ارسال مجدد پس از پایان شمارنده' : '';
+    };
+    tickResend();
+    timers.push(H.countdown(C.OTP_RESEND_SECONDS, tickResend, tickResend));
+    inputs[0].focus();
+
+    const verify = () => {
+      const code = inputs.map((i) => i.value).join('');
+      if (code.length < C.OTP_LENGTH) return;
+      if (code === state.otp.code) {
+        state.session = { phone: state.otp.phone, until: Date.now() + C.SESSION_DAYS * 86400000 };
+        state.completed[1] = true;
+        state.otp = null; state.otpFails = 0;
+        if (state.step < 2) state.step = 2;
+        persist();
+        H.toast('ورود انجام شد');
+        render();
+        return;
+      }
+      state.otpFails = (state.otpFails || 0) + 1;
+      inputs.forEach((i) => { i.value = ''; });
+      if (state.otpFails >= C.OTP_MAX_FAILS) {
+        state.lock = Date.now() + C.OTP_LOCK_MINUTES * 60000;
+        state.otp = null;
+        persist(); renderOtp(); return;
+      }
+      persist();
+      byId('o-err').textContent = `کد نادرست است. ${H.toFa(C.OTP_MAX_FAILS - state.otpFails)} تلاش دیگر باقی است.`;
+      inputs[0].focus();
+    };
+    inputs.forEach((inp, idx) => {
+      inp.addEventListener('input', () => {
+        inp.value = H.toEn(inp.value).replace(/\D/g, '').slice(-1);
+        if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+        verify();
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !inp.value && idx > 0) { inputs[idx - 1].focus(); inputs[idx - 1].value = ''; }
+      });
+      inp.addEventListener('paste', (e) => {
+        const t = H.toEn((e.clipboardData || window.clipboardData).getData('text')).replace(/\D/g, '');
+        if (t.length >= C.OTP_LENGTH) { e.preventDefault(); t.slice(0, C.OTP_LENGTH).split('').forEach((c, k) => { inputs[k].value = c; }); verify(); }
+      });
+    });
+  }
+
+  // ---------- مراحل احراز ----------
+  const STEP_NAMES = ['ورود', 'هویت و مدارک', 'زبان و مصاحبه', 'تخصص و خودرو', 'شبا و تعهد'];
+  const LANGS = [
+    ['ar', 'عربی ⟷ فارسی', 'خلیجی، عراقی و فصیح'],
+    ['en', 'انگلیسی ⟷ فارسی', 'مکالمه‌ی تخصصی و اداری'],
+    ['tr', 'ترکی استانبولی ⟷ فارسی', ''],
+    ['fr', 'فرانسوی ⟷ فارسی', ''],
+    ['ru', 'روسی ⟷ فارسی', ''],
+    ['zh', 'چینی ماندارین ⟷ فارسی', '']
+  ];
+  const INTERVIEW_SLOTS = (() => {
+    const out = [];
+    const now = new Date();
+    for (let d = 1; d <= 6; d++) for (const h of [10, 14, 17]) {
+      const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, h, 0);
+      out.push({ id: t.getTime(), at: t.getTime() });
+    }
+    return out;
+  })();
+  const FIELD_DEFS = [
+    { id: 'tourism', label: 'گردشگری', kind: 'non' },
+    { id: 'pilgrim', label: 'زیارتی', kind: 'non' },
+    { id: 'medical', label: 'درمانی (ورود به بیمارستان)', kind: 'spec', certs: ['مدرک یا گواهی حرفه‌ای', 'مجوز ورود IPD', 'مجوز ورود به بخش بین‌الملل (در صورت وجود)'] },
+    { id: 'business', label: 'بازرگانی', kind: 'spec', certs: ['مدرک یا گواهی حرفه‌ای'] },
+    { id: 'legal', label: 'حقوقی-اداری', kind: 'spec', certs: ['مدرک یا گواهی حرفه‌ای'] },
+    { id: 'airport', label: 'فرودگاه و جایگاه CIP', kind: 'spec', certs: ['مجوز CIP'] }
+  ];
+  const DOC_LABEL = {
+    idCard: 'تصویر کارت ملی هوشمند (JPG یا PNG، حداکثر ۵ مگابایت)',
+    selfie: 'سلفی زنده برای تطبیق با کارت ملی',
+    photo: 'عکس رسمی چهره (زمینه روشن، لباس اداری)',
+    address: 'سند یا قبض نشان‌دهنده‌ی آدرس سکونت',
+    criminal: 'گواهی عدم سوءپیشینه (آپلود یا استعلام سیستمی)',
+    drug: 'گواهی عدم اعتیاد'
+  };
+  const CITIES = ['تهران', 'مشهد', 'اصفهان', 'شیراز', 'تبریز', 'کیش'];
+  const CHARTER = ['بی‌طرفی و امانت‌داری در انتقال پیام.', 'منع دریافت وجه یا پاداش خارج از فاکتور رسمی سامانه.', 'محرمانگی مکالمات و اسناد.', 'پوشش آراسته‌ی اداری در طول مأموریت.'];
+
+  function docOk(key) { return !!(state.docs && state.docs[key]); }
+  function stepDone(n) {
+    if (n === 2) return !!state.completed[2];
+    if (n === 3) return !!state.completed[3];
+    if (n === 4) return !!state.completed[4];
+    if (n === 5) return !!state.completed[5];
+    return true;
+  }
+  function firstOpenStep() {
+    for (let i = 2; i <= 5; i++) if (!state.completed[i]) return i;
+    return 5;
+  }
+
+  function stepsBar(cur) {
+    return `<div class="steps" role="list" aria-label="مراحل احراز">${STEP_NAMES.map((n, i) => {
+      const num = i + 1;
+      const cls = (state.completed[num] ? 'done' : '') + (num === cur ? ' now' : '');
+      return `<div role="listitem" class="st ${cls}" ${num === cur ? 'aria-current="step"' : ''}>${H.toFa(num)}. ${n}${state.completed[num] ? ' ✓' : ''}</div>`;
+    }).join('')}</div>`;
+  }
+
+  // ورودی‌های فعلی مرحله را در پیش‌نویس نگه می‌دارد تا بازساختن صفحه آن‌ها را پاک نکند
+  function snapshotDraft() {
+    state.draft = state.draft || {};
+    document.querySelectorAll('#ob-body input[id], #ob-body select[id], #ob-body textarea[id]').forEach((el) => {
+      if (el.type === 'file') return;
+      state.draft[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    persist();
+  }
+  function restoreDraft() {
+    const d = state.draft || {};
+    Object.keys(d).forEach((id) => {
+      const el = byId(id);
+      if (!el || el.type === 'file') return;
+      if (el.type === 'checkbox') el.checked = !!d[id]; else el.value = d[id];
+    });
+  }
+
+  function renderOnboarding() {
+    state.step = Math.min(Math.max(state.step || 2, 2), 5);
+    const cur = state.step;
+    const done = [2, 3, 4, 5].filter((n) => state.completed[n]).length;
+    const pct = Math.round((done / 4) * 100);
+    const badge = state.status === 'in_progress' || done > 0 ? '<span class="chip warn">در حال احراز</span>' : '<span class="chip">ثبت‌نام‌شده</span>';
+    root.innerHTML = `
+      <section aria-labelledby="ob-title">
+        <div class="neu-card" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <h1 id="ob-title" style="font-size:18px;margin:0;color:var(--primary)">مرحله‌ی ${H.toFa(cur)} از ۵: ${STEP_NAMES[cur - 1]}</h1>
+            ${badge}
+          </div>
+          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="پیشرفت احراز" style="margin-top:12px"><i style="width:${pct}%"></i></div>
+          <p class="muted" style="margin:6px 0 0">پیشرفت شما ذخیره می‌شود؛ هر زمان برگردید از همین مرحله ادامه می‌دهید.</p>
+        </div>
+        ${stepsBar(cur)}
+        <div id="ob-body"></div>
+      </section>
+      ${testBox()}`;
+    const body = byId('ob-body');
+    if (cur === 2) body.innerHTML = step2();
+    if (cur === 3) body.innerHTML = step3();
+    if (cur === 4) body.innerHTML = step4();
+    if (cur === 5) body.innerHTML = step5();
+    restoreDraft();
+    bindStep(cur);
+    bindTest();
+    focusMain();
+  }
+
+  // ----- مرحله ۲: هویت و مدارک -----
+  function step2() {
+    const p = state.profile;
+    const docRow = (key) => `
+      <div class="panel" style="margin-bottom:10px;padding:14px">
+        <label class="field" style="margin:0"><span>${DOC_LABEL[key]}</span>
+          <input type="file" accept="image/jpeg,image/png,application/pdf" data-doc="${key}" aria-describedby="d-${key}">
+        </label>
+        <div class="hint" id="d-${key}">${docOk(key) ? '<span class="ok-text">✓ آپلود شد: ' + esc(state.docs[key].name) + '</span> — برای جایگزینی فایل تازه انتخاب کنید.' : 'هنوز آپلود نشده است.'}</div>
+      </div>`;
+    return `
+      <div class="panel">
+        <h2>اطلاعات هویتی</h2>
+        <p class="muted">نام و نام خانوادگی باید مطابق شناسنامه باشد؛ نسخه‌ی لاتین برای مسافر خارجی نمایش داده می‌شود.</p>
+        <div class="grid-2">
+          <label class="field"><span>نام (فارسی)</span><input id="p-nameFa" type="text" value="${esc(p.nameFa)}" autocomplete="given-name" required></label>
+          <label class="field"><span>نام خانوادگی (فارسی)</span><input id="p-lastFa" type="text" value="${esc(p.lastFa || '')}" autocomplete="family-name" required></label>
+          <label class="field"><span>نام (لاتین)</span><input id="p-nameEn" class="dir-ltr" type="text" value="${esc(p.nameEn)}" placeholder="Ali" required></label>
+          <label class="field"><span>نام خانوادگی (لاتین)</span><input id="p-lastEn" class="dir-ltr" type="text" value="${esc(p.lastEn || '')}" placeholder="Rezaei" required></label>
+        </div>
+        <label class="field"><span>کد ملی ۱۰ رقمی</span><input id="p-nid" class="dir-ltr" type="text" inputmode="numeric" maxlength="10" value="${esc(p.nationalId)}" aria-describedby="p-nid-h"><div class="hint" id="p-nid-h">کد ملی تکراری در پلتفرم پذیرفته نمی‌شود و با ثبت‌احوال استعلام می‌شود.</div></label>
+        <label class="field"><span>تاریخ تولد (شمسی)</span><input id="p-birth" class="dir-ltr" type="text" inputmode="numeric" placeholder="۱۳۷۰/۰۱/۰۱" value="${esc(p.birth)}" aria-describedby="p-birth-h"><div class="hint" id="p-birth-h">مثلاً ۱۳۷۰/۰۱/۰۱. حداقل ۱۸ سال سن لازم است.</div></label>
+        <div class="field"><span>جنسیت</span>
+          <div class="seg" role="group" aria-label="جنسیت"><button type="button" data-gender="زن" aria-pressed="${p.gender === 'زن'}">زن</button><button type="button" data-gender="مرد" aria-pressed="${p.gender === 'مرد'}">مرد</button></div>
+          <div class="hint">جنسیت روی کارت مترجم برای مسافر نمایش داده می‌شود و بعد از ثبت فقط با تأیید پشتیبانی تغییر می‌کند.</div>
+        </div>
+        <label class="field"><span>شهر پایه‌ی فعالیت</span>
+          <select id="p-city">${['', ...CITIES].map((c) => `<option value="${c}" ${p.city === c ? 'selected' : ''}>${c || 'انتخاب کنید'}</option>`).join('')}</select>
+        </label>
+      </div>
+      <div class="panel">
+        <h2>مدارک امنیتی</h2>
+        <p class="muted">این مدارک فقط برای بررسی است و به مسافر نشان داده نمی‌شوند. کد ملی و تصویر کارت ملی رمزنگاری می‌شوند.</p>
+        ${docRow('idCard')}
+        ${docRow('selfie')}
+        ${docRow('photo')}
+        ${docRow('address')}
+        ${docRow('criminal')}
+        ${docRow('drug')}
+      </div>
+      <div class="panel">
+        <h2>اطلاعات تماس اضطراری</h2>
+        <p class="muted">فقط برای مواقع بحران استفاده می‌شود و هرگز به مسافر یا کس دیگری نشان داده نمی‌شود.</p>
+        <div class="grid-2">
+          <label class="field"><span>نام</span><input id="e-name" type="text" value="${esc((p.emergency || {}).name || '')}"></label>
+          <label class="field"><span>نسبت</span><input id="e-rel" type="text" value="${esc((p.emergency || {}).rel || '')}"></label>
+        </div>
+        <label class="field"><span>شماره‌ی تماس</span><input id="e-phone" class="dir-ltr" type="tel" inputmode="numeric" value="${esc((p.emergency || {}).phone || '')}"></label>
+      </div>
+      <div class="flex" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="btn-draft">ذخیره‌ی پیش‌نویس</button>
+        <button class="btn btn-primary" id="btn-next">ذخیره و ادامه</button>
+      </div>`;
+  }
+
+  // ----- مرحله ۳: زبان و مصاحبه -----
+  function step3() {
+    const sel = state.languages || [];
+    const iv = state.interview;
+    const slots = INTERVIEW_SLOTS.map((s) => {
+      const d = new Date(s.at);
+      return `<option value="${s.id}" ${iv && iv.slot === s.id ? 'selected' : ''}>${H.jFull(d)} ساعت ${H.clock(d)}</option>`;
+    }).join('');
+    let ivBlock;
+    if (!iv) {
+      ivBlock = `<label class="field"><span>نوبت مصاحبه‌ی ویدئویی ۱۰ دقیقه‌ای</span><select id="iv-slot"><option value="">یک زمان را انتخاب کنید</option>${slots}</select><div class="hint">فقط زمان‌های آزاد واقعی سامانه نمایش داده می‌شوند. یک ساعت قبل از مصاحبه، لینک اتاق پیامک می‌شود.</div></label>`;
+    } else {
+      const d = new Date(iv.slot);
+      const res = iv.result === 'pass' ? '<span class="chip ok">قبول</span>' : iv.result === 'repeat' ? '<span class="chip warn">نیاز به تکرار</span>' : '<span class="chip info">در انتظار ارزیابی</span>';
+      ivBlock = `<div class="kv"><div><small>نوبت شما</small><b>${H.jFull(d)} ساعت ${H.clock(d)}</b></div><div><small>نتیجه</small><b>${res}</b></div></div>
+        <p class="muted">بررسی میکروفون و دوربین قبل از شروع انجام می‌شود. اگر حاضر نشوید، نوبت از دست می‌رود و می‌توانید دوباره نوبت بگیرید.</p>
+        ${iv.result === 'repeat' ? '<button class="btn btn-ghost btn-sm" id="iv-rebook">گرفتن نوبت تازه (بدون محدودیت تعداد)</button>' : ''}`;
+    }
+    return `
+      <div class="panel">
+        <h2>جفت‌زبان‌ها</h2>
+        <p class="muted">حداقل یک جفت‌زبان انتخاب کنید.</p>
+        ${LANGS.map(([code, name, note]) => `<label class="check"><input type="checkbox" data-lang="${code}" ${sel.includes(code) ? 'checked' : ''}><span><b>${esc(name)}</b>${note ? ' <span class="muted">(' + esc(note) + ')</span>' : ''} <span class="chip" style="margin-inline-start:6px">${code.toUpperCase()}</span></span></label>`).join('')}
+      </div>
+      <div class="panel">
+        <h2>مصاحبه‌ی زبان</h2>
+        <p class="muted">محتوا: فن بیان، تلفظ بومی و شبیه‌سازی یک سناریوی میدانی. ارزیاب انسانی نتیجه را «قبول» یا «نیاز به تکرار» ثبت می‌کند.</p>
+        ${ivBlock}
+        ${state.completed[3] ? '' : ''}
+      </div>
+      <div class="flex" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="btn-back">مرحله‌ی قبل</button>
+        <button class="btn btn-primary" id="btn-next">ذخیره و ادامه</button>
+      </div>`;
+  }
+
+  // ----- مرحله ۴: تخصص و خودرو -----
+  function step4() {
+    const f = state.fields || {};
+    const certs = state.certs || {};
+    const sp = state.specHistory || '';
+    const v = state.vehicle || {};
+    const fieldRow = (d) => {
+      const on = !!f[d.id];
+      if (d.kind === 'non') return `<label class="check"><input type="checkbox" data-field="${d.id}" ${on ? 'checked' : ''}><span><b>${d.label}</b> <span class="chip ok">فقط آزمون زبان</span></span></label>`;
+      const cstate = certs[d.id] || 'none';
+      const cLabel = { none: 'مدرک آپلود نشده', pending: 'در انتظار تأیید مدرک', approved: 'مدرک تأیید شد', rejected: 'مدرک رد شد؛ حوزه بسته است' }[cstate];
+      return `<div class="panel" style="padding:14px;margin-bottom:10px">
+        <label class="check" style="margin:0"><input type="checkbox" data-field="${d.id}" ${on ? 'checked' : ''}><span><b>${d.label}</b> <span class="chip warn">تخصصی</span> <span class="chip">${esc(cLabel)}</span></span></label>
+        ${on ? `<div style="margin-top:8px">${d.certs.map((c, i) => `<label class="field" style="margin:6px 0 0"><span>${esc(c)}</span><input type="file" accept="image/jpeg,image/png,application/pdf" data-cert="${d.id}:${i}"><div class="hint">${state.docs && state.docs['cert_' + d.id + '_' + i] ? '<span class="ok-text">✓ ' + esc(state.docs['cert_' + d.id + '_' + i].name) + '</span>' : 'آپلود نشده'}</div></label>`).join('')}</div>` : ''}
+        ${!on ? '' : '<div class="hint">تا تأیید مدرک، این حوزه قفل است، اما می‌توانید در حوزه‌های غیرتخصصی کار کنید.</div>'}
+      </div>`;
+    };
+    const vehicleOn = !!v.on;
+    const vDoc = (k, label) => `<label class="field"><span>${label}</span><input type="file" accept="image/jpeg,image/png,application/pdf" data-vdoc="${k}"><div class="hint">${state.docs && state.docs['veh_' + k] ? '<span class="ok-text">✓ ' + esc(state.docs['veh_' + k].name) + '</span>' : 'آپلود نشده'}</div></label>`;
+    return `
+      <div class="panel">
+        <h2>حوزه‌های کاری</h2>
+        <p class="muted">حوزه‌های غیرتخصصی فقط به آزمون زبان نیاز دارند. حوزه‌های تخصصی به مدرک نیاز دارند.</p>
+        ${FIELD_DEFS.filter((d) => d.kind === 'non').map(fieldRow).join('')}
+        ${FIELD_DEFS.filter((d) => d.kind === 'spec').map(fieldRow).join('')}
+        <label class="field" style="margin-top:8px"><span>سابقه‌ی کاری تخصصی (اختیاری)</span><textarea id="sp-hist" placeholder="مثلاً: ۳ سال همراهی در بیمارستان‌های تهران">${esc(sp)}</textarea><div class="hint">اختیاری است و امتیاز تطبیق را بالا می‌برد.</div></label>
+      </div>
+      <div class="panel">
+        <h2>خودرو (اختیاری)</h2>
+        <label class="check"><input type="checkbox" id="veh-on" ${vehicleOn ? 'checked' : ''}><span><b>همراهی با خودروی شخصی</b></span></label>
+        ${vehicleOn ? `
+          <div class="grid-2">
+            <label class="field"><span>مدل خودرو</span><input id="v-model" type="text" value="${esc(v.model || '')}"></label>
+            <label class="field"><span>سال ساخت</span><input id="v-year" class="dir-ltr" type="text" inputmode="numeric" value="${esc(v.year || '')}"></label>
+            <label class="field"><span>رنگ</span><input id="v-color" type="text" value="${esc(v.color || '')}"></label>
+            <label class="field"><span>ظرفیت سرنشین</span><input id="v-cap" class="dir-ltr" type="number" min="1" max="9" value="${esc(v.capacity || 4)}"></label>
+            <label class="field"><span>شماره‌ی پلاک انتظامی</span><input id="v-plate" class="dir-ltr" type="text" value="${esc(v.plate || '')}"></label>
+            <label class="field"><span>تاریخ انقضای بیمه‌ی شخص ثالث</span><input id="v-ins" class="dir-ltr" type="text" placeholder="۱۴۰۵/۰۶/۳۱" value="${esc((v.expiry || {}).insurance || '')}"></label>
+            <label class="field"><span>تاریخ انقضای معاینه‌ی فنی</span><input id="v-insp" class="dir-ltr" type="text" placeholder="۱۴۰۵/۰۶/۳۱" value="${esc((v.expiry || {}).inspection || '')}"></label>
+          </div>
+          ${vDoc('ownership', 'سند مالکیت یا وکالت‌نامه‌ی معتبر')}
+          ${vDoc('card', 'کارت وسیله‌ی نقلیه')}
+          ${vDoc('insurance', 'بیمه‌نامه‌ی شخص ثالث و بدنه‌ی معتبر')}
+          ${vDoc('inspection', 'معاینه‌ی فنی معتبر')}
+          ${vDoc('licence', 'گواهینامه‌ی رانندگی معتبر (برای مأموریت سواره الزامی است)')}
+          <div class="hint">تا تأیید مدارک خودرو فقط مأموریت پیاده می‌بینید. اگر بیمه یا گواهینامه منقضی شود، حالت سواره خودکار خاموش می‌شود.</div>
+        ` : '<p class="muted">بدون خودرو، فقط مأموریت پیاده دریافت می‌کنید.</p>'}
+      </div>
+      <div class="flex" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="btn-back">مرحله‌ی قبل</button>
+        <button class="btn btn-primary" id="btn-next">ذخیره و ادامه</button>
+      </div>`;
+  }
+
+  // ----- مرحله ۵: شبا و تعهد -----
+  function step5() {
+    const fi = state.finance || {};
+    const nameFa = [state.profile.nameFa, state.profile.lastFa].filter(Boolean).join(' ');
+    return `
+      <div class="panel">
+        <h2>شبا و اطلاعات مالی</h2>
+        <label class="field"><span>شماره‌ی شبا</span><input id="f-sheba" class="dir-ltr" type="text" placeholder="IR000000000000000000000000" value="${esc(fi.sheba || '')}" aria-describedby="f-sheba-h"><div class="hint" id="f-sheba-h">۲۶ کاراکتر: IR و ۲۴ رقم. تغییر بعدی فقط با کد پیامک انجام می‌شود.</div></label>
+        <label class="field"><span>نام دارنده‌ی حساب</span><input id="f-holder" type="text" value="${esc(fi.holder || '')}" aria-describedby="f-holder-h"><div class="hint" id="f-holder-h">باید دقیقاً با نام هویتی شما (${esc(nameFa)}) یکی باشد.</div></label>
+        <label class="field"><span>کد اقتصادی (اختیاری)</span><input id="f-econ" class="dir-ltr" type="text" value="${esc(fi.econ || '')}"><div class="hint">برای صدور فاکتور لازم است. اگر ندارید، کد ملی شما به‌عنوان شناسه‌ی مالیاتی ثبت می‌شود.</div></label>
+        <p class="muted">تسویه به شبای ثبت‌شده و به میزان سهم خالص نمایش‌داده‌شده انجام می‌شود. کارمزد اضافه‌ای کسر نمی‌شود.</p>
+      </div>
+      <div class="panel">
+        <h2>منشور اخلاقی و تعهدنامه</h2>
+        <ul class="ink2" style="padding-inline-start:20px;margin:0 0 10px">${CHARTER.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+        <label class="check"><input type="checkbox" id="t-ind" ${fi.ind ? 'checked' : ''}><span>پذیرش شرایط همکاری مستقل (تعهد جدا)</span></label>
+        <label class="check"><input type="checkbox" id="t-nda" ${fi.nda ? 'checked' : ''}><span>تعهدنامه‌ی عدم افشا (NDA) و منشور اخلاقی را می‌پذیرم</span></label>
+        <div class="hint">هر دو تعهد جدا هستند. تا هر دو تیک نخورده باشند ثبت نهایی فعال نمی‌شود. نسخه‌ی پذیرفته‌شده در سامانه ثبت می‌شود.</div>
+      </div>
+      <div class="flex" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="btn-back">مرحله‌ی قبل</button>
+        <button class="btn btn-primary" id="btn-submit" disabled>ثبت نهایی و ارسال برای بررسی</button>
+      </div>
+      <div class="hint" id="s-hint" style="margin-top:8px"></div>`;
+  }
+
+  // ---------- اعتبارسنجی و ذخیره‌ی مراحل ----------
+  function readStep2() {
+    const p = state.profile;
+    const get = (id) => (byId(id) ? byId(id).value.trim() : '');
+    p.nameFa = get('p-nameFa'); p.lastFa = get('p-lastFa');
+    p.nameEn = get('p-nameEn'); p.lastEn = get('p-lastEn');
+    p.nationalId = H.toEn(get('p-nid'));
+    p.birth = H.toEn(get('p-birth'));
+    p.city = get('p-city');
+    p.emergency = { name: get('e-name'), rel: get('e-rel'), phone: H.toEn(get('e-phone')) };
+    persist();
+    const errs = [];
+    if (!/^[\u0600-\u06FF\s]{2,}$/.test(p.nameFa)) errs.push(['p-nameFa', 'نام فارسی را فارسی بنویسید.']);
+    if (!/^[\u0600-\u06FF\s]{2,}$/.test(p.lastFa)) errs.push(['p-lastFa', 'نام خانوادگی فارسی را وارد کنید.']);
+    if (!/^[A-Za-z\s'-]{2,}$/.test(p.nameEn)) errs.push(['p-nameEn', 'نام لاتین را با حروف انگلیسی بنویسید.']);
+    if (!/^[A-Za-z\s'-]{2,}$/.test(p.lastEn)) errs.push(['p-lastEn', 'نام خانوادگی لاتین را وارد کنید.']);
+    if (!H.validNationalId(p.nationalId)) errs.push(['p-nid', 'کد ملی معتبر نیست. ۱۰ رقم با رقم کنترل درست وارد کنید.']);
+    const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(p.birth);
+    let birthDate = null;
+    if (m) birthDate = H.jalToGreg(+m[1], +m[2], +m[3]);
+    if (!birthDate) errs.push(['p-birth', 'تاریخ تولد شمسی معتبر نیست. مثلاً ۱۳۷۰/۰۱/۰۱.']);
+    else if (H.ageFrom(birthDate) < 18) errs.push(['p-birth', 'حداقل سن برای ثبت‌نام ۱۸ سال است.']);
+    if (!p.gender) errs.push(['btn-gender', 'جنسیت را انتخاب کنید.']);
+    if (!p.city) errs.push(['p-city', 'شهر پایه‌ی فعالیت را انتخاب کنید.']);
+    ['idCard', 'selfie', 'photo', 'address', 'criminal', 'drug'].forEach((k) => { if (!docOk(k)) errs.push(['d-' + k, 'آپلود ' + (DOC_LABEL[k].split(' (')[0]) + ' لازم است.']); });
+    const e = p.emergency;
+    if (!e.name || !e.rel || !/^9\d{9}$/.test(e.phone.replace(/^0/, ''))) errs.push(['e-name', 'اطلاعات تماس اضطراری را کامل کنید (شماره‌ی موبایل ایرانی).']);
+    return errs;
+  }
+
+  function showErrors(errs) {
+    if (!errs.length) return true;
+    const [id, msg] = errs[0];
+    H.toast(msg, { error: true });
+    const el = byId(id);
+    if (el) { el.classList.add('invalid'); el.focus(); el.scrollIntoView({ block: 'center' }); }
+    return false;
+  }
+
+  function bindStep(cur) {
+    const next = byId('btn-next'), draft = byId('btn-draft'), back = byId('btn-back');
+    if (back) back.onclick = () => { state.step = Math.max(2, cur - 1); persist(); render(); };
+    if (draft) draft.onclick = () => { if (cur === 2) readStep2(); H.toast('پیش‌نویس ذخیره شد'); };
+
+    if (cur === 2) {
+      document.querySelectorAll('[data-gender]').forEach((b) => b.onclick = () => {
+        snapshotDraft(); state.profile.gender = b.dataset.gender; persist(); renderOnboarding();
+      });
+      document.querySelectorAll('[data-doc]').forEach((inp) => inp.onchange = () => {
+        const f = inp.files[0]; if (!f) return;
+        if (f.size > 5 * 1024 * 1024) { H.toast('حجم فایل بیشتر از ۵ مگابایت است', { error: true }); inp.value = ''; return; }
+        state.docs = state.docs || {};
+        snapshotDraft();
+        state.docs[inp.dataset.doc] = { name: f.name, at: Date.now() };
+        // سلفی برای احراز بیومتریک است
+        if (inp.dataset.doc === 'selfie') state.profile.biometric = true;
+        persist(); H.toast('فایل ثبت شد'); renderOnboarding();
+      });
+      next.onclick = () => {
+        const errs = readStep2();
+        if (!showErrors(errs)) return;
+        state.completed[2] = true; state.step = 3; state.draft = {}; persist(); H.toast('هویت ثبت شد'); render();
+      };
+    }
+
+    if (cur === 3) {
+      document.querySelectorAll('[data-lang]').forEach((c) => c.onchange = () => {
+        snapshotDraft();
+        const set = new Set(state.languages || []);
+        c.checked ? set.add(c.dataset.lang) : set.delete(c.dataset.lang);
+        state.languages = [...set]; persist();
+      });
+      const slot = byId('iv-slot');
+      if (slot) slot.onchange = () => {
+        if (!slot.value) return;
+        snapshotDraft();
+        state.interview = { slot: +slot.value, result: null, attempts: 1 };
+        persist(); H.toast('نوبت مصاحبه ثبت شد'); renderOnboarding();
+      };
+      const rb = byId('iv-rebook');
+      if (rb) rb.onclick = () => { state.interview = null; persist(); renderOnboarding(); };
+      next.onclick = () => {
+        if (!(state.languages || []).length) { H.toast('حداقل یک جفت‌زبان را انتخاب کنید', { error: true }); return; }
+        if (!state.interview) { H.toast('نوبت مصاحبه را انتخاب کنید', { error: true }); return; }
+        state.completed[3] = true; state.step = 4; persist(); render();
+      };
+    }
+
+    if (cur === 4) {
+      document.querySelectorAll('[data-field]').forEach((c) => c.onchange = () => {
+        state.fields = state.fields || {};
+        snapshotDraft();
+        state.fields[c.dataset.field] = c.checked;
+        const def = FIELD_DEFS.find((d) => d.id === c.dataset.field);
+        if (def && def.kind === 'spec' && c.checked) state.certs[c.dataset.field] = state.certs[c.dataset.field] || 'none';
+        persist(); renderOnboarding();
+      });
+      document.querySelectorAll('[data-cert]').forEach((inp) => inp.onchange = () => {
+        const f = inp.files[0]; if (!f) return;
+        const [fid, idx] = inp.dataset.cert.split(':');
+        state.docs = state.docs || {};
+        snapshotDraft();
+        state.docs['cert_' + fid + '_' + idx] = { name: f.name, at: Date.now() };
+        // بعد از آپلود، مدرک در انتظار تأیید است
+        state.certs = state.certs || {};
+        const def = FIELD_DEFS.find((d) => d.id === fid);
+        const all = def.certs.every((_, i) => state.docs['cert_' + fid + '_' + i]);
+        state.certs[fid] = all ? 'pending' : 'none';
+        persist(); H.toast('مدرک آپلود شد؛ در انتظار تأیید'); renderOnboarding();
+      });
+      const vOn = byId('veh-on');
+      if (vOn) vOn.onchange = () => { snapshotDraft(); state.vehicle = state.vehicle || {}; state.vehicle.on = vOn.checked; persist(); renderOnboarding(); };
+      document.querySelectorAll('[data-vdoc]').forEach((inp) => inp.onchange = () => {
+        const f = inp.files[0]; if (!f) return;
+        state.docs = state.docs || {};
+        snapshotDraft();
+        state.docs['veh_' + inp.dataset.vdoc] = { name: f.name, at: Date.now() };
+        persist(); H.toast('مدرک خودرو آپلود شد'); renderOnboarding();
+      });
+      next.onclick = () => {
+        const f = state.fields || {};
+        if (!FIELD_DEFS.some((d) => f[d.id])) { H.toast('حداقل یک حوزه‌ی کاری انتخاب کنید', { error: true }); return; }
+        state.specHistory = (byId('sp-hist') || { value: '' }).value.trim();
+        const v = state.vehicle || {};
+        if (v.on) {
+          v.model = byId('v-model').value.trim(); v.year = H.toEn(byId('v-year').value.trim());
+          v.color = byId('v-color').value.trim(); v.capacity = Number(byId('v-cap').value) || 4;
+          v.plate = H.toEn(byId('v-plate').value.trim());
+          v.expiry = { insurance: H.toEn(byId('v-ins').value.trim()), inspection: H.toEn(byId('v-insp').value.trim()) };
+          if (!v.model || !v.plate) { H.toast('مدل و شماره‌ی پلاک خودرو را وارد کنید', { error: true }); return; }
+        }
+        state.vehicle = v;
+        const missing = FIELD_DEFS.filter((d) => f[d.id] && d.kind === 'spec' && !(state.certs[d.id] && state.certs[d.id] !== 'none'));
+        if (missing.length) { H.toast('مدرک حوزه‌ی «' + missing[0].label + '» لازم است. تا آپلود، آن حوزه قفل می‌ماند.', { error: true }); }
+        state.completed[4] = true; state.step = 5; state.draft = {}; persist(); render();
+      };
+    }
+
+    if (cur === 5) {
+      const sub = byId('btn-submit');
+      const refresh = () => {
+        const fi = state.finance;
+        const sheba = H.toEn(byId('f-sheba').value).replace(/\s/g, '').toUpperCase();
+        const holder = byId('f-holder').value.trim();
+        const okSheba = H.validSheba(sheba);
+        const okHolder = holder && holder.replace(/\s+/g, ' ') === [state.profile.nameFa, state.profile.lastFa].join(' ').replace(/\s+/g, ' ');
+        const bothTick = byId('t-ind').checked && byId('t-nda').checked;
+        sub.disabled = !(okSheba && okHolder && bothTick);
+        byId('s-hint').textContent = !okSheba ? 'شبا معتبر نیست.' : !okHolder ? 'نام دارنده‌ی حساب باید دقیقاً با نام هویتی شما یکی باشد.' : !bothTick ? 'هر دو تعهد را تیک بزنید.' : '';
+        fi.sheba = sheba; fi.holder = holder; fi.econ = H.toEn(byId('f-econ').value.trim()); fi.ind = byId('t-ind').checked; fi.nda = byId('t-nda').checked;
+        if (!fi.taxId) fi.taxId = state.profile.nationalId;
+        persist();
+      };
+      ['f-sheba', 'f-holder', 't-ind', 't-nda', 'f-econ'].forEach((id) => { byId(id).oninput = refresh; byId(id).onchange = refresh; });
+      refresh();
+      sub.onclick = () => {
+        const done = [2, 3, 4].every((n) => state.completed[n]);
+        if (!done || !(state.interview && state.interview.result === 'pass')) {
+          H.toast('ارزیابی زبان هنوز قبول نشده است. پس از قبولی می‌توانید ثبت نهایی کنید.', { error: true });
+          return;
+        }
+        state.completed[5] = true; state.status = 'pending_review';
+        state.trackingCode = 'HZ' + String(Date.now()).slice(-8);
+        persist(); H.toast('حساب برای بررسی نهایی ارسال شد'); render();
+      };
+    }
+    if (cur === 3 || cur === 4) { /* مراحل ۳ و ۴ فقط ذخیره می‌شوند */ }
+  }
+
+  // ---------- وضعیت‌ها ----------
+  function renderStatus() {
+    const st = state.status;
+    const info = {
+      pending_review: ['در انتظار بررسی نهایی', 'همه‌ی مراحل پر شده و نزد کارشناس انسانی است. فعال‌سازی خودکار وجود ندارد. تا تأیید، درخواستی دریافت نمی‌کنید.'],
+      rejected: ['رد شده', state.rejectReason || 'مدرک یا مصاحبه رد شده است. دلیل ثبت‌شده را ببینید.'],
+      suspended: ['تعلیق موقت', state.suspendReason || 'حساب به‌دلیل امتیاز یا شکایت‌ها موقتاً تعلیق شده است. کارشناس بررسی می‌کند.']
+    }[st];
+    const appealOk = st === 'rejected' && (!state.appeal || Date.now() - state.appeal.at > 7 * 86400000 ? !state.appeal : false);
+    const appealBtn = (st === 'rejected' || st === 'suspended') ? `<button class="btn btn-ghost btn-block" id="btn-appeal" ${state.appeal ? 'disabled' : ''}>${state.appeal ? 'اعتراض ثبت شده است' : 'اعتراض (یک بار در ۷ روز)'}</button>` : '';
+    root.innerHTML = `
+      <section class="neu-card" aria-labelledby="s-title">
+        <h1 id="s-title" style="font-size:19px;margin:0 0 6px;color:var(--primary)">${info[0]}</h1>
+        <p class="ink2">${esc(info[1])}</p>
+        ${state.trackingCode ? `<div class="kv"><div><small>کد رهگیری ملی</small><b class="num">${H.toFa(state.trackingCode)}</b></div><div><small>وضعیت</small><b>${H.STATUS_LABEL[st]}</b></div></div>` : ''}
+        <div style="display:grid;gap:10px;margin-top:12px">
+          ${appealBtn}
+          ${st === 'rejected' ? '<button class="btn btn-primary btn-block" id="btn-resubmit">ارسال دوباره‌ی مدرک</button>' : ''}
+        </div>
+      </section>
+      ${testBox()}`;
+    if (byId('btn-appeal')) byId('btn-appeal').onclick = () => { state.appeal = { at: Date.now() }; persist(); H.toast('اعتراض ثبت شد؛ کارشناس دیگری بررسی می‌کند'); renderStatus(); };
+    if (byId('btn-resubmit')) byId('btn-resubmit').onclick = () => { state.status = 'in_progress'; state.step = 2; persist(); render(); };
+    bindTest();
+    focusMain();
+  }
+
+  // ---------- ابزار آزمایشی (فقط محیط آزمایش؛ در تولید حذف می‌شود) ----------
+  function testBox() {
+    return `<section class="test-box" aria-label="ابزار آزمایشی"><b>ابزار آزمایشی (فقط محیط آزمایش)</b>
+      <p class="hint" style="margin:4px 0 8px">این بخش در نسخه‌ی تولید حذف می‌شود.</p>
+      <button class="btn btn-ghost btn-sm" data-test="pass-interview">مصاحبه: قبول</button>
+      <button class="btn btn-ghost btn-sm" data-test="repeat-interview">مصاحبه: نیاز به تکرار</button>
+      <button class="btn btn-ghost btn-sm" data-test="approve">تأیید کارشناس</button>
+      <button class="btn btn-ghost btn-sm" data-test="reject">رد حساب</button>
+      <button class="btn btn-ghost btn-sm" data-test="reset">بازنشانی حساب</button>
+    </section>`;
+  }
+  function bindTest() {
+    document.querySelectorAll('[data-test]').forEach((b) => b.onclick = () => {
+      const a = b.dataset.test;
+      if (a === 'pass-interview' && state.interview) state.interview.result = 'pass';
+      if (a === 'repeat-interview' && state.interview) state.interview.result = 'repeat';
+      if (a === 'approve') {
+        const sp = FIELD_DEFS.some((d) => d.kind === 'spec' && state.fields && state.fields[d.id]);
+        state.status = sp ? 'active_specialized' : 'active_general';
+        if (sp) FIELD_DEFS.forEach((d) => { if (d.kind === 'spec' && state.fields[d.id]) state.certs[d.id] = 'approved'; });
+        state.activatedAt = Date.now();
+      }
+      if (a === 'reject') { state.status = 'rejected'; state.rejectReason = 'تصویر کارت ملی خوانا نیست؛ لطفاً دوباره آپلود کنید.'; }
+      if (a === 'reset') { const sess = state.session; state = H.defaultState(); state.session = sess; }
+      persist(); render();
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

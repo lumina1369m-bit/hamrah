@@ -1,0 +1,1874 @@
+<!DOCTYPE html><html dir="rtl" lang="fa" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<title>سامانه سنجش و اعتبارسنجی صلاحیت مترجمان (CAP) | همراه</title>
+<style>
+  /* نشان مرحله (گام ۱ از ۵) نباید بشکند */
+  span.px-3.py-1{white-space:nowrap;flex:0 0 auto}
+
+  html, body {
+    font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #e6ebf1;
+    color: #161c23;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem); }
+  .pt-safe { padding-top: max(env(safe-area-inset-top, 0px), 0.75rem); }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    line-height: 1;
+  }
+  .filled-icon {
+    font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+  }
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+  }
+  .step-content {
+    display: none;
+  }
+  .step-content.active {
+    display: flex;
+  }
+
+  /* Interactive Device Switcher Simulator Classes */
+  .mode-mobile-sim {
+    max-width: 440px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    border-radius: 2.25rem !important;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.18), 12px 12px 28px #b9c4d2, -12px -12px 28px #ffffff !important;
+    border: 8px solid #d2dbe5;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .mode-mobile-sim .adaptive-grid {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .mode-mobile-sim .tablet-desktop-sidebar {
+    display: none !important;
+  }
+  .mode-mobile-sim .mobile-stepper-container {
+    display: block !important;
+  }
+
+  .mode-tablet-sim {
+    max-width: 860px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    border-radius: 1.75rem !important;
+    box-shadow: 0 20px 45px -10px rgba(0,0,0,0.14), 10px 10px 24px #bcc7d5, -10px -10px 24px #ffffff !important;
+    border: 6px solid #d5dfeb;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+  .mode-tablet-sim .adaptive-grid {
+    display: grid !important;
+    grid-template-columns: 290px 1fr !important;
+    gap: 1.5rem !important;
+  }
+  .mode-tablet-sim .tablet-desktop-sidebar {
+    display: flex !important;
+  }
+  .mode-tablet-sim .mobile-stepper-container {
+    display: none !important;
+  }
+  .mode-tablet-sim .desktop-only-details {
+    display: none !important;
+  }
+
+  .mode-desktop-sim {
+    max-width: 1320px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .mode-desktop-sim .adaptive-grid {
+    display: grid !important;
+    grid-template-columns: 360px 1fr !important;
+    gap: 2rem !important;
+  }
+  .mode-desktop-sim .tablet-desktop-sidebar {
+    display: flex !important;
+  }
+  .mode-desktop-sim .mobile-stepper-container {
+    display: none !important;
+  }
+  .mode-desktop-sim .desktop-only-details {
+    display: block !important;
+  }
+  #otpBlock[hidden],#consentBlock [hidden]{display:none !important}
+  #sendOtpBtn:disabled{background:#006a61;color:#fff;opacity:1;cursor:not-allowed}
+</style>
+<link href="vendor/fonts.css" rel="stylesheet"/>
+<link href="vendor/tailwind.css" rel="stylesheet"/>
+<link href="vendor/theme.css" rel="stylesheet"/>
+</head>
+<body class="bg-[#e6ebf1] min-h-screen text-[#161c23] antialiased pt-safe pb-safe selection:bg-[#cee5ff] selection:text-[#005182]">
+<div id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="if(event.target===this)closeInfoModal()" style="display:none;position:fixed;inset:0;background:rgba(22,28,35,.45);z-index:1000;align-items:center;justify-content:center;padding:16px">
+<div style="direction:rtl;background:#e6ebf1;color:#161c23;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;border-radius:20px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><h3 id="modalTitle" style="font-size:16px;font-weight:800;margin:0"></h3><button type="button" onclick="closeInfoModal()" style="padding:6px 14px;border-radius:12px;background:#006a61;color:#fff;font-weight:700;font-size:12px;border:0;cursor:pointer">بستن</button></div>
+<div id="modalBody" style="white-space:pre-wrap;overflow-y:auto;font-size:13px;line-height:1.9;color:#404750;background:#dbe4ee;border-radius:14px;padding:14px"></div>
+</div></div>
+<!-- ================= ADAPTIVE PLATFORM SWITCHER TOOLBAR ================= -->
+
+<!-- ================= MAIN RESPONSIVE CONTAINER ================= -->
+<div class="min-h-screen flex flex-col justify-between w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-2 sm:py-4 transition-all duration-300" id="appContainer">
+<!-- ================= TOP HEADER BRAND ================= -->
+<header class="w-full mb-4 sm:mb-6">
+<div class="flex items-center justify-between p-3.5 sm:p-5 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center gap-3.5" style="flex:1 1 auto;min-width:0">
+<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#e6ebf1] flex items-center justify-center shadow-neu-raised text-[#005182]">
+<span class="material-symbols-outlined text-2xl sm:text-3xl filled-icon">translate</span>
+</div>
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<h1 class="text-base sm:text-xl font-extrabold text-[#161c23] tracking-tight">همراه مترجم</h1>
+<span class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-[#cbf7ee] text-[#006053] border border-[#86f2e4]">
+              ناوگان رسمی بین‌المللی
+            </span>
+<span class="hidden md:inline px-2 py-0.5 rounded-lg text-[11px] font-bold bg-[#e3eaf3] text-[#005182] shadow-neu-inset">
+              معماری ۴بعدی CAP-100
+            </span>
+</div>
+<p class="text-xs sm:text-sm text-[#404750] font-medium mt-0.5">
+            سامانه سنجش صلاحیت چندبُعدی مترجمان حضوری و همراهی هیئت‌های خارجی
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="hidden xl:flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-[#dbe4ee] shadow-neu-inset text-xs">
+<span class="flex h-2.5 w-2.5 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+</span>
+<span class="text-[#006a61] font-bold" id="cityCountBadge">پذیرش فعال در شهرهای بزرگ کشور</span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-[#e6ebf1] text-[#005182] text-xs font-bold shadow-neu-raised active:shadow-neu-inset transition-all" onclick="openHelp()" type="button">
+<span class="material-symbols-outlined text-base">support_agent</span>
+<span class="hidden sm:inline">راهنما و پشتیبانی</span>
+</button>
+</div>
+</div>
+<!-- MOBILE-ONLY COMPACT STEPPER (< md) -->
+<nav aria-label="روند احراز صلاحیت موبایل" class="mobile-stepper-container md:hidden mt-3 p-1.5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset overflow-x-auto">
+<div class="grid grid-cols-5 gap-1 text-center min-w-[320px]" id="stepperNavMobile">
+<button class="step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 bg-[#e6ebf1] shadow-neu-raised text-[#005182] font-extrabold text-[10px]" id="step-nav-m-1" onclick="goToStep(1)" type="button">
+<span class="material-symbols-outlined text-base">phone_iphone</span>
+<span class="">۱. پیامک</span>
+</button>
+<button class="step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 text-[#717881] font-semibold text-[10px] hover:text-[#161c23]" id="step-nav-m-2" onclick="goToStep(2)" type="button">
+<span class="material-symbols-outlined text-base">badge</span>
+<span class="">۲. هویت</span>
+</button>
+<button class="step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 text-[#717881] font-semibold text-[10px] hover:text-[#161c23]" id="step-nav-m-3" onclick="goToStep(3)" type="button">
+<span class="material-symbols-outlined text-base">record_voice_over</span>
+<span class="">۳. زبان</span>
+</button>
+<button class="step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 text-[#717881] font-semibold text-[10px] hover:text-[#161c23]" id="step-nav-m-4" onclick="goToStep(4)" type="button">
+<span class="material-symbols-outlined text-base">psychology</span>
+<span class="">۴. تخصص</span>
+</button>
+<button class="step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 text-[#717881] font-semibold text-[10px] hover:text-[#161c23]" id="step-nav-m-5" onclick="goToStep(5)" type="button">
+<span class="material-symbols-outlined text-base">gavel</span>
+<span class="">۵. شبا</span>
+</button>
+</div>
+</nav>
+</header>
+<!-- ================= ADAPTIVE MAIN LAYOUT (SPLIT VIEW ON TABLET / DASHBOARD ON DESKTOP) ================= -->
+<div class="adaptive-grid md:grid md:grid-cols-[290px_1fr] lg:grid-cols-[360px_1fr] gap-5 lg:gap-7 items-start flex-grow">
+<!-- ================= SIDEBAR: TABLET & DESKTOP DEDICATED PANEL ================= -->
+<aside class="tablet-desktop-sidebar hidden md:flex flex-col gap-5">
+<!-- Vertical Interactive Stepper Card -->
+<nav aria-label="استپر عمودی تبلت و دسکتاپ" class="p-5 lg:p-6 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center justify-between pb-3.5 border-b border-[#cbd6e3] mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#005182] text-xl">conversion_path</span>
+<h2 class="text-xs lg:text-sm font-extrabold text-[#161c23]">مراحل احراز صلاحیت CAP</h2>
+</div>
+<span class="text-xs font-mono font-bold text-[#005182]" id="stepPercentBadge">۲۰٪</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-[#d7e1ec] rounded-full h-2 mb-5 p-0.5 shadow-neu-inset">
+<div class="bg-[#005182] h-full rounded-full transition-all duration-300" id="progressBarFill" style="width: 20%;"></div>
+</div>
+<!-- Steps List -->
+<div class="flex flex-col gap-2.5">
+<!-- Step 1 Item -->
+<button class="side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between bg-[#e6ebf1] shadow-neu-raised text-[#005182] border-r-4 border-[#005182]" id="step-side-1" onclick="goToStep(1)" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-[#d1e6ff] text-[#005182] font-bold text-xs flex items-center justify-center">۱</div>
+<div>
+<p class="text-xs font-bold">ورود و کد پیامک</p>
+<p class="text-[10px] text-[#404750]">اعتبارسنجی اولیه همراه</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-lg step-status-icon">check_circle</span>
+</button>
+<!-- Step 2 Item -->
+<button class="side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between text-[#717881] hover:text-[#161c23]" id="step-side-2" onclick="goToStep(2)" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-[#d8e1eb] text-[#717881] font-bold text-xs flex items-center justify-center">۲</div>
+<div>
+<p class="text-xs font-bold">هویت و جنسیت</p>
+<p class="text-[10px] text-[#717881]">ثبت‌احوال و کارت ملی</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-lg step-status-icon">radio_button_unchecked</span>
+</button>
+<!-- Step 3 Item -->
+<button class="side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between text-[#717881] hover:text-[#161c23]" id="step-side-3" onclick="goToStep(3)" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-[#d8e1eb] text-[#717881] font-bold text-xs flex items-center justify-center">۳</div>
+<div>
+<p class="text-xs font-bold">زبان‌ها و آزمون شفاهی</p>
+<p class="text-[10px] text-[#717881]">مصاحبه تصویری زنده</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-lg step-status-icon">radio_button_unchecked</span>
+</button>
+<!-- Step 4 Item -->
+<button class="side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between text-[#717881] hover:text-[#161c23]" id="step-side-4" onclick="goToStep(4)" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-[#d8e1eb] text-[#717881] font-bold text-xs flex items-center justify-center">۴</div>
+<div>
+<p class="text-xs font-bold">تخصص و ناوگان خودرو</p>
+<p class="text-[10px] text-[#717881]">پزشکی، تجاری، سواره</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-lg step-status-icon">radio_button_unchecked</span>
+</button>
+<!-- Step 5 Item -->
+<button class="side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between text-[#717881] hover:text-[#161c23]" id="step-side-5" onclick="goToStep(5)" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-[#d8e1eb] text-[#717881] font-bold text-xs flex items-center justify-center">۵</div>
+<div>
+<p class="text-xs font-bold">شماره شبا و قرارداد NDA</p>
+<p class="text-[10px] text-[#717881]">تسویه روزانه و تعهد</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-lg step-status-icon">radio_button_unchecked</span>
+</button>
+</div>
+</nav>
+<!-- CAP Framework Information & Verification Matrix Card (Desktop / Tablet) -->
+<div class="p-5 lg:p-6 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center gap-2 text-[#005182] font-bold text-xs lg:text-sm mb-3">
+<span class="material-symbols-outlined text-xl">verified_user</span>
+<h3 class="">استاندارد احراز صلاحیت (CAP-100)</h3>
+</div>
+<p class="text-[11px] lg:text-xs text-[#404750] leading-relaxed mb-4">
+          ناوگان «همراه» اولین شبکه مترجمان حضوری دارای رتبه‌بندی رسمی در خاورمیانه است که بر مبنای ۴ بُعد کلیدی ارزیابی می‌شود:
+        </p>
+<div class="flex flex-col gap-2.5">
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#005182] text-lg">fingerprint</span>
+<span class="text-xs font-bold text-[#161c23]">بُعد ۱: استعلام هویتی</span>
+</div>
+<span class="text-[10px] font-bold text-[#006a61] bg-[#cbf7ee] px-2 py-0.5 rounded-md">ITP-202</span>
+</div>
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#006a61] text-lg">record_voice_over</span>
+<span class="text-xs font-bold text-[#161c23]">بُعد ۲: مصاحبه زنده زبان</span>
+</div>
+<span class="text-[10px] font-bold text-[#005182] bg-[#d1e6ff] px-2 py-0.5 rounded-md">۱۰ دقیقه</span>
+</div>
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#6f4400] text-lg">psychology</span>
+<span class="text-xs font-bold text-[#161c23]">بُعد ۳: تسلط اصطلاحات حوزه</span>
+</div>
+<span class="text-[10px] font-bold text-[#6f4400] bg-[#ffddb8] px-2 py-0.5 rounded-md">۴ حوزه</span>
+</div>
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#005182] text-lg">directions_car</span>
+<span class="text-xs font-bold text-[#161c23]">بُعد ۴: ناوگان سواره/پیاده</span>
+</div>
+<span class="text-[10px] font-bold text-[#006a61] bg-[#cbf7ee] px-2 py-0.5 rounded-md">تشریفات</span>
+</div>
+</div>
+<!-- Extra Desktop Details -->
+<div class="desktop-only-details mt-4 pt-3.5 border-t border-[#cbd6e3] text-[11px] text-[#717881] leading-relaxed">
+<div class="flex items-center gap-1.5 text-[#005182] font-bold mb-1">
+<span class="material-symbols-outlined text-sm">lock_clock</span>
+<span class="">ضمانت محرمانگی داده‌ها:</span>
+</div>
+          اطلاعات ثبت‌شده مستقیماً در سامانه پایگاه احراز صلاحیت مترجمان ثبت و با مراجع ذی‌صلاح تطبیق داده می‌شود.
+        </div>
+</div>
+</aside>
+<!-- ================= CENTER / LEFT: MAIN FORM CONTENT AREA ================= -->
+<main class="w-full">
+<!-- ========== STEP 1: MOBILE & OTP ========== -->
+<section aria-label="گام اول ورود و پیامک" class="step-content active flex-col gap-4 sm:gap-5" id="step-panel-1">
+<div class="p-5 sm:p-7 lg:p-8 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center justify-between pb-3.5 border-b border-[#cbd6e3]">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-[#005182] text-white flex items-center justify-center shadow-neu-btn-primary">
+<span class="material-symbols-outlined text-2xl">verified_user</span>
+</div>
+<div>
+<h2 class="text-base sm:text-lg lg:text-xl font-extrabold text-[#161c23]">ورود اختصاصی متقاضیان مترجمی</h2>
+<p class="text-xs sm:text-sm text-[#404750]">بر اساس پروتکل ITP-200 اعتبارسنجی اولیه با شماره معتبر همراه انجام می‌شود</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-xl bg-[#dbe4ee] text-[#005182] text-xs font-bold shadow-neu-inset">گام ۱ از ۵</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 mt-6">
+<!-- Mobile Input Box -->
+<div class="flex flex-col gap-2 p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]" for="mobileInput">شماره تلفن همراه متقاضی:</label>
+<div class="flex items-center bg-[#e6ebf1] rounded-2xl p-1.5 shadow-neu-raised">
+<span class="px-3 py-2 text-xs font-extrabold text-[#005182] bg-[#dbe4ee] rounded-xl shadow-neu-inset select-none">&nbsp;(+98)
+                </span>
+<input class="w-full bg-transparent px-3 py-2 text-base font-bold text-[#161c23] tracking-wider text-left focus:outline-none border-none ring-0 placeholder:text-[#717881]" dir="ltr" id="mobileInput" maxlength="11" type="tel" value="" placeholder="۰۹۱۲۳۴۵۶۷۸۹" aria-describedby="mobileHint" aria-label="شماره تلفن همراه">
+<span class="material-symbols-outlined text-[#717881] px-2 text-xl">smartphone</span>
+</div>
+<p class="text-[11px] text-[#404750]">پنل و ابلاغ مأموریت‌های اعزام بین‌المللی به این خط ارسال می‌شود.</p>
+</div>
+<div class="flex flex-col gap-2.5" id="consentBlock">
+<label class="flex items-start gap-3 cursor-pointer text-sm font-bold text-[#161c23]"><input class="mt-1 w-5 h-5 accent-[#006a61]" id="c-age" type="checkbox"> <span>تأیید می‌کنم حداقل ۱۸ سال سن دارم.</span></label>
+<button class="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl bg-[#e6ebf1] shadow-neu-raised text-xs sm:text-sm font-bold text-[#005182] cursor-pointer" id="openTermsBtn" onclick="openTerms()" type="button" style="cursor:pointer">
+<span>شرایط همکاری مترجم همراه را بخوانید</span>
+<span class="material-symbols-outlined text-base">open_in_new</span>
+</button>
+<p class="text-[11px] font-bold text-[#404750]" id="termsHint">برای تیک زدن شرایط، ابتدا آن را باز کنید.</p>
+<label class="flex items-start gap-3 cursor-pointer text-sm font-bold text-[#161c23]"><input class="mt-1 w-5 h-5 accent-[#006a61]" id="c-terms" type="checkbox"> <span>شرایط همکاری مترجم همراه را خوانده‌ام و می‌پذیرم.</span></label>
+<p class="text-xs font-bold text-[#a43c00]" id="gate-hint" role="status">برای دریافت کد، هر دو تأیید بالا را بزنید.</p>
+<button class="w-full px-8 py-3.5 rounded-2xl bg-[#006a61] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-neu-btn-primary transition-all cursor-pointer disabled:cursor-not-allowed" disabled id="sendOtpBtn" onclick="handleSend()" type="button">دریافت کد تأیید</button>
+<!-- TEST ONLY: ورود آزمایشی بدون ثبت‌نام. قبل از انتشار حذف شود -->
+<button class="hidden w-full px-8 py-3 rounded-2xl bg-[#fdf2e9] text-[#a43c00] font-bold text-xs sm:text-sm" id="devSkipBtn" onclick="devSkip()" type="button">ورود آزمایشی به میز کار (فقط توسعه)</button>
+<p class="text-xs text-[#b3261e] font-bold hidden" id="phoneErr" role="alert"></p>
+</div>
+<!-- OTP Input Box -->
+<div id="otpBlock" hidden class="flex flex-col gap-2 p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<div class="flex items-center justify-between">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]">کد تایید ۶ رقمی پیامک‌شده:</label>
+<div class="flex items-center gap-1.5 text-xs font-semibold text-[#005182]">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-mono font-bold" id="countdownTimer">02:00</span>
+<button class="text-xs text-[#717881] hover:text-[#005182] transition-colors underline mr-1 cursor-pointer" id="resendOtpBtn" onclick="handleResend()" type="button" disabled>
+                    ارسال مجدد
+                  </button>
+</div>
+</div>
+<!-- 6 Digit Inputs -->
+<div class="flex justify-between items-center gap-1.5 sm:gap-2 my-1" dir="ltr">
+<input class="otp-box w-9 sm:w-11 lg:w-12 h-11 sm:h-12 lg:h-13 rounded-2xl text-center font-bold text-lg bg-[#e6ebf1] shadow-neu-raised focus:shadow-neu-inset focus:text-[#005182] outline-none transition-all" maxlength="1" type="text" value="">
+<input class="otp-box w-9 sm:w-11 lg:w-12 h-11 sm:h-12 lg:h-13 rounded-2xl text-center font-bold text-lg bg-[#e6ebf1] shadow-neu-raised focus:shadow-neu-inset focus:text-[#005182] outline-none transition-all" maxlength="1" type="text" value="">
+<input class="otp-box w-9 sm:w-11 lg:w-12 h-11 sm:h-12 lg:h-13 rounded-2xl text-center font-bold text-lg bg-[#e6ebf1] shadow-neu-raised focus:shadow-neu-inset focus:text-[#005182] outline-none transition-all" maxlength="1" type="text" value="">
+<input class="otp-box w-9 sm:w-11 lg:w-12 h-11 sm:h-12 lg:h-13 rounded-2xl text-center font-bold text-lg bg-[#e6ebf1] shadow-neu-raised focus:shadow-neu-inset focus:text-[#005182] outline-none transition-all" maxlength="1" type="text" value="">
+<input class="otp-box w-9 sm:w-11 lg:w-12 h-11 sm:h-12 lg:h-13 rounded-2xl text-center font-bold text-lg bg-[#e6ebf1] shadow-neu-raised focus:shadow-neu-inset focus:text-[#005182] outline-none transition-all" maxlength="1" type="text" value="">
+<input class="otp-box w-9 sm:w-11 lg:w-12 h-11 sm:h-12 lg:h-13 rounded-2xl text-center font-bold text-lg bg-[#e6ebf1] shadow-neu-raised focus:shadow-neu-inset focus:text-[#005182] outline-none transition-all" maxlength="1" type="text" value="">
+</div>
+<p class="text-[11px] text-[#006a61] font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">lock</span>
+                <span id="testOtpNote">کد آزمایشی (فقط محیط آزمایش): ۱۲۳۴۵۶</span>
+              </p>
+</div>
+</div>
+<!-- Action Next Button -->
+<div class="hidden mt-7 pt-4 border-t border-[#cbd6e3] flex flex-col sm:flex-row items-center justify-between gap-4" id="verifyRow">
+<div class="text-xs text-[#404750] flex items-center gap-1.5 order-2 sm:order-1">
+<span class="material-symbols-outlined text-[#006a61] text-base">security</span>
+<span class="">امنیت داده‌ها بر طبق بندهای سند حریم خصوصی همراه تضمین می‌گردد.</span>
+</div>
+<button class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#006a61] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-neu-btn-primary active:scale-[0.98] transition-all cursor-pointer order-1 sm:order-2" onclick="verifyNow()" type="button">
+<span class="">تایید پیامک و ادامه ثبت‌نام</span>
+<span class="material-symbols-outlined text-lg">arrow_back</span>
+</button>
+</div>
+</div>
+<!-- Mobile Framework Accordion Card (visible on mobile under step 1) -->
+<div class="md:hidden p-5 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center gap-2 text-[#005182] font-bold text-sm mb-2">
+<span class="material-symbols-outlined text-xl">hub</span>
+<h3 class="">مدل ارزیابی شایستگی ۴بعدی (CAP-100)</h3>
+</div>
+<p class="text-xs text-[#404750] mb-3 leading-relaxed">
+            مترجمان در پلتفرم «همراه» بر مبنای توانمندی زبانی زنده، حسن سابقه و خودرو ارزیابی می‌شوند:
+          </p>
+<div class="grid grid-cols-2 gap-2">
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset text-center flex flex-col items-center">
+<span class="material-symbols-outlined text-[#005182] text-xl mb-1">fingerprint</span>
+<span class="text-xs font-bold text-[#161c23]">۱. تطابق هویت</span>
+<span class="text-[10px] text-[#717881] mt-0.5">ثبت‌احوال و مدارک</span>
+</div>
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset text-center flex flex-col items-center">
+<span class="material-symbols-outlined text-[#006a61] text-xl mb-1">forum</span>
+<span class="text-xs font-bold text-[#161c23]">۲. آزمون گفتاری</span>
+<span class="text-[10px] text-[#717881] mt-0.5">مصاحبه ۱۰ دقیقه‌ای</span>
+</div>
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset text-center flex flex-col items-center">
+<span class="material-symbols-outlined text-[#6f4400] text-xl mb-1">psychology</span>
+<span class="text-xs font-bold text-[#161c23]">۳. صلاحیت حوزه</span>
+<span class="text-[10px] text-[#717881] mt-0.5">درمان، تجارت، توریسم</span>
+</div>
+<div class="p-3 rounded-2xl bg-[#dbe4ee] shadow-neu-inset text-center flex flex-col items-center">
+<span class="material-symbols-outlined text-[#005182] text-xl mb-1">directions_car</span>
+<span class="text-xs font-bold text-[#161c23]">۴. ناوگان خودرو</span>
+<span class="text-[10px] text-[#717881] mt-0.5">سواره یا پیاده</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========== STEP 2: IDENTITY & GENDER ========== -->
+<section aria-label="گام دوم احراز هویت و جنسیت" class="step-content flex-col gap-4 sm:gap-5" id="step-panel-2">
+<div class="p-5 sm:p-7 lg:p-8 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center justify-between pb-3.5 border-b border-[#cbd6e3]">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-[#005182] text-white flex items-center justify-center shadow-neu-btn-primary">
+<span class="material-symbols-outlined text-2xl">badge</span>
+</div>
+<div>
+<h2 class="text-base sm:text-lg lg:text-xl font-extrabold text-[#161c23]">بُعد اول: اطلاعات هویتی و ثبت احوال</h2>
+<p class="text-xs sm:text-sm text-[#404750]">بندهای قانونی ITP-201 الی ITP-207 و تطبیق رسمی سند هویتی</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-xl bg-[#dbe4ee] text-[#005182] text-xs font-bold shadow-neu-inset">گام ۲ از ۵</span>
+</div>
+<!-- Gender Switch (Mandatory Requirement) -->
+<div class="mt-5 p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]">
+                جنسیت متقاضی (الزامی جهت هماهنگی با مسافران و پروتکل‌های بین‌المللی):
+              </label>
+<span class="text-[11px] text-[#006a61] font-bold">تطبیق پذیرش TRV-058</span>
+</div>
+<div class="grid grid-cols-2 gap-3" id="genderGroup">
+<button class="gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm bg-[#e6ebf1] text-[#005182] shadow-neu-raised transition-all" id="gender-male" onclick="setGender('male')" type="button">
+<span class="material-symbols-outlined text-xl filled-icon">man</span>
+<span class="">آقا</span>
+</button>
+<button class="gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm text-[#717881] hover:text-[#161c23] transition-all" id="gender-female" onclick="setGender('female')" type="button">
+<span class="material-symbols-outlined text-xl">woman</span>
+<span class="">خانم</span>
+</button>
+</div>
+</div>
+<!-- Adaptive Form Grid: 1 col on mobile, 2 col on tablet & desktop -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 mt-5">
+<!-- First Name -->
+<div class="flex flex-col gap-1.5">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]" for="firstName">نام (مطابق شناسنامه)</label>
+<div class="bg-[#dbe4ee] rounded-2xl p-2.5 shadow-neu-inset">
+<input placeholder="نام مطابق شناسنامه" class="w-full bg-transparent text-sm font-bold text-[#161c23] focus:outline-none border-none ring-0" id="firstName" type="text" value="">
+</div>
+</div>
+<!-- Last Name -->
+<div class="flex flex-col gap-1.5">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]" for="lastName">نام خانوادگی</label>
+<div class="bg-[#dbe4ee] rounded-2xl p-2.5 shadow-neu-inset">
+<input placeholder="نام خانوادگی مطابق شناسنامه" class="w-full bg-transparent text-sm font-bold text-[#161c23] focus:outline-none border-none ring-0" id="lastName" type="text" value="">
+</div>
+</div>
+<!-- National ID -->
+<div class="flex flex-col gap-1.5">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]" for="nationalCode">کد ملی ۱۰ رقمی (ITP-202)</label>
+<div class="bg-[#dbe4ee] rounded-2xl p-2.5 shadow-neu-inset flex items-center">
+<input placeholder="۱۰ رقم کد ملی" class="w-full bg-transparent text-sm font-bold tracking-widest text-left text-[#161c23] focus:outline-none border-none ring-0" dir="ltr" id="nationalCode" maxlength="10" type="text" value="">
+<span class="material-symbols-outlined text-[#717881] text-lg ml-1">pin</span>
+</div>
+</div>
+<!-- Birth Date -->
+<div class="flex flex-col gap-1.5">
+<label class="text-xs sm:text-sm font-bold text-[#161c23]" for="birthDate">تاریخ تولد (روز / ماه / سال)</label>
+<div class="bg-[#dbe4ee] rounded-2xl p-2.5 shadow-neu-inset flex items-center justify-between">
+<input placeholder="YYYY/MM/DD" class="w-full bg-transparent text-sm font-bold text-[#161c23] focus:outline-none border-none ring-0" id="birthDate" type="text" value="">
+<span class="material-symbols-outlined text-[#717881] text-lg">calendar_today</span>
+</div>
+</div>
+</div>
+<!-- Postal code (replaces address proof upload) -->
+<div class="mt-5 p-4 sm:p-5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<label class="block text-xs sm:text-sm font-bold text-[#161c23] mb-2" for="postalCode">کد پستی ۱۰ رقمی محل سکونت (نشانی):</label>
+<input class="w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-sm font-bold text-[#161c23] tracking-widest text-left shadow-neu-raised border-none focus:outline-none" dir="ltr" id="postalCode" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" placeholder="0000000000" type="text" value="">
+</div>
+<!-- City selection -->
+<div class="mt-5">
+<label class="block text-xs sm:text-sm font-bold text-[#161c23] mb-2">شهر پایه فعالیت مترجم:</label>
+<div class="grid grid-cols-3 sm:grid-cols-6 gap-2" id="cityList">
+<button class="city-chip py-2 px-3 rounded-xl text-xs font-bold bg-[#e6ebf1] text-[#005182] shadow-neu-raised" onclick="setCity(this, 'تهران')" type="button">تهران</button>
+<button class="city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]" onclick="setCity(this, 'مشهد')" type="button">مشهد</button>
+<button class="city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]" onclick="setCity(this, 'اصفهان')" type="button">اصفهان</button>
+<button class="city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]" onclick="setCity(this, 'شیراز')" type="button">شیراز</button>
+<button class="city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]" onclick="setCity(this, 'تبریز')" type="button">تبریز</button>
+<button class="city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]" onclick="setCity(this, 'کیش')" type="button">کیش</button>
+</div>
+</div>
+<!-- Uploads: National Card + Portrait -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+<!-- National ID Upload -->
+<div class="p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex flex-col gap-2">
+<div class="flex items-center justify-between text-xs font-bold text-[#161c23]">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[#005182] text-base">id_card</span>
+<span class="">تصویر کارت ملی هوشمند</span>
+</span>
+<span class="text-[#006a61] font-bold text-[11px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-xs">check_circle</span>
+                  الزامی
+                </span>
+</div>
+<label class="p-3 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center justify-between cursor-pointer active:shadow-neu-inset transition-all">
+<input accept="image/*" class="hidden" onchange="previewFile(this, 'nidFileName')" type="file">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#006a61] text-2xl">file_present</span>
+<div class="text-right">
+<p class="text-xs font-bold text-[#161c23]" id="nidFileName">هنوز فایلی انتخاب نشده است</p>
+<p class="text-[10px] text-[#717881]">تصویر روشن هر دو روی کارت ملی (JPG/PNG/PDF)</p>
+</div>
+</div>
+<span class="text-xs text-[#005182] font-bold">تغییر فایل</span>
+</label>
+</div>
+<!-- Official Portrait Upload -->
+<div class="p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex flex-col gap-2">
+<div class="flex items-center justify-between text-xs font-bold text-[#161c23]">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[#005182] text-base">account_circle</span>
+<span class="">عکس پرتره رسمی مترجم</span>
+</span>
+<span class="text-[#006a61] font-bold text-[11px] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-xs">verified</span>
+                  الزامی
+                </span>
+</div>
+<label class="p-2.5 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center gap-3 cursor-pointer active:shadow-neu-inset transition-all">
+<input accept="image/*" class="hidden" onchange="previewPortrait(this)" type="file">
+<img alt="پرتره رسمی" class="w-12 h-12 rounded-xl object-cover shadow-neu-inset" id="portraitImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' fill='%23dbe4ee'/><circle cx='24' cy='18' r='8' fill='%23717881'/><path d='M8 44c2-9 9-13 16-13s14 4 16 13z' fill='%23717881'/></svg>">
+<div class="flex-1">
+<p class="text-xs font-bold text-[#161c23]">عکس رسمی چهره</p>
+<p class="text-[10px] text-[#717881]">هنوز عکسی انتخاب نشده؛ زمینه روشن و لباس اداری</p>
+</div>
+<span class="text-xs text-[#005182] font-bold">تعویض</span>
+</label>
+</div>
+</div>
+<!-- Navigation Buttons -->
+<div class="mt-7 pt-4 border-t border-[#cbd6e3] flex items-center justify-between gap-3">
+<button class="px-5 py-3 rounded-2xl bg-[#e6ebf1] text-[#161c23] font-bold text-xs sm:text-sm shadow-neu-raised active:shadow-neu-inset transition-all" onclick="goToStep(1)" type="button">
+              بازگشت به ورود
+            </button>
+<button class="px-7 py-3 rounded-2xl bg-[#006a61] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-neu-btn-primary active:scale-[0.98] transition-all cursor-pointer" onclick="goToStep(3)" type="button">
+<span class="">تایید هویت و مرحله زبان‌ها</span>
+<span class="material-symbols-outlined text-base">arrow_back</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ========== STEP 3: LANGUAGES & LIVE ORAL TEST ========== -->
+<section aria-label="گام سوم زبان‌ها و آزمون شفاهی" class="step-content flex-col gap-4 sm:gap-5" id="step-panel-3">
+<div class="p-5 sm:p-7 lg:p-8 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center justify-between pb-3.5 border-b border-[#cbd6e3]">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-[#005182] text-white flex items-center justify-center shadow-neu-btn-primary">
+<span class="material-symbols-outlined text-2xl">record_voice_over</span>
+</div>
+<div>
+<h2 class="text-base sm:text-lg lg:text-xl font-extrabold text-[#161c23]">بُعد دوم: زبان‌های مسلط و آزمون شفاهی</h2>
+<p class="text-xs sm:text-sm text-[#404750]">انتخاب جفت‌زبان‌ها و نوبت مصاحبه زنده آنلاین ۱۰ دقیقه‌ای</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-xl bg-[#dbe4ee] text-[#005182] text-xs font-bold shadow-neu-inset">گام ۳ از ۵</span>
+</div>
+<!-- Language Selector Grid (1 col on mobile, 2 col on tablet, 3 col on desktop) -->
+<div class="mt-5">
+<label class="block text-xs sm:text-sm font-bold text-[#161c23] mb-2.5">
+              زبان‌های تخصصی مورد تسلط خود را انتخاب فرمایید (حداقل یک زبان):
+            </label>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="langCards">
+<!-- Arabic -->
+<div class="lang-item p-3.5 rounded-2xl bg-[#e6ebf1] shadow-neu-raised border-2 border-[#005182] cursor-pointer transition-all flex items-center justify-between" onclick="toggleLanguage(this)">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-[#cbf7ee] text-[#006053] font-bold text-sm flex items-center justify-center shadow-neu-inset">عـ</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">عربی ⟷ فارسی</h4>
+<p class="text-[10px] text-[#717881]">خلیجی، عراقی و فصیح</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#005182] text-xl lang-check filled-icon">check_circle</span>
+</div>
+<!-- English -->
+<div class="lang-item p-3.5 rounded-2xl bg-[#e6ebf1] shadow-neu-raised border-2 border-[#005182] cursor-pointer transition-all flex items-center justify-between" onclick="toggleLanguage(this)">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-[#d1e6ff] text-[#005182] font-bold text-sm flex items-center justify-center shadow-neu-inset">EN</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">انگلیسی ⟷ فارسی</h4>
+<p class="text-[10px] text-[#717881]">مکالمه تخصصی و اداری</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#005182] text-xl lang-check filled-icon">check_circle</span>
+</div>
+<!-- Turkish -->
+<div class="lang-item p-3.5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset border-2 border-transparent cursor-pointer transition-all flex items-center justify-between" onclick="toggleLanguage(this)">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-white/70 text-[#161c23] font-bold text-sm flex items-center justify-center">TR</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">ترکی استانبولی</h4>
+<p class="text-[10px] text-[#717881]">توریسم و بازرگانی</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#717881] text-xl lang-check">radio_button_unchecked</span>
+</div>
+<!-- French -->
+<div class="lang-item p-3.5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset border-2 border-transparent cursor-pointer transition-all flex items-center justify-between" onclick="toggleLanguage(this)">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-white/70 text-[#161c23] font-bold text-sm flex items-center justify-center">FR</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">فرانسوی ⟷ فارسی</h4>
+<p class="text-[10px] text-[#717881]">فرهنگی و سفارت</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#717881] text-xl lang-check">radio_button_unchecked</span>
+</div>
+<!-- Russian -->
+<div class="lang-item p-3.5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset border-2 border-transparent cursor-pointer transition-all flex items-center justify-between" onclick="toggleLanguage(this)">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-white/70 text-[#161c23] font-bold text-sm flex items-center justify-center">RU</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">روسی ⟷ فارسی</h4>
+<p class="text-[10px] text-[#717881]">صنعتی و نمایشگاهی</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#717881] text-xl lang-check">radio_button_unchecked</span>
+</div>
+<!-- Chinese -->
+<div class="lang-item p-3.5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset border-2 border-transparent cursor-pointer transition-all flex items-center justify-between" onclick="toggleLanguage(this)">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-white/70 text-[#161c23] font-bold text-sm flex items-center justify-center">ZH</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">چینی (ماندارین)</h4>
+<p class="text-[10px] text-[#717881]">واردات و قراردادها</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#717881] text-xl lang-check">radio_button_unchecked</span>
+</div>
+</div>
+</div>
+<!-- Oral Interview Booking (Adaptive split on larger screens) -->
+<div class="mt-6 p-4 sm:p-5 lg:p-6 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+<div class="flex items-center gap-2 text-[#005182] font-bold text-xs sm:text-sm">
+<span class="material-symbols-outlined text-lg">videocam</span>
+<span class="">رزرو نوبت سنجش شفاهی زنده (۱۰ دقیقه آنلاین / تصویری)</span>
+</div>
+<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#cbf7ee] text-[#006053] self-start sm:self-auto">
+                مصاحبه ویدئویی وب
+              </span>
+</div>
+<p class="text-xs text-[#404750] leading-relaxed mb-4">
+              ارزیابی شامل سنجش فن بیان، تلفظ بومی و شبیه‌سازی سناریوی میدانی همراهی با میهمان خارجی است.
+            </p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-bold text-[#161c23] mb-1" for="oralDate">روز مصاحبه</label>
+<select class="w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-xs font-bold text-[#161c23] shadow-neu-raised border-none focus:outline-none" id="oralDate">
+<option value="فردا - سه‌شنبه ۱۸ اردیبهشت">فردا - سه‌شنبه ۱۸ اردیبهشت</option>
+<option value="چهارشنبه ۱۹ اردیبهشت">چهارشنبه ۱۹ اردیبهشت</option>
+<option value="پنج‌شنبه ۲۰ اردیبهشت">پنج‌شنبه ۲۰ اردیبهشت</option>
+<option value="شنبه ۲۲ اردیبهشت">شنبه ۲۲ اردیبهشت</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-bold text-[#161c23] mb-1" for="oralTime">ساعت مصاحبه (حضوری یا هماهنگی بیرونی)</label>
+<select class="w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-xs font-bold text-[#161c23] shadow-neu-raised border-none focus:outline-none" id="oralTime">
+<option value="۱۰:۳۰ الی ۱۰:۴۰">۱۰:۳۰ الی ۱۰:۴۰ صبح</option>
+<option value="۱۱:۰۰ الی ۱۱:۱۰">۱۱:۰۰ الی ۱۱:۱۰ صبح</option>
+<option value="۱۵:۰۰ الی ۱۵:۱۰">۱۵:۰۰ الی ۱۵:۱۰ عصر</option>
+<option value="۱۷:۳۰ الی ۱۷:۴۰">۱۷:۳۰ الی ۱۷:۴۰ عصر</option>
+</select>
+</div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-[11px] text-[#005182] font-semibold">
+<span class="material-symbols-outlined text-sm">notifications_active</span>
+<span class="">محل یا ابزار هماهنگی مصاحبه پس از تأیید نوبت، در بخش مصاحبه‌ی برنامه نمایش داده می‌شود.</span>
+</div>
+</div>
+<!-- Navigation Buttons -->
+<div class="mt-7 pt-4 border-t border-[#cbd6e3] flex items-center justify-between gap-3">
+<button class="px-5 py-3 rounded-2xl bg-[#e6ebf1] text-[#161c23] font-bold text-xs sm:text-sm shadow-neu-raised active:shadow-neu-inset transition-all" onclick="goToStep(2)" type="button">
+              بازگشت به هویت
+            </button>
+<button class="px-7 py-3 rounded-2xl bg-[#006a61] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-neu-btn-primary active:scale-[0.98] transition-all cursor-pointer" onclick="goToStep(4)" type="button">
+<span class="">تایید زبان و مرحله تخصص‌ها</span>
+<span class="material-symbols-outlined text-base">arrow_back</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ========== STEP 4: DOMAINS & VEHICLE ========== -->
+<section aria-label="گام چهارم تخصص‌ها و ناوگان خودرو" class="step-content flex-col gap-4 sm:gap-5" id="step-panel-4">
+<div class="p-5 sm:p-7 lg:p-8 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center justify-between pb-3.5 border-b border-[#cbd6e3]">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-[#005182] text-white flex items-center justify-center shadow-neu-btn-primary">
+<span class="material-symbols-outlined text-2xl">psychology</span>
+</div>
+<div>
+<h2 class="text-base sm:text-lg lg:text-xl font-extrabold text-[#161c23]">بُعد سوم و چهارم: حوزه تخصص و ناوگان خودرو</h2>
+<p class="text-xs sm:text-sm text-[#404750]">تعیین زمینه‌های پذیرش مأموریت و وضعیت وسیله نقلیه (اختیاری)</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-xl bg-[#dbe4ee] text-[#005182] text-xs font-bold shadow-neu-inset">گام ۴ از ۵</span>
+</div>
+<!-- Domain Selection: 2 col tablet/desktop -->
+<div class="mt-5">
+<label class="block text-xs sm:text-sm font-bold text-[#161c23] mb-2.5">
+              حوزه‌های فعالیت مترجمی مورد تقاضا (انتخاب چندگانه مجاز است):
+            </label>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="domainsList">
+<!-- Medical -->
+<div class="domain-card p-4 rounded-2xl bg-[#e6ebf1] shadow-neu-raised border-2 border-[#005182] cursor-pointer transition-all" onclick="toggleDomain(this)">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#ba1a1a] text-xl">medical_services</span>
+<span class="text-xs sm:text-sm font-bold text-[#161c23]">درمانی، کلینیکال و پزشکی</span>
+</div>
+<span class="material-symbols-outlined text-[#005182] text-lg domain-icon filled-icon">check_circle</span>
+</div>
+<p class="text-[11px] sm:text-xs text-[#404750] leading-relaxed">
+                  توریسم سلامت، بیمارستان‌ها، چشم‌پزشکی و کلینیک‌های زیبایی با اصطلاحات بالینی.
+                </p>
+</div>
+<!-- Commerce -->
+<div class="domain-card p-4 rounded-2xl bg-[#e6ebf1] shadow-neu-raised border-2 border-[#005182] cursor-pointer transition-all" onclick="toggleDomain(this)">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#005182] text-xl">handshake</span>
+<span class="text-xs sm:text-sm font-bold text-[#161c23]">بازرگانی، تجاری و قراردادها</span>
+</div>
+<span class="material-symbols-outlined text-[#005182] text-lg domain-icon filled-icon">check_circle</span>
+</div>
+<p class="text-[11px] sm:text-xs text-[#404750] leading-relaxed">
+                  مذاکرات B2B، اتاق‌های بازرگانی، نمایشگاه‌های بین‌المللی و کارخانجات صنعتی.
+                </p>
+</div>
+<!-- Tourism -->
+<div class="domain-card p-4 rounded-2xl bg-[#e6ebf1] shadow-neu-raised border-2 border-[#005182] cursor-pointer transition-all" onclick="toggleDomain(this)">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#006a61] text-xl">explore</span>
+<span class="text-xs sm:text-sm font-bold text-[#161c23]">گردشگری، تفریحی و خرید</span>
+</div>
+<span class="material-symbols-outlined text-[#005182] text-lg domain-icon filled-icon">check_circle</span>
+</div>
+<p class="text-[11px] sm:text-xs text-[#404750] leading-relaxed">
+                  مراکز خرید، ابنیه تاریخی، هتل‌ها، تورهای شهری و معرفی جاذبه‌های تفریحی.
+                </p>
+</div>
+<!-- Legal & Diplomatic -->
+<div class="domain-card p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset border-2 border-transparent cursor-pointer transition-all" onclick="toggleDomain(this)">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#6f4400] text-xl">gavel</span>
+<span class="text-xs sm:text-sm font-bold text-[#161c23]">حقوقی، اداری و سفارت‌خانه‌ها</span>
+</div>
+<span class="material-symbols-outlined text-[#717881] text-lg domain-icon">radio_button_unchecked</span>
+</div>
+<p class="text-[11px] sm:text-xs text-[#404750] leading-relaxed">
+                  دفاتر اسناد رسمی، ثبت شرکت‌ها، امور اقامت و مراجع اداری بین‌الملل.
+                </p>
+</div>
+<!-- Pilgrimage & Religious -->
+<div class="domain-card p-4 rounded-2xl bg-[#dbe4ee] shadow-neu-inset border-2 border-transparent cursor-pointer transition-all col-span-1 md:col-span-2" onclick="toggleDomain(this)">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#006a61] text-xl">mosque</span>
+<span class="text-xs sm:text-sm font-bold text-[#161c23]">زیارتی و مذهبی (مشهد، قم و اماکن متبرکه)</span>
+</div>
+<span class="material-symbols-outlined text-[#717881] text-lg domain-icon">radio_button_unchecked</span>
+</div>
+<p class="text-[11px] sm:text-xs text-[#404750] leading-relaxed">
+                  همراهی زائران عرب‌زبان و غیرایرانی در آستان‌های متبرکه، هتل‌ها و مراسم مذهبی.
+                </p>
+</div>
+</div>
+</div>
+<!-- Vehicle Toggle & Expandable Fields -->
+<div class="mt-6 p-4 sm:p-5 lg:p-6 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-[#e6ebf1] text-[#005182] flex items-center justify-center shadow-neu-raised-sm">
+<span class="material-symbols-outlined text-xl sm:text-2xl">directions_car</span>
+</div>
+<div>
+<h4 class="text-xs sm:text-sm font-bold text-[#161c23]">همراهی با خودروی شخصی (ناوگان تشریفات سواره)</h4>
+<p class="text-[11px] text-[#404750]">در صورت داشتن خودرو و تمایل به مأموریت سواره روشن کنید</p>
+</div>
+</div>
+<!-- Car toggle button -->
+<div class="flex items-center justify-start">
+<label class="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#006a61] text-white text-xs sm:text-sm font-bold cursor-pointer select-none shadow-neu-btn-primary" for="carToggle" id="carToggleLabel" style="position:relative">
+<input id="carToggle" onchange="toggleCarForm()" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" type="checkbox">
+<span class="material-symbols-outlined text-base">directions_car</span>
+<span id="carToggleText">فعال کردن همراهی با خودرو</span>
+</label>
+</div>
+</div>
+<!-- Car Form Details (Adaptive 1 col on mobile, 3 col on tablet/desktop) -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4 pt-3.5 border-t border-[#cbd6e3] transition-all duration-300 opacity-25 pointer-events-none" id="carFields">
+<div>
+<label class="block text-xs font-bold text-[#161c23] mb-1" for="carModel">مدل و سال خودرو</label>
+<input placeholder="مثلاً پژو ۲۰۷ اتوماتیک ۱۴۰۱" class="w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-xs font-bold text-[#161c23] shadow-neu-raised border-none focus:outline-none" id="carModel" type="text" value="">
+</div>
+<div>
+<label class="block text-xs font-bold text-[#161c23] mb-1" for="carColor">رنگ خودرو</label>
+<input placeholder="مثلاً سفید" class="w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-xs font-bold text-[#161c23] shadow-neu-raised border-none focus:outline-none" id="carColor" type="text" value="">
+</div>
+<div>
+<label class="block text-xs font-bold text-[#161c23] mb-1" for="carPlate">شماره پلاک انتظامی</label>
+<input placeholder="مثلاً ۱۲ ب ۳۴۵ - ایران ۶۶" class="w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-xs font-bold text-[#161c23] text-center shadow-neu-raised border-none focus:outline-none" dir="ltr" id="carPlate" type="text" value="">
+</div>
+</div>
+</div>
+<!-- Navigation Buttons -->
+<div class="mt-7 pt-4 border-t border-[#cbd6e3] flex items-center justify-between gap-3">
+<button class="px-5 py-3 rounded-2xl bg-[#e6ebf1] text-[#161c23] font-bold text-xs sm:text-sm shadow-neu-raised active:shadow-neu-inset transition-all" onclick="goToStep(3)" type="button">
+              بازگشت به زبان
+            </button>
+<button class="px-7 py-3 rounded-2xl bg-[#006a61] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-neu-btn-primary active:scale-[0.98] transition-all cursor-pointer" onclick="goToStep(5)" type="button">
+<span class="">تایید و مرحله نهایی: شبا و قرارداد</span>
+<span class="material-symbols-outlined text-base">arrow_back</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ========== STEP 5: SHABA & CONTRACT ========== -->
+<section aria-label="گام پنجم شبا و قرارداد" class="step-content flex-col gap-4 sm:gap-5" id="step-panel-5">
+<div class="p-5 sm:p-7 lg:p-8 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60">
+<div class="flex items-center justify-between pb-3.5 border-b border-[#cbd6e3]">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-[#006a61] text-white flex items-center justify-center shadow-neu-btn-secondary">
+<span class="material-symbols-outlined text-2xl">gavel</span>
+</div>
+<div>
+<h2 class="text-base sm:text-lg lg:text-xl font-extrabold text-[#161c23]">گام پنجم: حساب بانکی و تعهدنامه محرمانگی</h2>
+<p class="text-xs sm:text-sm text-[#404750]">تسویه حساب مستقیم حق‌الزحمه مأموریت‌ها و امضای سند منشور اخلاقی</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-xl bg-[#cbf7ee] text-[#006053] text-xs font-bold">مرحله نهایی</span>
+</div>
+<!-- Bank Shaba Input -->
+<div class="mt-5 p-4 sm:p-5 lg:p-6 rounded-2xl bg-[#dbe4ee] shadow-neu-inset">
+<div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#161c23] mb-2">
+<span class="material-symbols-outlined text-[#006a61] text-lg">account_balance</span>
+<span class="">شماره شبای بانکی جهت واریز حق‌الزحمه (ITP-602)</span>
+</div>
+<p class="text-[11px] sm:text-xs text-[#404750] mb-3">
+              تسویه حساب مأموریت‌ها به صورت روزانه و بدون کسر کارمزد مستقیماً به شماره شبا واریز می‌گردد.
+            </p>
+<div class="flex items-center bg-[#e6ebf1] rounded-2xl p-2 shadow-neu-raised" dir="ltr">
+<span class="px-2.5 py-1 text-xs font-extrabold text-[#005182] bg-[#dbe4ee] rounded-lg">IR</span>
+<input placeholder="۲۴ رقم شبا بدون IR" class="w-full bg-transparent px-2 text-sm sm:text-base font-mono font-bold tracking-widest text-[#161c23] border-none ring-0 focus:outline-none" id="shabaInput" maxlength="24" oninput="detectBankName(this.value)" type="text" value="">
+<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#cbf7ee] text-[#006053] whitespace-nowrap shadow-neu-inset" id="bankBadge">
+                بانک ملت
+              </span>
+</div>
+<div class="mt-2.5 hidden items-center gap-1.5 text-xs text-[#006a61] font-bold" id="shabaVerified">
+<span class="material-symbols-outlined text-sm">verified</span>
+<span class="">شماره شبا با نام دارنده پرونده هویتی مطابقت کامل دارد.</span>
+</div>
+</div>
+<!-- NDA Contract Box -->
+<div class="mt-5 p-4 sm:p-5 lg:p-6 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex flex-col gap-3">
+<div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#161c23]">
+<span class="material-symbols-outlined text-[#005182] text-lg">shield</span>
+<span class="">تعهدنامه‌ی محرمانگی (NDA) (ITP-601)</span>
+</div>
+<div class="p-3.5 rounded-xl bg-[#e6ebf1] text-xs text-[#404750] leading-relaxed max-h-36 overflow-y-auto shadow-neu-inset whitespace-pre-wrap" id="ndaText">در حال بارگذاری…</div>
+<div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#161c23] mt-2"><span class="material-symbols-outlined text-[#005182] text-lg">menu_book</span><span>منشور اخلاقی مترجم</span></div>
+<div class="p-3.5 rounded-xl bg-[#e6ebf1] text-xs text-[#404750] leading-relaxed max-h-36 overflow-y-auto shadow-neu-inset whitespace-pre-wrap" id="ethicsText">در حال بارگذاری…</div>
+<label class="flex items-center gap-2.5 mt-1 cursor-pointer select-none">
+<input class="w-4 h-4 rounded text-[#006a61] focus:ring-[#006a61] cursor-pointer" id="termsConsent" type="checkbox">
+<span class="text-xs sm:text-sm font-bold text-[#161c23]">
+                شرایط همکاری مستقل، تعهدنامه عدم افشا (NDA) و ضوابط همراه را به دقت مطالعه کرده و می‌پذیرم.
+              </span>
+</label>
+</div>
+<!-- Submit & Navigation Buttons -->
+<div class="mt-7 pt-4 border-t border-[#cbd6e3] flex flex-col sm:flex-row items-center justify-between gap-3">
+<button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-[#e6ebf1] text-[#161c23] font-bold text-xs sm:text-sm shadow-neu-raised active:shadow-neu-inset transition-all" onclick="goToStep(4)" type="button">
+              بازگشت به گام ۴
+            </button>
+<button class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#006a61] text-white font-bold text-xs sm:text-base flex items-center justify-center gap-2 shadow-neu-btn-secondary active:scale-[0.98] transition-all cursor-pointer" onclick="finishRegistration()" type="button">
+<span class="material-symbols-outlined text-lg filled-icon">task_alt</span>
+<span class="">تکمیل پرونده و صدور کارت شایستگی</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ========== SUCCESS & WELCOME SCREEN ========== -->
+<section aria-label="پرونده نهایی و تایید صلاحیت" class="step-content flex-col gap-5 sm:gap-6" id="step-panel-success">
+<div class="p-6 sm:p-8 lg:p-10 rounded-3xl bg-[#e6ebf1] shadow-neu-raised border border-white/60 text-center flex flex-col items-center">
+<!-- Success Icon -->
+<div class="w-16 sm:w-20 h-16 sm:h-20 rounded-3xl bg-[#e6ebf1] text-[#006a61] flex items-center justify-center mb-4 shadow-neu-raised">
+<span class="material-symbols-outlined text-4xl sm:text-5xl filled-icon">verified</span>
+</div>
+<h2 class="text-lg sm:text-2xl font-extrabold text-[#161c23]">پرونده شایستگی مترجمی ثبت شد</h2>
+<p class="text-xs sm:text-sm text-[#404750] max-w-lg mt-1 mb-6 leading-relaxed">
+            کد رهگیری ملی شما: <span class="font-mono font-extrabold text-[#005182] text-sm sm:text-base" id="dispTrack">—</span> • جزئیات زیر از اطلاعات ثبت‌شده‌ی خودتان نمایش داده می‌شود.
+          </p>
+<!-- CAP 4-Dimension Status Matrix: Adaptive 1 col mobile, 2 col tablet/desktop -->
+<div class="w-full text-right p-4 sm:p-6 rounded-2xl bg-[#dbe4ee] shadow-neu-inset mb-6">
+<div class="flex items-center justify-between border-b border-[#cbd6e3] pb-3 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#005182] text-xl">dataset</span>
+<h3 class="text-xs sm:text-sm font-bold text-[#161c23]">خلاصه کارت شایستگی مترجم (CAP Matrix)</h3>
+</div>
+<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#cbf7ee] text-[#006053]">
+                وضعیت: <span id="dispStatus">در انتظار بررسی کارشناس</span>
+              </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+<!-- Dim 1 -->
+<div class="p-3.5 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-[#d1e6ff] text-[#005182] flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">badge</span>
+</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]" id="dispName">هویت: سید علیرضا موسوی فخر</h4>
+<p class="text-[10px] text-[#717881]" id="dispGenderCity">آقا • شهر پایه: تهران</p>
+</div>
+</div>
+<span class="text-[11px] font-bold text-[#006a61]" id="dispIdState">در انتظار بررسی</span>
+</div>
+<!-- Dim 2 -->
+<div class="p-3.5 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-[#cbf7ee] text-[#006053] flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">record_voice_over</span>
+</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">آزمون سنجش گفتاری</h4>
+<p class="text-[10px] text-[#717881]" id="dispInterview">—</p>
+</div>
+</div>
+<span class="text-[11px] font-bold text-[#005182]" id="dispInterviewState">ثبت شد</span>
+</div>
+<!-- Dim 3 -->
+<div class="p-3.5 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-[#ffddb8] text-[#6f4400] flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">psychology</span>
+</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">حوزه‌های تخصصی</h4>
+<p class="text-[10px] text-[#717881]" id="dispFields">—</p>
+</div>
+</div>
+<span class="text-[11px] font-bold text-[#006a61]" id="dispFieldState">در انتظار کارشناس</span>
+</div>
+<!-- Dim 4 -->
+<div class="p-3.5 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-[#d1e6ff] text-[#005182] flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">directions_car</span>
+</div>
+<div>
+<h4 class="text-xs font-bold text-[#161c23]">ناوگان تشریفاتی</h4>
+<p class="text-[10px] text-[#717881]" id="dispCar">—</p>
+</div>
+</div>
+<span class="text-[11px] font-bold text-[#006a61]" id="dispCarStatus">سواره فعال</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+<button class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#e6ebf1] text-[#005182] font-bold text-xs sm:text-sm shadow-neu-raised active:shadow-neu-inset transition-all" onclick="goToStep(1)" type="button">
+              ویرایش مجدد پرونده
+            </button>
+<button class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#006a61] text-white font-bold text-xs sm:text-sm shadow-neu-btn-primary active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer" onclick="deskEnter()" type="button">
+<span class="material-symbols-outlined text-base">dashboard</span>
+<span class="">ورود مستقیم به پنل و سفارش‌های زنده</span>
+</button>
+<p class="hidden text-xs sm:text-sm font-bold text-[#a43c00] text-center" id="desk-msg" role="status"></p>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- ================= FOOTER ================= -->
+<footer class="w-full mt-6 text-center text-xs text-[#717881] py-3 border-t border-[#cbd6e3] flex flex-col sm:flex-row items-center justify-between gap-2">
+<p class="">© سامانه هوشمند همراه مترجم • پیاده‌سازی منطبق بر معماری CAP و الزامات حقوقی مترجمان حضوری</p>
+<div class="flex items-center gap-3 text-[11px]">
+<span class="text-[#005182] font-semibold">پروتکل امنیتی ITP-200</span>
+<span class="">•</span>
+<span class="text-[#006a61] font-semibold">نسخه پلتفرم ۴.۲ (چندپلتفرمی)</span>
+</div>
+</footer>
+</div>
+<!-- ================= JAVASCRIPT CONTROLLERS ================= -->
+<script>
+  // State
+  let currentStep = 1;
+  let userGender = 'male';
+  let userCity = 'تهران';
+  let userCityId = null;
+  let timerSeconds = 102;
+  let timerHandle = null;
+
+  // Platform Simulator State
+  function setPlatformMode(mode) {
+    const container = document.getElementById('appContainer');
+    const buttons = {
+      auto: document.getElementById('mode-auto'),
+      mobile: document.getElementById('mode-mobile'),
+      tablet: document.getElementById('mode-tablet'),
+      desktop: document.getElementById('mode-desktop')
+    };
+
+    // Reset button styles
+    Object.values(buttons).forEach(btn => {
+      btn.className = "px-2.5 py-1.5 rounded-lg transition-all text-[#404750] hover:text-[#161c23]";
+    });
+
+    if (buttons[mode]) {
+      buttons[mode].className = "px-2.5 py-1.5 rounded-lg transition-all text-[#005182] bg-[#e6ebf1] shadow-neu-raised-sm";
+    }
+
+    // Reset container classes
+    container.classList.remove('mode-mobile-sim', 'mode-tablet-sim', 'mode-desktop-sim');
+
+    if (mode === 'mobile') {
+      container.classList.add('mode-mobile-sim');
+    } else if (mode === 'tablet') {
+      container.classList.add('mode-tablet-sim');
+    } else if (mode === 'desktop') {
+      container.classList.add('mode-desktop-sim');
+    }
+  }
+
+  // STEP SWITCHER (Synchronizes mobile stepper, sidebar stepper, and content panels)
+  function goToStep(step) {
+    if (step < 1 || step > 5) return;
+    currentStep = step;
+
+    // Hide all step panels
+    document.querySelectorAll('.step-content').forEach(p => p.classList.remove('active'));
+
+    // Show targeted panel
+    const target = document.getElementById(`step-panel-${step}`);
+    if (target) target.classList.add('active');
+
+    // Progress bar and percentage badge
+    const pct = step * 20;
+    const pFill = document.getElementById('progressBarFill');
+    const pBadge = document.getElementById('stepPercentBadge');
+    if (pFill) pFill.style.width = `${pct}%`;
+    if (pBadge) pBadge.innerText = `${pct}٪`;
+
+    // 1. Update Mobile Top Stepper
+    for (let i = 1; i <= 5; i++) {
+      const mBtn = document.getElementById(`step-nav-m-${i}`);
+      if (!mBtn) continue;
+
+      if (i === step) {
+        mBtn.className = "step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 bg-[#e6ebf1] shadow-neu-raised text-[#005182] font-extrabold text-[10px]";
+      } else if (i < step) {
+        mBtn.className = "step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 text-[#006a61] font-bold text-[10px] hover:text-[#161c23]";
+      } else {
+        mBtn.className = "step-nav-btn py-2 px-1 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 text-[#717881] font-semibold text-[10px] hover:text-[#161c23]";
+      }
+    }
+
+    // 2. Update Sidebar Stepper (Tablet / Desktop)
+    for (let i = 1; i <= 5; i++) {
+      const sBtn = document.getElementById(`step-side-${i}`);
+      if (!sBtn) continue;
+      const numBadge = sBtn.querySelector('div > div:first-child');
+      const statusIcon = sBtn.querySelector('.step-status-icon');
+
+      if (i === step) {
+        sBtn.className = "side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between bg-[#e6ebf1] shadow-neu-raised text-[#005182] border-r-4 border-[#005182]";
+        if (numBadge) numBadge.className = "w-8 h-8 rounded-xl bg-[#d1e6ff] text-[#005182] font-bold text-xs flex items-center justify-center shadow-neu-inset";
+        if (statusIcon) {
+          statusIcon.innerText = "check_circle";
+          statusIcon.className = "material-symbols-outlined text-lg step-status-icon text-[#005182]";
+        }
+      } else if (i < step) {
+        sBtn.className = "side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between text-[#006a61] hover:text-[#161c23] border-r-4 border-[#006a61]";
+        if (numBadge) numBadge.className = "w-8 h-8 rounded-xl bg-[#cbf7ee] text-[#006053] font-bold text-xs flex items-center justify-center";
+        if (statusIcon) {
+          statusIcon.innerText = "verified";
+          statusIcon.className = "material-symbols-outlined text-lg step-status-icon text-[#006a61] filled-icon";
+        }
+      } else {
+        sBtn.className = "side-step-btn w-full text-right p-3 rounded-2xl transition-all flex items-center justify-between text-[#717881] hover:text-[#161c23]";
+        if (numBadge) numBadge.className = "w-8 h-8 rounded-xl bg-[#d8e1eb] text-[#717881] font-bold text-xs flex items-center justify-center";
+        if (statusIcon) {
+          statusIcon.innerText = "radio_button_unchecked";
+          statusIcon.className = "material-symbols-outlined text-lg step-status-icon text-[#717881]";
+        }
+      }
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // OTP Timer Logic
+  function startOtpTimer() {
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = setInterval(() => {
+      if (timerSeconds <= 0) {
+        clearInterval(timerHandle);
+        const timerEl = document.getElementById('countdownTimer');
+        if (timerEl) timerEl.innerText = '00:00';
+        return;
+      }
+      timerSeconds--;
+      const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+      const s = String(timerSeconds % 60).padStart(2, '0');
+      const timerEl = document.getElementById('countdownTimer');
+      if (timerEl) timerEl.innerText = `${m}:${s}`;
+    }, 1000);
+  }
+
+  function restartTimer() {
+    timerSeconds = 120;
+    startOtpTimer();
+    alert('کد تایید پیامکی جدید برای شماره شما ارسال شد.');
+  }
+
+  // Gender Selection
+  function setGender(gender) {
+    userGender = gender;
+    const maleBtn = document.getElementById('gender-male');
+    const femaleBtn = document.getElementById('gender-female');
+
+    if (gender === 'male') {
+      maleBtn.className = "gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm bg-[#e6ebf1] text-[#005182] shadow-neu-raised transition-all";
+      maleBtn.querySelector('.material-symbols-outlined').classList.add('filled-icon');
+      femaleBtn.className = "gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm text-[#717881] hover:text-[#161c23] transition-all";
+      femaleBtn.querySelector('.material-symbols-outlined').classList.remove('filled-icon');
+    } else {
+      femaleBtn.className = "gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm bg-[#e6ebf1] text-[#005182] shadow-neu-raised transition-all";
+      femaleBtn.querySelector('.material-symbols-outlined').classList.add('filled-icon');
+      maleBtn.className = "gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm text-[#717881] hover:text-[#161c23] transition-all";
+      maleBtn.querySelector('.material-symbols-outlined').classList.remove('filled-icon');
+    }
+  }
+
+  // City Selection
+  // شهرهای فعال برای مترجم از سرور (پنل مدیر)
+  function renderCityChips(list) {
+    var box = document.getElementById('cityList');
+    if (!box || !list || !list.length) return;
+    box.textContent = '';
+    list.forEach(function (c, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]';
+      b.textContent = c.name_fa;
+      b.onclick = function () { setCity(b, c.name_fa, c.id); };
+      box.appendChild(b);
+      if (i === 0) setCity(b, c.name_fa, c.id);
+    });
+  }
+  function setCity(btn, city, id) {
+    userCity = city;
+    userCityId = id || null;
+    document.querySelectorAll('.city-chip').forEach(b => {
+      b.className = "city-chip py-2 px-3 rounded-xl text-xs font-semibold text-[#161c23] bg-[#dbe4ee] shadow-neu-inset hover:text-[#005182]";
+    });
+    btn.className = "city-chip py-2 px-3 rounded-xl text-xs font-bold bg-[#e6ebf1] text-[#005182] shadow-neu-raised";
+  }
+
+  // File Upload Previews
+  function previewFile(input, targetId) {
+    if (input.files && input.files[0]) {
+      document.getElementById(targetId).innerText = input.files[0].name;
+      if (targetId === 'nidFileName') window.hzNidFile = input.files[0];
+    }
+  }
+
+
+  // مدارک: هر مدرک برچسب فارسی دارد و در بخش مربوط به خودش (داخل کارت گام) نمایش داده می‌شود
+  window.hzDocFiles = window.hzDocFiles || {};
+  window.hzDocExp = window.hzDocExp || {};
+  var DOC_EXPIRING_UI = ['car_docs', 'licence', 'criminal_record'];
+  var SPEC_LABEL = { medical: 'گواهی تخصصی حوزه‌ی درمانی', legal: 'گواهی تخصصی حوزه‌ی حقوقی', business: 'گواهی تخصصی حوزه‌ی بازرگانی', general: 'گواهی تخصصی حوزه‌ی گردشگری و زیارتی' };
+  // ظرفیت سرنشین خودرو (سند ۶.۲): در کنار مدل خودرو ثبت می‌شود، بدون مقدار پیش‌فرض
+  (function addCarCapacity() {
+    var model = document.getElementById('carModel');
+    if (!model || document.getElementById('carCapacity')) return;
+    var wrap = document.createElement('div');
+    var lab = document.createElement('label');
+    lab.className = 'block text-xs font-bold text-[#161c23] mb-1';
+    lab.setAttribute('for', 'carCapacity');
+    lab.textContent = 'ظرفیت سرنشین (نفر)';
+    var inp = document.createElement('input');
+    inp.id = 'carCapacity'; inp.type = 'number'; inp.min = '1'; inp.max = '8'; inp.value = ''; inp.placeholder = '۱ تا ۸';
+    inp.className = 'w-full bg-[#e6ebf1] py-2.5 px-3 rounded-xl text-xs font-bold text-[#161c23] shadow-neu-raised border-none focus:outline-none dir-ltr';
+    wrap.appendChild(lab); wrap.appendChild(inp);
+    var modelWrap = model.parentElement;
+    modelWrap.parentElement.insertBefore(wrap, modelWrap.nextSibling);
+  })();
+
+  function makeDocRow(kind, label) {
+    var lab = document.createElement('label');
+    lab.setAttribute('data-doc-kind', kind);
+    lab.className = 'p-3 rounded-xl bg-[#e6ebf1] shadow-neu-raised flex items-center justify-between gap-3 cursor-pointer';
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*,application/pdf'; inp.className = 'hidden';
+    var txt = document.createElement('div'); txt.className = 'text-right flex-1';
+    var name = document.createElement('p'); name.className = 'text-xs font-bold text-[#161c23]'; name.textContent = label;
+    var sub = document.createElement('p'); sub.className = 'text-[10px] text-[#717881]'; sub.textContent = 'فایلی انتخاب نشده است';
+    txt.appendChild(name); txt.appendChild(sub);
+    if (DOC_EXPIRING_UI.indexOf(kind) !== -1) {
+      var dwrap = document.createElement('div'); dwrap.className = 'flex items-center gap-2 mt-1';
+      var dl = document.createElement('span'); dl.className = 'text-[10px] text-[#404750]'; dl.textContent = 'تاریخ انقضا:';
+      var dateIn = document.createElement('input');
+      dateIn.type = 'date'; dateIn.className = 'text-[11px] dir-ltr';
+      dateIn.setAttribute('aria-label', 'تاریخ انقضا ' + label);
+      dateIn.addEventListener('click', function (ev) { ev.stopPropagation(); });
+      dateIn.addEventListener('change', function () { window.hzDocExp[kind] = dateIn.value; });
+      dwrap.appendChild(dl); dwrap.appendChild(dateIn); txt.appendChild(dwrap);
+    }
+    var act = document.createElement('span'); act.className = 'text-xs text-[#005182] font-bold whitespace-nowrap'; act.textContent = 'انتخاب فایل';
+    inp.addEventListener('change', function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { alert('حداکثر حجم هر فایل ۵ مگابایت است.'); inp.value = ''; return; }
+      window.hzDocFiles[kind] = f;
+      sub.textContent = f.name;
+    });
+    lab.reset = function () { delete window.hzDocFiles[kind]; delete window.hzDocExp[kind]; inp.value = ''; sub.textContent = 'فایلی انتخاب نشده است'; };
+    lab.appendChild(inp); lab.appendChild(txt); lab.appendChild(act);
+    return lab;
+  }
+  function makeSection(title, desc) {
+    var box = document.createElement('div');
+    box.className = 'mt-5 p-4 sm:p-5 rounded-2xl bg-[#dbe4ee] shadow-neu-inset flex flex-col gap-3';
+    var h = document.createElement('p'); h.className = 'text-xs sm:text-sm font-bold text-[#161c23]'; h.textContent = title;
+    box.appendChild(h);
+    if (desc) { var d = document.createElement('p'); d.className = 'text-[11px] text-[#404750]'; d.textContent = desc; box.appendChild(d); }
+    return box;
+  }
+  function insertBeforeNav(panel, el) {
+    var card = panel.firstElementChild || panel;
+    var kids = Array.prototype.filter.call(card.children, function (c) { return (c.className || '').indexOf('mt-7') !== -1; });
+    var nav = kids[kids.length - 1];
+    if (nav) card.insertBefore(el, nav); else card.appendChild(el);
+  }
+  function domainCode(card) {
+    var t = card.textContent, f = 'general';
+    if (t.indexOf('درمان') !== -1 || t.indexOf('پزشک') !== -1) f = 'medical';
+    else if (t.indexOf('حقوق') !== -1) f = 'legal';
+    else if (t.indexOf('بازرگان') !== -1) f = 'business';
+    return f;
+  }
+  function selectedFields() {
+    var out = [];
+    [].forEach.call(document.querySelectorAll('#domainsList .domain-card'), function (c) {
+      if (!c.classList.contains('border-[#005182]')) return;
+      var f = domainCode(c); if (out.indexOf(f) === -1) out.push(f);
+    });
+    return out;
+  }
+  // نمایش بخش‌های شرطی بر اساس انتخاب حوزه و خودرو؛ مدارک بخش‌های پنهان پاک می‌شوند
+  function syncConditionalDocs() {
+    var sel = selectedFields();
+    var carOn = document.getElementById('carToggle') && document.getElementById('carToggle').checked;
+    document.querySelectorAll('[data-spec-row]').forEach(function (row) {
+      var key = row.getAttribute('data-spec-row');
+      var show = key === 'car' ? !!carOn : sel.indexOf(key) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (!show && row.reset) row.reset();
+    });
+  }
+  function mountDocs() {
+    // گام ۲: گواهی‌های سوءپیشینه و اعتیاد (با برچسب) داخل کارت گام
+    var p2 = document.getElementById('step-panel-2');
+    if (p2 && !document.getElementById('docsStep2')) {
+      var box2 = makeSection('گواهی‌های سلامت و سوابق', 'هر دو گواهی را بارگذاری کنید؛ در صورت وجود تاریخ انقضا را ثبت کنید.');
+      box2.id = 'docsStep2';
+      box2.appendChild(makeDocRow('criminal_record', 'گواهی عدم سوءپیشینه'));
+      box2.appendChild(makeDocRow('drug_free', 'گواهی عدم اعتیاد'));
+      insertBeforeNav(p2, box2);
+    }
+    // گام ۴: گواهی تخصصی هر حوزه جدا
+    var dl = document.getElementById('domainsList');
+    if (dl && !document.getElementById('docsStep4')) {
+      var box4 = makeSection('مدارک تخصصی هر حوزه', 'برای هر حوزه‌ای که انتخاب کرده‌اید، گواهی تخصصی همان حوزه را بارگذاری کنید.');
+      box4.id = 'docsStep4';
+      SPEC_CODES.forEach(function (code) {
+        var row = makeDocRow('specialty_cert:' + code, SPEC_LABEL[code]);
+        row.setAttribute('data-spec-row', code);
+        box4.appendChild(row);
+      });
+      dl.parentNode.insertBefore(box4, dl.nextSibling);
+      dl.addEventListener('click', function () { setTimeout(syncConditionalDocs, 0); });
+    }
+    // گام ۴: مدارک خودرو و گواهینامه، زیر بخش خودرو و فقط وقتی همراهی با خودرو فعال است
+    var carFields = document.getElementById('carFields');
+    if (carFields && !document.getElementById('docsCar')) {
+      var boxC = makeSection('مدارک خودرو و راننده', 'این مدارک فقط وقتی همراهی با خودرو فعال باشد لازم است.');
+      boxC.id = 'docsCar';
+      var rowC1 = makeDocRow('car_docs', 'مدارک خودرو (بیمه‌نامه)'); rowC1.setAttribute('data-spec-row', 'car');
+      var rowC2 = makeDocRow('licence', 'گواهینامه‌ی رانندگی'); rowC2.setAttribute('data-spec-row', 'car');
+      boxC.appendChild(rowC1); boxC.appendChild(rowC2);
+      carFields.parentNode.insertBefore(boxC, carFields.nextSibling);
+    }
+    syncConditionalDocs();
+  }
+  var SPEC_CODES = ['medical', 'legal', 'business', 'general'];
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountDocs);
+  else mountDocs();
+
+  // ارسال فایل مدرک به سرور (رمزنگاری‌شده؛ فقط وضعیت به مترجم نشان داده می‌شود)
+  function uploadDoc(kind, file) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        window.hzApi('POST', '/translator/documents', { kind: kind, data: fr.result, expires_at: window.hzDocExp[kind] || '' }).then(resolve, reject);
+      };
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
+
+  function previewPortrait(input) {
+    if (input.files && input.files[0]) {
+      window.hzPortraitFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('portraitImg').src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // Language Card Selection
+  // جفت‌زبان‌ها از پنل مدیر (فقط موارد فعال). کارت‌های پیش‌فرض همان ساختار قبلی را دارند.
+  var LANG_DEFAULT_ON = ['ar-fa', 'en-fa'];
+  function renderLangCards(pairs) {
+    var box = document.getElementById('langCards');
+    if (!box || !pairs || !pairs.length) return;
+    box.innerHTML = '';
+    pairs.forEach(function (pr) {
+      var on = LANG_DEFAULT_ON.indexOf(pr.code) !== -1;
+      var card = document.createElement('div');
+      card.className = 'lang-item p-3.5 rounded-2xl cursor-pointer transition-all flex items-center justify-between border-2 ' +
+        (on ? 'bg-[#e6ebf1] shadow-neu-raised border-[#005182]' : 'bg-[#dbe4ee] shadow-neu-inset border-transparent');
+      card.setAttribute('onclick', 'toggleLanguage(this)');
+      card.dataset.langs = JSON.stringify(pr.langs);
+      var left = document.createElement('div'); left.className = 'flex items-center gap-2.5';
+      var badge = document.createElement('div');
+      badge.className = 'w-9 h-9 rounded-xl text-sm font-bold flex items-center justify-center ' + (on ? 'bg-[#cbf7ee] text-[#006053] shadow-neu-inset' : 'bg-white/70 text-[#161c23]');
+      badge.textContent = pr.langs[0].toUpperCase();
+      var txt = document.createElement('div');
+      var h = document.createElement('h4'); h.className = 'text-xs font-bold text-[#161c23]'; h.textContent = pr.label;
+      var p = document.createElement('p'); p.className = 'text-[10px] text-[#717881]'; p.textContent = pr.note || '';
+      txt.appendChild(h); txt.appendChild(p);
+      left.appendChild(badge); left.appendChild(txt);
+      var chk = document.createElement('span');
+      chk.className = 'material-symbols-outlined text-xl lang-check ' + (on ? 'text-[#005182] filled-icon' : '');
+      chk.textContent = on ? 'check_circle' : 'radio_button_unchecked';
+      card.appendChild(left); card.appendChild(chk);
+      box.appendChild(card);
+    });
+  }
+  fetch('/api/config').then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.language_pairs) renderLangCards(d.language_pairs);
+    if (d && d.translator_cities) renderCityChips(d.translator_cities);
+    if (d && d.translator_cities && d.translator_cities.length) { var cb = document.getElementById('cityCountBadge'); if (cb) cb.textContent = 'پذیرش فعال در ' + d.translator_cities.length.toLocaleString('fa-IR') + ' شهر'; }
+    var f = (d && d.features) || {};
+    window.hzFeatures = f;
+    if (f.translator_registration === false) {
+      // ثبت‌نام مترجم خاموش است: دکمه‌ها غیرفعال و پیام نمایش داده می‌شود
+      document.querySelectorAll('[onclick*="finishRegistration"]').forEach(function (b) { b.disabled = true; });
+      var note = document.createElement('div');
+      note.className = 'mb-4 p-3 rounded-xl bg-[#ffdad6] text-[#93000a] text-sm font-bold';
+      note.textContent = 'ثبت‌نام مترجمان فعلاً بسته است.';
+      var main = document.querySelector('main') || document.body;
+      main.insertBefore(note, main.firstChild);
+    }
+  }).catch(function () {});
+
+  function toggleLanguage(card) {
+    const isSelected = card.classList.contains('border-[#005182]');
+    const checkIcon = card.querySelector('.lang-check');
+
+    if (isSelected) {
+      card.classList.remove('border-[#005182]', 'bg-[#e6ebf1]', 'shadow-neu-raised');
+      card.classList.add('border-transparent', 'bg-[#dbe4ee]', 'shadow-neu-inset');
+      checkIcon.innerText = 'radio_button_unchecked';
+      checkIcon.classList.remove('text-[#005182]', 'filled-icon');
+      checkIcon.classList.add('text-[#717881]');
+    } else {
+      card.classList.remove('border-transparent', 'bg-[#dbe4ee]', 'shadow-neu-inset');
+      card.classList.add('border-[#005182]', 'bg-[#e6ebf1]', 'shadow-neu-raised');
+      checkIcon.innerText = 'check_circle';
+      checkIcon.classList.remove('text-[#717881]');
+      checkIcon.classList.add('text-[#005182]', 'filled-icon');
+    }
+  }
+
+  // Domain Selection
+  function toggleDomain(card) {
+    const isSelected = card.classList.contains('border-[#005182]');
+    const icon = card.querySelector('.domain-icon');
+
+    if (isSelected) {
+      card.classList.remove('border-[#005182]', 'bg-[#e6ebf1]', 'shadow-neu-raised');
+      card.classList.add('border-transparent', 'bg-[#dbe4ee]', 'shadow-neu-inset');
+      icon.innerText = 'radio_button_unchecked';
+      icon.classList.remove('text-[#005182]', 'filled-icon');
+      icon.classList.add('text-[#717881]');
+    } else {
+      card.classList.remove('border-transparent', 'bg-[#dbe4ee]', 'shadow-neu-inset');
+      card.classList.add('border-[#005182]', 'bg-[#e6ebf1]', 'shadow-neu-raised');
+      icon.innerText = 'check_circle';
+      icon.classList.remove('text-[#717881]');
+      icon.classList.add('text-[#005182]', 'filled-icon');
+    }
+  }
+
+  // Car Toggle Switch
+  function toggleCarForm() {
+    const on = document.getElementById('carToggle').checked;
+    const fields = document.getElementById('carFields');
+    fields.classList.toggle('opacity-25', !on);
+    fields.classList.toggle('pointer-events-none', !on);
+    document.getElementById('carToggleText').textContent = on ? 'غیرفعال کردن همراهی با خودرو' : 'فعال کردن همراهی با خودرو';
+    if (typeof syncConditionalDocs === 'function') syncConditionalDocs();
+  }
+
+  // Bank Detector
+  function detectBankName(val) {
+    const cleaned = val.replace(/\D/g, '');
+    const badge = document.getElementById('bankBadge');
+    if (cleaned.startsWith('012')) badge.innerText = 'بانک ملت';
+    else if (cleaned.startsWith('017')) badge.innerText = 'بانک ملی';
+    else if (cleaned.startsWith('056')) badge.innerText = 'بانک سامان';
+    else if (cleaned.startsWith('054')) badge.innerText = 'بانک پارسیان';
+    else if (cleaned.startsWith('019')) badge.innerText = 'بانک صادرات';
+    else badge.innerText = 'بانک عضو شتاب';
+  }
+
+  // Final Registration Submission
+  function finishRegistration() {
+    if (window.hzFeatures && window.hzFeatures.translator_registration === false) return;
+    if (!hasLoginToken()) { alert('برای ثبت نهایی ابتدا در گام ۱ با کد پیامکی وارد شوید.'); goToStep(1); return; }
+    const consent = document.getElementById('termsConsent');
+    if (!consent.checked) {
+      alert('پذیرش شرایط تعهدنامه محرمانگی (NDA) برای ثبت نهایی الزامی است.');
+      return;
+    }
+
+    // Populate Results
+    const fName = document.getElementById('firstName').value.trim();
+    const lName = document.getElementById('lastName').value.trim();
+    const nCode = document.getElementById('nationalCode').value.trim();
+    const bDate = document.getElementById('birthDate').value.trim();
+    const pCode = document.getElementById('postalCode').value.trim();
+    const shabaVal = document.getElementById('shabaInput').value.replace(/\s/g, '');
+    const carOnV = document.getElementById('carToggle').checked;
+    const selFields = selectedFields();
+    const missing = [];
+    if (!fName) missing.push('نام');
+    if (!lName) missing.push('نام خانوادگی');
+    if (!/^\d{10}$/.test(nCode)) missing.push('کد ملی ۱۰ رقمی');
+    if (!bDate) missing.push('تاریخ تولد');
+    if (!/^\d{10}$/.test(pCode)) missing.push('کد پستی ۱۰ رقمی');
+    if (!window.hzNidFile) missing.push('تصویر کارت ملی');
+    if (!window.hzPortraitFile) missing.push('عکس پرتره رسمی');
+    if (!window.hzDocFiles.criminal_record) missing.push('گواهی عدم سوءپیشینه');
+    if (!window.hzDocFiles.drug_free) missing.push('گواهی عدم اعتیاد');
+    if (!selFields.length) missing.push('حداقل یک حوزه‌ی فعالیت');
+    selFields.forEach(function (f) { if (!window.hzDocFiles['specialty_cert:' + f]) missing.push('گواهی تخصصی ' + SPEC_LABEL[f]); });
+    if (carOnV) {
+      if (!document.getElementById('carModel').value.trim()) missing.push('مدل خودرو');
+      if (!document.getElementById('carColor').value.trim()) missing.push('رنگ خودرو');
+      if (!document.getElementById('carPlate').value.trim()) missing.push('شماره پلاک');
+      if (!(parseInt(document.getElementById('carCapacity').value, 10) >= 1)) missing.push('ظرفیت سرنشین');
+      if (!window.hzDocFiles.car_docs) missing.push('مدارک خودرو');
+      if (!window.hzDocFiles.licence) missing.push('گواهینامه‌ی رانندگی');
+    }
+    if (!/^\d{24}$/.test(shabaVal)) missing.push('شماره شبا (۲۴ رقم بدون IR)');
+    // مدارک دارای انقضا: فایل بدون تاریخ انقضا پذیرفته نمی‌شود
+    var expLabels = { criminal_record: 'گواهی عدم سوءپیشینه', car_docs: 'مدارک خودرو', licence: 'گواهینامه‌ی رانندگی' };
+    Object.keys(expLabels).forEach(function (k) {
+      if (window.hzDocFiles[k] && !window.hzDocExp[k]) missing.push('تاریخ انقضای ' + expLabels[k]);
+    });
+    if (missing.length) { alert('موارد زیر را تکمیل کنید: ' + missing.join('، ')); return; }
+    document.getElementById('dispName').innerText = `هویت: ${fName} ${lName}`;
+    document.getElementById('dispGenderCity').innerText = `${userGender === 'male' ? 'آقا' : 'خانم'} • شهر پایه: ${userCity}`;
+
+    const oralD = document.getElementById('oralDate').value;
+    const oralT = document.getElementById('oralTime').value;
+    document.getElementById('dispInterview').innerText = `${oralD} (${oralT})`;
+
+    const carChecked = document.getElementById('carToggle').checked;
+    if (carChecked) {
+      const model = document.getElementById('carModel').value.trim();
+      document.getElementById('dispCar').innerText = model;
+      document.getElementById('dispCarStatus').innerText = 'سواره فعال';
+      document.getElementById('dispCarStatus').className = 'text-[11px] font-bold text-[#006a61]';
+    } else {
+      document.getElementById('dispCar').innerText = 'اعزام بدون خودرو (پیاده)';
+      document.getElementById('dispCarStatus').innerText = 'پیاده فعال';
+      document.getElementById('dispCarStatus').className = 'text-[11px] font-bold text-[#005182]';
+    }
+
+    // سند ۷.۳: فعال‌سازی خودکار نیست؛ پس از ثبت، پرونده نزد کارشناس است
+    // ثبت روی سرور: پرونده نزد کارشناس می‌رود؛ وضعیت را خود سرور تعیین می‌کند
+    var carOn = document.getElementById('carToggle').checked;
+    // زبان‌ها و زمینه‌ها از کارت‌های انتخاب‌شده خوانده می‌شوند و همان مقادیر تطبیق‌اند
+    var langCodes = [];
+    [].forEach.call(document.querySelectorAll('#langCards .lang-item'), function (c) {
+      if (!c.classList.contains('border-[#005182]')) return;
+      if (c.dataset.langs) {
+        JSON.parse(c.dataset.langs).forEach(function (code) { if (langCodes.indexOf(code) === -1) langCodes.push(code); });
+        return;
+      }
+      var t = c.textContent;
+      if (t.indexOf('عرب') !== -1) langCodes.push('ar');
+      if (t.indexOf('فارس') !== -1) langCodes.push('fa');
+      if (t.indexOf('انگلیس') !== -1) langCodes.push('en');
+    });
+    var fieldCodes = selFields;
+    window.hzApi('POST', '/translator/registration', {
+      nda: true, charter: true, gender: userGender === 'male' ? 'male' : 'female',
+      first_name: fName, last_name: lName, city: userCity, city_id: userCityId, car: carOn,
+      car_model: carOn ? (document.getElementById('carModel').value || '') : '',
+      car_capacity: carOn ? (parseInt(document.getElementById('carCapacity').value, 10) || 0) : 0,
+      postal_code: pCode,
+      languages: langCodes, fields: fieldCodes,
+      interview_at: (oralD + ' ' + oralT).trim()
+    }).then(function (res) {
+      if (res.status === 200) {
+        var st = HZ.load(); st.gender = userGender; st.status = res.data.status; HZ.save(st);
+        // مدارک انتخاب‌شده پس از ثبت پرونده فرستاده می‌شوند
+        var docJobs = [];
+        if (window.hzNidFile) docJobs.push(uploadDoc('nid_card', window.hzNidFile));
+        if (window.hzPortraitFile) docJobs.push(uploadDoc('portrait', window.hzPortraitFile));
+        Object.keys(window.hzDocFiles).forEach(function (k) { docJobs.push(uploadDoc(k, window.hzDocFiles[k])); });
+        Promise.all(docJobs).catch(function () {
+          var m2 = document.getElementById('desk-msg');
+          if (m2) { m2.textContent = 'ارسال مدارک انجام نشد؛ بعداً از همین بخش دوباره ارسال کنید.'; m2.classList.remove('hidden'); }
+        });
+        return;
+      }
+      var m = document.getElementById('desk-msg');
+      if (m) { m.textContent = res.status === 401 ? 'نشست شما منقضی شده؛ دوباره وارد شوید.' : 'ثبت پرونده روی سرور انجام نشد. اتصال را بررسی کنید.'; m.classList.remove('hidden'); }
+    }).catch(function () {
+      var m = document.getElementById('desk-msg');
+      if (m) { m.textContent = NET_ERR; m.classList.remove('hidden'); }
+    });
+
+    // دکمه‌ی تأیید آزمایشی فقط وقتی سرور در حالت توسعه باشد نمایش داده می‌شود
+
+    var FIELD_FA = { medical: 'درمانی', legal: 'حقوقی', business: 'بازرگانی', general: 'گردشگری و زیارتی' };
+    var lblOf = function (id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; };
+    lblOf('dispFields', selFields.map(function (f) { return FIELD_FA[f]; }).join('، ') || '—');
+    lblOf('dispInterview', ((oralD + ' ' + oralT).trim()) || '—');
+    lblOf('dispInterviewState', oralD ? 'ثبت شد' : 'ثبت نشده');
+    lblOf('dispTrack', 'پس از تأیید کارشناس صادر می‌شود');
+    // Show Success Screen
+    document.querySelectorAll('.step-content').forEach(p => p.classList.remove('active'));
+    document.getElementById('step-panel-success').classList.add('active');
+
+    // Update Progress Bar
+    const pFill = document.getElementById('progressBarFill');
+    const pBadge = document.getElementById('stepPercentBadge');
+    if (pFill) pFill.style.width = `100%`;
+    if (pBadge) pBadge.innerText = `۱۰۰٪`;
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // آزمایشی: شبیه‌سازی تأیید کارشناس. فقط وقتی TEST_OTP تعریف شده نمایش داده می‌شود و قبل از انتشار حذف می‌شود.
+  // ورود مستقیم: در حالت توسعه مترجم آزمایشی تأیید می‌شود؛ در نسخه‌ی نهایی فقط وضعیت واقعی بررسی می‌شود
+  // TEST ONLY: ورود آزمایشی بدون ثبت‌نام (فقط حالت توسعه). قبل از انتشار حذف شود
+  function devSkip() {
+    if (!window.hzDev) return;
+    var H = { 'Content-Type': 'application/json' };
+    var phone = '9' + String(Math.floor(100000000 + Math.random() * 899999999));
+    var stage = 'کد';
+    var fail = function (where) {
+      var m = document.getElementById('phoneErr');
+      if (m) { m.textContent = 'ورود آزمایشی متوقف شد در مرحله‌ی ' + where + '. این پیام را برای توسعه‌دهنده بفرستید.'; m.classList.remove('hidden'); }
+    };
+    fetch('/api/auth/request-code', { method: 'POST', headers: H, body: JSON.stringify({ phone: phone, role: 'translator' }) })
+      .then(function (r) { if (r.status !== 200) throw new Error('code ' + r.status); stage = 'تأیید کد'; return fetch('/api/auth/verify', { method: 'POST', headers: H, body: JSON.stringify({ phone: phone, role: 'translator', code: '123456' }) }); })
+      .then(function (r) { if (r.status !== 200) throw new Error('verify ' + r.status); return r.json(); })
+      .then(function (v) {
+        if (!v.token) throw new Error('no token');
+        stage = 'تأیید آزمایشی';
+        return fetch('/api/dev/approve-translator', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + v.token, 'X-Auth-Token': v.token } })
+          .then(function (r) { if (r.status !== 200) throw new Error('approve ' + r.status); return v; });
+      })
+      .then(function (v) {
+        stage = 'ذخیره‌ی ورود';
+        var st = window.HZ ? HZ.load() : {};
+        st.token = v.token; st.session = { phone: phone, until: Date.now() + (v.expires_in || 43200) * 1000 };
+        st.completed = st.completed || {}; st.completed[1] = true; st.status = 'active_general';
+        if (window.HZ) HZ.save(st);
+        location.href = 'app.html';
+      })
+      .catch(function (e) { fail(stage + ' (' + (e && e.message ? e.message : 'خطای شبکه') + ')'); });
+  }
+  function hasLoginToken() {
+    return !!(window.HZ && HZ.load().token);
+  }
+  function deskEnter() {
+    var m = document.getElementById('desk-msg');
+    if (!hasLoginToken()) { if (m) { m.textContent = 'برای ادامه ابتدا در گام ۱ با کد پیامکی وارد شوید.'; m.classList.remove('hidden'); } goToStep(1); return; }
+    if (!window.hzDev) return enterDesk();
+    window.hzApi('POST', '/dev/approve-translator').then(function (res) {
+      if (res.status !== 200) {
+        if (res.status === 401 && window.HZ) { var stale = HZ.load(); stale.token = null; stale.session = null; HZ.save(stale); }
+        if (m) { m.textContent = res.status === 401 ? 'نشست ورود قدیمی پاک شد. صفحه را نو کنید، با کد پیامکی دوباره وارد شوید و ثبت نام را کامل کنید.' : 'ورود مستقیم انجام نشد (' + res.status + ').'; m.classList.remove('hidden'); }
+        return;
+      }
+      var st = window.HZ ? HZ.load() : {}; st.status = 'active_general'; if (window.HZ) HZ.save(st);
+      enterDesk();
+    }).catch(function () { if (m) { m.textContent = NET_ERR; m.classList.remove('hidden'); } });
+  }
+
+  // پنجره‌ی متن (شرایط، راهنما)
+  function openInfoModal(title, body) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').textContent = body;
+    document.getElementById('infoModal').style.display = 'flex';
+  }
+  function closeInfoModal() { document.getElementById('infoModal').style.display = 'none'; }
+  function openTerms() {
+    var c = window.hzCfg || {};
+    var txt = (c.translator_terms_text || '').trim();
+    openInfoModal('شرایط همکاری مترجم همراه', txt || 'متن شرایط همکاری هنوز در پنل مدیریت ثبت نشده است.');
+    window.hzTermsOpened = true;
+    updateTermsGate();
+  }
+  function updateTermsGate() {
+    var c = window.hzCfg || {};
+    var ct = document.getElementById('c-terms');
+    var hint = document.getElementById('termsHint');
+    var ready = !!(c.translator_terms_text && String(c.translator_terms_text).trim());
+    if (ct) { ct.disabled = !(ready && window.hzTermsOpened); if (!ready || !window.hzTermsOpened) ct.checked = false; }
+    if (hint) hint.textContent = !ready ? 'متن شرایط همکاری هنوز در پنل مدیریت ثبت نشده است؛ تا آن زمان ثبت‌نام ممکن نیست.' : (window.hzTermsOpened ? 'شرایط خوانده شد؛ اکنون می‌توانید تیک بزنید.' : 'برای تیک زدن شرایط، ابتدا آن را باز کنید.');
+    if (typeof gate === 'function') gate();
+  }
+  function openHelp() {
+    var c = window.hzCfg || {};
+    var text = String(c.translator_help_text || '').trim() || 'راهنمای مترجم هنوز در پنل مدیریت تنظیم نشده است.';
+    var phone = String(c.support_phone || '').trim();
+    if (phone) text += '\n\nتلفن پشتیبانی: ' + phone;
+    openInfoModal('راهنما و پشتیبانی', text);
+  }
+
+  // ورود به میز کار فقط پس از تأیید کارشناس (سند ۷.۳)
+  function enterDesk() {
+    window.hzApi('GET', '/translator/status').then(function (res) {
+      var st = window.HZ ? HZ.load() : {};
+      if (res.status === 200 && res.data.status) { st.status = res.data.status; if (window.HZ) HZ.save(st); }
+      var ok = st.status === 'active_general' || st.status === 'active_specialized';
+      if (ok) { location.href = 'app.html'; return; }
+      var m = document.getElementById('desk-msg');
+      if (m) { m.textContent = 'پرونده شما برای بررسی نهایی ثبت شد. پس از تأیید کارشناس، میز کار و سفارش‌های زنده فعال می‌شود.'; m.classList.remove('hidden'); }
+    }).catch(function () {
+      var m = document.getElementById('desk-msg');
+      if (m) { m.textContent = NET_ERR; m.classList.remove('hidden'); }
+    });
+  }
+
+  // Auto-focus OTP fields on typing
+  document.addEventListener('DOMContentLoaded', () => {
+    const boxes = document.querySelectorAll('.otp-box');
+    boxes.forEach((box, index) => {
+      box.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < boxes.length - 1) {
+          boxes[index + 1].focus();
+        }
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          boxes[index - 1].focus();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+<script src="ui.js"></script>
+<script>
+/* ورود مترجم: منطق گام ۱ بر پایه‌ی نمونه‌ی code.html */
+(function () {
+  var H = window.HZ, C = H.CONFIG;
+  var $ = function (id) { return document.getElementById(id); };
+  var state = H.load();
+  var sentAt = 0, otpPhone = '';
+
+  function gate() {
+    var ok = $('c-age').checked && $('c-terms').checked;
+    $('sendOtpBtn').disabled = !ok;
+    var h = $('gate-hint');
+    if (h) h.textContent = ok ? '' : 'برای دریافت کد، هر دو تأیید بالا را بزنید.';
+  }
+  $('c-age').addEventListener('change', gate);
+  $('c-terms').addEventListener('change', gate);
+  $('mobileInput').addEventListener('input', function (e) {
+    e.target.value = H.toEn(e.target.value).replace(/\D/g, '').slice(0, 11);
+    $('phoneErr').classList.add('hidden');
+  });
+
+  function checkPhone(raw) {
+    var p = raw.replace(/^0/, '');
+    return /^9\d{9}$/.test(p) ? p : null;
+  }
+
+  // ارتباط با سرور همراه (/api). توکن نشست فقط در حافظه‌ی محلی ذخیره می‌شود.
+  function api(method, path, body) {
+    var headers = { 'Content-Type': 'application/json' };
+    if (state.token) { headers.Authorization = 'Bearer ' + state.token; headers['X-Auth-Token'] = state.token; }
+    return fetch('/api' + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (data) { return { status: r.status, data: data }; });
+      });
+  }
+  window.hzApi = api;
+  // پرچم محیط آزمایش هنگام بارگذاری (دکمه‌ی تأیید آزمایشی فقط در حالت توسعه)
+  api('GET', '/config').then(function (res) {
+    window.hzDev = !!(res.data && res.data.dev);
+    var devBtn = document.getElementById('devSkipBtn'); if (devBtn) devBtn.classList.toggle('hidden', !window.hzDev);
+    window.hzCfg = res.data || {};
+    var d = res.data || {};
+    var setTxt = function (id, txt, empty) {
+      var el = document.getElementById(id); if (!el) return;
+      el.textContent = txt || empty;
+      if (!txt) el.classList.add('text-[#a43c00]', 'font-bold');
+    };
+    setTxt('ndaText', d.translator_nda_text, 'متن تعهدنامه‌ی محرمانگی هنوز در پنل مدیریت ثبت نشده است.');
+    setTxt('ethicsText', d.charter_text, 'متن منشور اخلاقی هنوز در پنل مدیریت ثبت نشده است.');
+    updateTermsGate();
+  }).catch(function () {});
+  var NET_ERR = 'اتصال به سرور برقرار نیست. اینترنت خود را بررسی کنید.';
+
+  window.handleSend = function () {
+    var p = checkPhone($('mobileInput').value);
+    if (!p) {
+      $('phoneErr').textContent = 'شماره‌ی موبایل معتبر نیست. مثلاً ۰۹۱۲۳۴۵۶۷۸۹.';
+      $('phoneErr').classList.remove('hidden');
+      $('mobileInput').focus();
+      return;
+    }
+    if (state.lock && state.lock > Date.now()) { showLock(); return; }
+    $('phoneErr').classList.add('hidden');
+    api('POST', '/auth/request-code', { phone: p, role: 'translator' }).then(function (res) {
+      if (res.status === 423) { lockFor(res.data.retry_after); return; }
+      if (res.status === 429) { $('phoneErr').textContent = 'ارسال مجدد کد زودتر از موعد است. کمی صبر کنید.'; $('phoneErr').classList.remove('hidden'); return; }
+      if (res.status !== 200 || !res.data.ok) {
+        $('phoneErr').textContent = res.status === 503 ? 'ارسال پیامک فعال نیست. بعداً تلاش کنید.' : 'شماره‌ی موبایل پذیرفته نشد.';
+        $('phoneErr').classList.remove('hidden');
+        return;
+      }
+      otpPhone = p; sentAt = Date.now(); state.otpFails = 0; H.save(state);
+      $('otpBlock').hidden = false;
+      $('sendOtpBtn').textContent = 'کد ارسال شد';
+      $('verifyRow').classList.remove('hidden');
+      $('sendOtpBtn').disabled = true;
+      startTimer();
+      document.querySelectorAll('.otp-box')[0].focus();
+    }).catch(function () { $('phoneErr').textContent = NET_ERR; $('phoneErr').classList.remove('hidden'); });
+  };
+
+  var t = null;
+  function startTimer() {
+    clearInterval(t);
+    var end = sentAt + C.OTP_RESEND_SECONDS * 1000;
+    function tick() {
+      var left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      var m = String(Math.floor(left / 60)).padStart(2, '0'), s = String(left % 60).padStart(2, '0');
+      $('countdownTimer').textContent = m + ':' + s;
+      $('resendOtpBtn').disabled = left > 0;
+      if (left <= 0) clearInterval(t);
+    }
+    tick(); t = setInterval(tick, 1000);
+  }
+
+  window.handleResend = function () {
+    if (!otpPhone) return;
+    api('POST', '/auth/request-code', { phone: otpPhone, role: 'translator' }).then(function (res) {
+      if (res.status === 423) { lockFor(res.data.retry_after); return; }
+      if (res.status !== 200 || !res.data.ok) { $('testOtpNote').textContent = 'ارسال مجدد کد ممکن نیست. کمی بعد تلاش کنید.'; return; }
+      sentAt = Date.now(); H.save(state);
+      document.querySelectorAll('.otp-box').forEach(function (b) { b.value = ''; });
+      startTimer();
+    }).catch(function () { $('testOtpNote').textContent = NET_ERR; });
+  };
+
+  function boxes() { return Array.prototype.slice.call(document.querySelectorAll('.otp-box')); }
+  function code() { return boxes().map(function (b) { return b.value; }).join(''); }
+
+  function showLock() {
+    var left = Math.max(1, Math.ceil((state.lock - Date.now()) / 60000));
+    $('phoneErr').textContent = 'ورود به‌دلیل تلاش‌های ناموفق تا ' + H.toFa(left) + ' دقیقه‌ی دیگر قفل است.';
+    $('phoneErr').classList.remove('hidden');
+  }
+  function lockFor(seconds) {
+    state.lock = Date.now() + (seconds || 600) * 1000; H.save(state);
+    showLock();
+  }
+
+  window.verifyNow = function () {
+    if (state.lock && state.lock > Date.now()) { showLock(); return; }
+    var c = code();
+    if (c.length < C.OTP_LENGTH) { $('testOtpNote').textContent = 'کد ' + H.toFa(C.OTP_LENGTH) + ' رقمی را کامل کنید.'; return; }
+    if (!otpPhone) { $('testOtpNote').textContent = 'ابتدا کد را درخواست کنید.'; return; }
+    api('POST', '/auth/verify', { phone: otpPhone, role: 'translator', code: c }).then(function (res) {
+      if (res.status === 200 && res.data.token) {
+        state.token = res.data.token;
+        state.session = { phone: otpPhone, until: Date.now() + (res.data.expires_in || 43200) * 1000 };
+        state.completed[1] = true; state.step = 2; state.otp = null; state.otpFails = 0; state.lock = null;
+        H.save(state);
+        goToStep(2);
+        return;
+      }
+      boxes().forEach(function (b) { b.value = ''; });
+      boxes()[0].focus();
+      if (res.status === 423) { lockFor(res.data.retry_after); return; }
+      if (res.status === 410) { $('testOtpNote').textContent = 'کد منقضی شده است. کد جدید بگیرید.'; return; }
+      if (res.status === 401) {
+        $('testOtpNote').textContent = 'کد نادرست است. ' + H.toFa(res.data.attempts_left) + ' تلاش دیگر باقی است.';
+        return;
+      }
+      $('testOtpNote').textContent = 'تأیید کد انجام نشد. دوباره تلاش کنید.';
+    }).catch(function () { $('testOtpNote').textContent = NET_ERR; });
+  };
+
+  // خودکار: با پر شدن خانه‌ی ششم
+  boxes().forEach(function (b, i, all) {
+    b.addEventListener('input', function () {
+      b.value = H.toEn(b.value).replace(/\D/g, '').slice(-1);
+      if (b.value && all[i + 1]) all[i + 1].focus();
+      if (code().length === C.OTP_LENGTH) window.verifyNow();
+    });
+    b.addEventListener('paste', function (e) {
+      var t2 = H.toEn((e.clipboardData || window.clipboardData).getData('text')).replace(/\D/g, '');
+      if (t2.length >= C.OTP_LENGTH) { e.preventDefault(); t2.slice(0, C.OTP_LENGTH).split('').forEach(function (c, k) { all[k].value = c; }); window.verifyNow(); }
+    });
+  });
+
+  // اگر نشست معتبر است، همان گام بعد
+  if (H.requireSession(state)) { goToStep(state.step && state.step > 1 ? state.step : 2); }
+  if (state.lock && state.lock > Date.now()) showLock();
+})();
+</script>
+</body></html>
