@@ -1010,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var p = state.lastPrice || {};
     var n = document.getElementById('notes-input');
     return {
-      category: state.category, rate: state.hourlyRate, hours: state.hours, car: state.hasCar, pax: state.passengers,
+      gender: state.gender, category: state.category, rate: state.hourlyRate, hours: state.hours, car: state.hasCar, pax: state.passengers,
       notes: n ? n.value.slice(0, CONFIG.notesMax) : '',
       startAt: scheduled ? getScheduledStart() : null,
       base: p.base || 0, tax: p.tax || 0, total: p.total || 0
@@ -2611,7 +2611,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var pill = $('scheduled-summary-pill');
     var pr = (window.getBookingPricing ? window.getBookingPricing(scheduled) : {});
     return {
-      category: pr.category || 'general', place: faText($('selected-location-title')), lat: (window.meetingPoint && isFinite(window.meetingPoint.lat)) ? window.meetingPoint.lat : null, lng: (window.meetingPoint && isFinite(window.meetingPoint.lng)) ? window.meetingPoint.lng : null, rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
+      gender: pr.gender || 'any', category: pr.category || 'general', place: faText($('selected-location-title')), lat: (window.meetingPoint && isFinite(window.meetingPoint.lat)) ? window.meetingPoint.lat : null, lng: (window.meetingPoint && isFinite(window.meetingPoint.lng)) ? window.meetingPoint.lng : null, rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
       title: faText($('txt-origin-lang')) + ' ← ' + faText($('txt-dest-lang')),
       field: faText($('label-price-note')),
       hours: faText($('label-hours-count')),

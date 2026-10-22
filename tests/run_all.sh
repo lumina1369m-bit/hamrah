@@ -64,4 +64,5 @@ run python3 map_search_ui.py
 run python3 no_sim_buttons.py
 run python3 extension_ui.py
 run python3 finish_flow_ui.py
+run python3 booking_options_ui.py
 exit $fail
