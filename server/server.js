@@ -648,7 +648,7 @@ const SETTING_DEFS = {
   translator_nda_text: { v: '', type: 'text', max: 20000, label: 'متن تعهدنامه‌ی محرمانگی (NDA) مترجم (گام ۵)' },
   charter_text: { v: '', type: 'text', max: 20000, label: 'متن منشور اخلاقی مترجم (گام ۵، ضمیمه‌ی تعهدنامه)' },
   translator_help_text: { v: '', type: 'text', max: 20000, label: 'متن راهنمای مترجم (دکمه‌ی راهنما و پشتیبانی)' },
-  support_phone: { v: '', type: 'text', max: 100, label: 'شماره‌ی تلفن پشتیبانی مترجم' },
+  support_phone: { v: '', type: 'text', max: 100, label: 'شماره‌ی تلفن پشتیبانی (مسافر و مترجم)' },
   traveler_terms_text: { v: '', type: 'text', max: 20000, label: 'متن قوانین و ضوابط همراهی تشریفاتی (اپ مسافر)' },
   car_fee_per_hour: { v: 350000, type: 'int', min: 0, max: 100000000000, label: 'هزینه‌ی خودرو در هر ساعت (تومان)' },
   hourly_tariffs: { v: '{"general":1450000,"medical":1685000,"business":1950000,"tourism":1350000}', type: 'json', max: 2000,
