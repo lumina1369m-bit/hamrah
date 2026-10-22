@@ -101,7 +101,7 @@ jobs:
       - name: تست گزینه‌های رزرو، پایان خدمت و پرداخت در Chromium
         working-directory: tests
         run: |
-          for test in traveler_support_ui.py account_truth_ui.py logout_sessions_ui.py traveler_auth_ui.py booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
+          for test in account_delete_ui.py traveler_support_ui.py account_truth_ui.py logout_sessions_ui.py traveler_auth_ui.py booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
             if python "$test" > /tmp/browser-test.log 2>&1; then
               cat /tmp/browser-test.log
             else
@@ -127,5 +127,6 @@ jobs:
             tests/assets/last_logout_sessions/
             tests/assets/last_account_truth/
             tests/assets/last_traveler_support/
+            tests/assets/last_account_delete/
             /tmp/browser-server.log
           retention-days: 7
