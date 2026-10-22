@@ -446,16 +446,13 @@
 <span class="material-symbols-outlined text-[18px] text-secondary">verified_user</span>
 <span class="text-[10px] text-on-surface-variant">امکان لغو رایگان تا پیش از تایید نهایی مترجم بدون هیچ‌گونه جریمه محفوظ است. مترجم دعوت‌شده ۶۰ ثانیه فرصت پذیرش دارد.</span>
 </div>
-<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="grid grid-cols-1 gap-2 pt-1">
 <button class="py-2.5 px-3 rounded-xl neu-flat text-error font-bold text-[12px] active:neu-pressed transition-all flex items-center justify-center gap-1 cursor-pointer" id="btn-cancel-search" type="button">
 <span class="material-symbols-outlined text-[17px]">close</span>
 <span class="">لغو درخواست</span>
 </button>
-<button class="py-2.5 px-3 rounded-xl bg-secondary text-on-secondary font-bold text-[12px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer" id="btn-sim-found" type="button">
-<span class="material-symbols-outlined text-[17px]">check_circle</span>
-<span class="">شبیه‌سازی: مترجم یافت شد</span>
-</button>
 </div>
+<p class="text-[10px] text-outline text-center">به‌محض اینکه مترجمی درخواست را بپذیرد، این صفحه خودکار به‌روز می‌شود.</p>
 </div>
 <!-- ========================================== -->
 <!-- STAGE 3: TRANSLATOR EN ROUTE (ETA 3 MIN)  -->
@@ -478,8 +475,8 @@
 <span class="material-symbols-outlined text-[22px]">directions_car</span>
 </div>
 <div class="flex flex-col">
-<span class="text-[10.5px] text-on-surface-variant">زمان تخمینی رسیدن مترجم</span>
-<span class="text-[14px] font-extrabold text-primary">۳ دقیقه تا مبدأ شما</span>
+<span class="text-[10.5px] text-on-surface-variant">وضعیت مترجم</span>
+<span class="text-[14px] font-extrabold text-primary">در راه رسیدن به محل شما</span>
 </div>
 </div>
 <div class="flex items-center gap-1 px-2.5 py-1 rounded-full neu-flat text-[10px] text-secondary font-bold">
@@ -490,35 +487,19 @@
 <!-- Certified Translator Info Card -->
 <div class="neu-card rounded-2xl p-3 flex flex-col gap-2.5">
 <div class="flex items-center gap-3">
-<div class="relative w-13 h-13 rounded-2xl neu-flat p-0.5 overflow-hidden flex-shrink-0">
-<img alt="پرتره رسمی سارا احمدی" class="w-12 h-12 object-cover rounded-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRpm0gBSZ3saLjLNQfTfdO-UtwRh6sQdIh2pRjzsDRVpffvd5_pH3YGHDHagil1QsFJTY_Rdb0zOW2dDn2YZfMzIsrAt5MLzFQ1DYpF4zmXG-qX9vaXBM5ddVqtwiyAK9ou6fHY54mIjwAhCYTbKogG7Ygpt4JLJ0kmSvrwhkes1bqI-YxEc5zi5bDbYHNUw3FczBeWl7cHM4x2xitEeUaEqvY9Es5nXJwRcTtOz0_pAfufehe6d4"/>
+<div class="relative w-13 h-13 rounded-2xl neu-flat p-0.5 overflow-hidden flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-[30px] text-secondary">person</span>
 <span class="absolute bottom-1 left-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
 </div>
 <div class="flex-1 flex flex-col">
 <div class="flex items-center gap-1.5">
-<span class="text-[13px] font-bold text-on-surface">سارا احمدی</span><span class="text-[10px] text-on-surface-variant">خانم · مترجم درمانی</span>
+<span class="text-[13px] font-bold text-on-surface" id="matched-translator-name">مترجم همراه</span>
 <span class="material-symbols-outlined text-[15px] text-amber-600" style='font-variation-settings: "FILL" 1;'>verified</span>
 </div>
-<span class="text-[10.5px] text-on-surface-variant">مترجم رسمی عربی و انگلیسی • گرایش درمانی</span>
+<span class="text-[10.5px] text-on-surface-variant">مترجم احراز هویت‌شده‌ی همراه</span>
 <div class="flex items-center gap-2 mt-0.5">
-<span class="flex items-center gap-0.5 text-[10px] text-amber-700 font-bold">
-<span class="material-symbols-outlined text-[13px]" style='font-variation-settings: "FILL" 1;'>star</span>
-                ۴.۹ (۱۸۴ سفر موفق)
-              </span>
-<span class="text-outline-variant">•</span>
-<span class="text-[10px] text-secondary font-semibold">پژو ۲۰۷ سفید</span>
+<span class="flex items-center gap-0.5 text-[10px] text-secondary font-bold" id="matched-translator-car">—</span>
 </div>
-</div>
-</div>
-<!-- Vehicle Plate -->
-<div class="neu-pressed rounded-xl p-2 flex items-center justify-between bg-surface-container-high/60">
-<span class="text-[10.5px] text-on-surface-variant">پلاک خودروی اسکورت:</span>
-<div class="flex items-center gap-1.5 px-3 py-0.5 rounded-lg bg-surface-container-lowest shadow-sm font-extrabold text-[12px] tracking-wider" dir="ltr">
-<span class="text-primary text-[9px] pr-0.5">IRAN</span>
-<span class="">45</span>
-<span class="text-secondary font-bold">ج</span>
-<span class="">123</span>
-<span class="text-outline text-[10px] pl-0.5 font-normal">ایران ۶۸</span>
 </div>
 </div>
 <!-- Masked Contacts Row -->
@@ -541,11 +522,12 @@
 </button>
 </div>
 </div>
-<!-- Next Step Simulator -->
-<button class="w-full py-2.5 px-3 rounded-2xl bg-secondary text-on-secondary font-bold text-[12px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-sim-arrived" type="button">
+<!-- تأیید واقعی مسافر هنگام رسیدن مترجم؛ بعد کد امنیتی شروع خدمت نمایش داده می‌شود -->
+<button class="w-full py-2.5 px-3 rounded-2xl bg-secondary text-on-secondary font-bold text-[12px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-arrived" type="button">
 <span class="material-symbols-outlined text-[18px]">location_on</span>
 <span class="">مترجم به محل رسید</span>
 </button>
+<p class="text-[10px] text-outline text-center">وقتی مترجم را دیدید، این دکمه را بزنید تا کد امنیتی شروع خدمت را ببینید.</p>
 </div>
 <!-- ========================================== -->
 <!-- STAGE 4: ARRIVED & START SERVICE CONFIRM  -->
@@ -1749,19 +1731,43 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  const btnSimFound = document.getElementById('btn-sim-found');
-  if (btnSimFound) {
-    btnSimFound.addEventListener('click', () => {
-      goToStage(3);
-      window.showAppToast('مترجم منتخب خانم سارا احمدی سفر را پذیرفت', 'check_circle');
-    });
+  // جلو رفتن صفحه‌ها فقط با وضعیت واقعی رزرو روی سرور است (بدون دکمه‌ی شبیه‌سازی):
+  // تطبیق‌یافتن مترجم ← صفحه‌ی «در راه است»، شروع خدمت با کد امنیتی ← تایمر، پایان خدمت ← فاکتور.
+  function readLocalBookings() {
+    try { return JSON.parse(localStorage.getItem('hamzaban.bookings.v1') || '[]'); } catch (e) { return []; }
   }
+  function fillMatchedTranslator(b) {
+    var nameEl = document.getElementById('matched-translator-name');
+    if (nameEl && b && b.translatorName) nameEl.textContent = b.translatorName;
+    var carEl = document.getElementById('matched-translator-car');
+    if (carEl) carEl.textContent = b && b.translatorCar ? b.translatorCar : 'بدون خودرو';
+  }
+  setInterval(() => {
+    if (state.currentStage !== 2 && state.currentStage !== 3 && state.currentStage !== 4 && state.currentStage !== 5) return;
+    const list = readLocalBookings();
+    const b = list.find(x => x.serverId && ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched', 'finished'].indexOf(x.srvStatus) !== -1)
+      || list.find(x => x.serverId);
+    if (!b) return;
+    if (state.currentStage === 2) {
+      if (b.srvStatus === 'matched') { fillMatchedTranslator(b); goToStage(3); window.showAppToast('مترجم سفر را پذیرفت', 'check_circle'); }
+      else if (b.srvStatus === 'no_match' || b.srvStatus === 'unmatched_ask') showNoMatch();
+    } else if (state.currentStage === 3) {
+      fillMatchedTranslator(b);
+    } else if (state.currentStage === 4 && b.serviceStarted) {
+      goToStage(5);
+      window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
+    } else if (state.currentStage === 5 && b.srvStatus === 'finished') {
+      goToStage(6);
+      window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long');
+    }
+  }, 1000);
 
-  const btnSimArrived = document.getElementById('btn-sim-arrived');
-  if (btnSimArrived) {
-    btnSimArrived.addEventListener('click', () => {
+  // تأیید واقعی مسافر: مترجم رسیده است؛ کد امنیتی شروع خدمت نمایش داده می‌شود.
+  const btnArrived = document.getElementById('btn-arrived');
+  if (btnArrived) {
+    btnArrived.addEventListener('click', () => {
       goToStage(4);
-      window.showAppToast('مترجم به آدرس شما رسید! پلاک ۶۸-۱۲۳ج۴۵', 'where_to_vote');
+      window.showAppToast('کد امنیتی را به مترجم اعلام کنید تا خدمت شروع شود', 'where_to_vote');
     });
   }
 
@@ -1771,7 +1777,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   const btnChatInapp = document.getElementById('btn-chat-inapp');
   if (btnChatInapp) {
-    btnChatInapp.addEventListener('click', () => window.showAppToast('صفحه پیامک با سارا احمدی باز شد', 'chat'));
+    btnChatInapp.addEventListener('click', () => window.showAppToast('صفحه پیامک با مترجم باز شد', 'chat'));
   }
   const btnShareRide = document.getElementById('btn-share-ride');
   if (btnShareRide) {
@@ -1785,6 +1791,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnConfirmStart = document.getElementById('btn-confirm-start');
   if (btnConfirmStart) {
     btnConfirmStart.addEventListener('click', () => {
+      const b = readLocalBookings().find(x => x.serverId);
+      if (b && !b.serviceStarted) { window.showAppToast('کد امنیتی را به مترجم اعلام کنید؛ خدمت وقتی مترجم کد را ثبت کند، شروع می‌شود', 'key'); return; }
       goToStage(5);
       window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
     });
@@ -1793,6 +1801,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnFinishService = document.getElementById('btn-finish-service');
   if (btnFinishService) {
     btnFinishService.addEventListener('click', () => {
+      const b = readLocalBookings().find(x => x.serverId);
+      if (b && b.srvStatus !== 'finished') { window.showAppToast('پایان خدمت را مترجم ثبت می‌کند؛ بعد از آن فاکتور نمایش داده می‌شود', 'schedule'); return; }
       goToStage(6);
       window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long');
     });
@@ -1982,7 +1992,7 @@ document.addEventListener('DOMContentLoaded', function() {
           lb = { id: 's' + sb.id, serverId: sb.id, mode: sb.kind, title: LANG_LABEL[sb.origin_lang] + ' ← ' + LANG_LABEL[sb.dest_lang],
             field: FIELD_LABEL[sb.field] || '', hours: '', amount: (Number(sb.total) || 0).toLocaleString('fa-IR') + ' تومان',
             when: sb.scheduled_at ? (window.jLabel ? window.jLabel(Date.parse(sb.scheduled_at)) : sb.scheduled_at) : 'فوری',
-            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null };
+            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started };
           list.unshift(lb); changed = true;
         }
         if (lb.tab !== m.tab || lb.statusLabel !== m.label || lb.srvStatus !== sb.status) {
@@ -1993,6 +2003,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (lb.place !== (sb.place || '') || lb.notes !== (sb.notes || '')) { lb.place = sb.place || ''; lb.notes = sb.notes || ''; changed = true; }
         if (lb.serviceCode !== (sb.service_code || null)) { lb.serviceCode = sb.service_code || null; changed = true; }
+        if (lb.translatorName !== (sb.translator_name || null) || lb.translatorCar !== (sb.translator_car || null) || lb.serviceStarted !== !!sb.service_started) {
+          lb.translatorName = sb.translator_name || null; lb.translatorCar = sb.translator_car || null; lb.serviceStarted = !!sb.service_started; changed = true;
+        }
         if (lb.payState !== (sb.pay_state || null)) { lb.payState = sb.pay_state || null; changed = true; }
         if (lb.total !== (Number(sb.total) || 0)) { lb.total = Number(sb.total) || 0; changed = true; }
         var pc = sb.pending_change || null;

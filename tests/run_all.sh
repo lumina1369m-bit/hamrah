@@ -61,4 +61,5 @@ run python3 tr_docs_send_ui.py
 run python3 tr_interview_ui.py
 run python3 map_real.py
 run python3 map_search_ui.py
+run python3 no_sim_buttons.py
 exit $fail
