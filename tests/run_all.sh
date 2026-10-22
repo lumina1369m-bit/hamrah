@@ -45,6 +45,7 @@ run python3 admin_editors_ui.py
 run python3 tariff_browser_ui.py http://127.0.0.1:8081
 run python3 admin_system_ui.py http://127.0.0.1:8081
 run python3 features_ui.py http://127.0.0.1:8081 test-admin-pass
+run python3 logout_sessions_ui.py
 run python3 traveler_auth_ui.py
 run python3 login_flow.py fa
 run python3 login_flow.py en

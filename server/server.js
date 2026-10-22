@@ -291,11 +291,14 @@ const ROLES = new Set(['traveler', 'translator']);
 const STATUSES = new Set(['registered', 'in_progress', 'pending_review', 'active_general', 'active_specialized', 'rejected', 'suspended', 'deleted']);
 
 // ---------- نشست ----------
-function currentUser(req) {
+function userTokenOf(req) {
   // پیش‌نمایش ممکن است هدر Authorization را رد کند؛ توکن از X-Auth-Token هم خوانده می‌شود
   const h = req.headers.authorization || '';
   const m = h.match(/^Bearer\s+(.+)$/i);
-  const tok = m ? m[1] : (req.headers['x-auth-token'] ? String(req.headers['x-auth-token']).trim() : '');
+  return m ? m[1] : (req.headers['x-auth-token'] ? String(req.headers['x-auth-token']).trim() : '');
+}
+function currentUser(req) {
+  const tok = userTokenOf(req);
   if (!tok) return null;
   const row = db.prepare(`SELECT u.id, u.phone, u.role, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`).get(sha256(tok));
   if (!row) return null;
@@ -404,10 +407,17 @@ route('GET', '/api/auth/me', async (req, res) => {
   send(res, 200, { id: u.id, role: u.role, phone: u.phone });
 });
 
+// Idempotent single-device logout; use the same header rules as authentication.
 route('POST', '/api/auth/logout', async (req, res) => {
-  const h = req.headers.authorization || '';
-  const m = h.match(/^Bearer\s+(.+)$/i);
-  if (m) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(m[1]));
+  const tok = userTokenOf(req);
+  if (tok) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(tok));
+  send(res, 200, { ok: true });
+});
+
+// Only the authenticated account may revoke its sessions. Never accept a target ID.
+route('POST', '/api/auth/logout-all', async (req, res) => {
+  const u = requireUser(req, res); if (!u) return;
+  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(u.id);
   send(res, 200, { ok: true });
 });
 

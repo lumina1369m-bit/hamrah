@@ -136,7 +136,7 @@ async def scenario(browser, lang):
         await page.wait_for_function("() => !localStorage.getItem('hamzaban.token.v1')")
         await expect(page.locator('#step-identifier')).to_be_visible()
         await expect(page.locator('#step-identity')).to_be_hidden()
-        # Logging out locally must clear the token as well as the cached identity;
+        # Confirmed logout must clear the token as well as the cached identity;
         # otherwise the new session restore would immediately reopen identity entry.
         await page.evaluate('(t) => localStorage.setItem("hamzaban.token.v1",t)', token)
         await page.goto(BASE + '/traveler/index.html')
@@ -146,6 +146,7 @@ async def scenario(browser, lang):
         await expect(page).to_have_url(BASE + '/traveler/index.html')
         await expect(page.locator('#step-identifier')).to_be_visible()
         assert await page.evaluate("() => localStorage.getItem('hamzaban.token.v1')") is None
+        await api(ctx.request, 'GET', '/auth/me', token, status=401)
         assert not errors, errors
         print(f'PASS [{lang}]: delivery error stays retryable; single request/verify; real session, account-bound profile and revocation')
     except Exception:

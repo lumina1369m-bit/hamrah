@@ -2073,12 +2073,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // ---------- همگام‌سازی رزروها با سرور ----------
   var KEY_TOKEN_T = 'hamzaban.token.v1';
   function srvToken() { try { return localStorage.getItem(KEY_TOKEN_T); } catch (e) { return null; } }
-  function srvCall(method, path, body) {
+  function srvCall(method, path, body, options) {
     var t = srvToken(); if (!t) return Promise.reject({ status: 401 });
     var headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t };
-    return fetch('/api' + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined })
+    return fetch('/api' + path, { method: method, headers: headers, signal: options && options.signal, body: body ? JSON.stringify(body) : undefined })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (d) {
+          if (r.status === 401 && srvToken() === t) clearTravelerSession(true);
           if (!r.ok) { var e = new Error(d.error || 'http'); e.status = r.status; throw e; }
           return d;
         });
@@ -2111,8 +2112,10 @@ document.addEventListener('DOMContentLoaded', function() {
     return null;
   }
   function syncServer() {
-    if (!srvToken()) return;
+    var sessionToken = srvToken();
+    if (!sessionToken) return;
     srvCall('GET', '/traveler/bookings').then(function (d) {
+      if (srvToken() !== sessionToken) return;
       var list = getBk(), changed = false;
       (d.bookings || []).forEach(function (sb) {
         var lb = list.find(function (x) { return x.serverId === sb.id; });
@@ -2853,20 +2856,44 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  $('ac-logout').onclick = function () {
-    localStorage.removeItem(KEY_TOKEN_T);
-    // خروج از این دستگاه: نشست را پاک می‌کند
-    localStorage.removeItem(KEY_USER);
-    show(null);
-    localStorage.removeItem(KEY_USER); location.replace('index.html');
-    toast('از این دستگاه خارج شدید');
-  };
-  $('ac-logout-all').onclick = function () {
-    localStorage.removeItem(KEY_TOKEN_T);
-    // خروج از همه‌ی دستگاه‌ها: در نسخه‌ی واقعی نشست‌های سرور باطل می‌شوند
-    localStorage.removeItem(KEY_USER);
+  var logoutPending = false;
+  function clearTravelerSession(expired) {
+    [KEY_TOKEN_T, KEY_USER, KEY_BK].forEach(function (key) { localStorage.removeItem(key); });
+    if (expired) { try { sessionStorage.setItem('hamzaban.auth.notice.v1', 'expired'); } catch (e) {} }
     location.replace('index.html');
-  };
+  }
+  function logoutTraveler(allDevices) {
+    if (logoutPending) return;
+    if (!srvToken()) {
+      if (!allDevices) clearTravelerSession(false);
+      else toast('برای خروج از همهٔ دستگاه‌ها، ابتدا وارد حساب شوید.', 'error');
+      return;
+    }
+    var logoutToken = srvToken();
+    logoutPending = true;
+    var buttons = [$('ac-logout'), $('ac-logout-all')];
+    var active = buttons[allDevices ? 1 : 0];
+    buttons.forEach(function (button) { button.disabled = true; });
+    active.setAttribute('aria-busy', 'true');
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 10000);
+    // Keep local credentials until the server confirms revocation, including on retry.
+    srvCall('POST', allDevices ? '/auth/logout-all' : '/auth/logout', null, { signal: controller.signal })
+      .then(function (result) {
+        if (!result || result.ok !== true) throw new Error('logout_not_confirmed');
+        if (srvToken() === logoutToken) clearTravelerSession(false);
+      }).catch(function () {
+        if (srvToken() !== logoutToken) return;
+        toast('خروج ثبت نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.', 'error');
+      }).finally(function () {
+        clearTimeout(timeout);
+        logoutPending = false;
+        buttons.forEach(function (button) { button.disabled = false; });
+        active.removeAttribute('aria-busy');
+      });
+  }
+  $('ac-logout').onclick = function () { logoutTraveler(false); };
+  $('ac-logout-all').onclick = function () { logoutTraveler(true); };
   $('ac-delete').onclick = function () { if (lastOpen()) { toast('حذف حساب وقتی رزرو فعال دارید ممکن نیست'); return; } $('ac-delete-box').classList.remove('hidden'); $('ac-delete-box').classList.add('flex'); };
   // عبارت تأیید حذف، به زبان انتخاب‌شده‌ی برنامه است
   function deleteWord() {

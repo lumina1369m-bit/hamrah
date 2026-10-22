@@ -773,6 +773,59 @@ async function main() {
   r = await call('DELETE', '/api/auth/account', null, tokTrDel);
   check('حذف حساب مترجم بدون مأموریت باز ممکن است', r.status === 200, JSON.stringify(r));
 
+  console.log('== خروج واقعی نشست‌ها');
+  async function sessionFor(phone, role = 'traveler') {
+    const requested = await call('POST', '/api/auth/request-code', { phone, role });
+    if (requested.status !== 200) throw new Error('Session setup failed: ' + JSON.stringify(requested));
+    const verified = await call('POST', '/api/auth/verify', { phone, role, code: '123456' });
+    if (verified.status !== 200 || !verified.data.token) throw new Error('Session setup failed: ' + JSON.stringify(verified));
+    return verified.data;
+  }
+  const sessionA = await sessionFor(phoneFor(base + 80));
+  const sessionB = await sessionFor(phoneFor(base + 80));
+  const sessionC = await sessionFor(phoneFor(base + 80));
+  const otherAccount = await sessionFor(phoneFor(base + 81));
+  const otherRole = await sessionFor(phoneFor(base + 80), 'translator');
+  check('سه نشست مستقل برای یک حساب ساخته می‌شود', sessionA.user.id === sessionB.user.id && sessionB.user.id === sessionC.user.id && new Set([sessionA.token, sessionB.token, sessionC.token]).size === 3);
+  r = await call('POST', '/api/auth/logout-all', { user_id: sessionA.user.id });
+  check('خروج همه بدون احراز هویت رد می‌شود', r.status === 401);
+  r = await call('POST', '/api/auth/logout-all', null, 'bogus');
+  check('خروج همه با توکن نامعتبر رد می‌شود', r.status === 401);
+  r = await call('GET', '/api/auth/me', null, sessionA.token);
+  check('درخواست بی‌مجوز نشست دیگران را باطل نمی‌کند', r.status === 200);
+  r = await call('GET', '/api/auth/logout-all', null, sessionA.token);
+  check('خروج همه با GET اجرا نمی‌شود', r.status !== 200);
+  const fallbackMe = await fetch(BASE + '/api/auth/me', { headers: { 'X-Auth-Token': sessionA.token } });
+  check('نشست با سرصفحه جایگزین معتبر است', fallbackMe.status === 200);
+  const fallbackLogout = await fetch(BASE + '/api/auth/logout', { method: 'POST', headers: { 'X-Auth-Token': sessionA.token } });
+  check('خروج تکی با سرصفحه جایگزین تأیید می‌شود', fallbackLogout.status === 200 && (await fallbackLogout.json()).ok === true);
+  r = await call('GET', '/api/auth/me', null, sessionA.token);
+  check('خروج تکی فقط همان توکن را واقعاً باطل می‌کند', r.status === 401);
+  r = await call('GET', '/api/auth/me', null, sessionB.token);
+  check('نشست دوم پس از خروج تکی معتبر است', r.status === 200);
+  r = await call('GET', '/api/auth/me', null, sessionC.token);
+  check('نشست سوم پس از خروج تکی معتبر است', r.status === 200);
+  r = await call('POST', '/api/auth/logout', null, sessionA.token);
+  check('خروج تکی تکراری بی‌خطر است', r.status === 200 && r.data.ok === true);
+  // A supplied target is deliberately ignored: only the caller's account is affected.
+  const allLogout = await fetch(BASE + '/api/auth/logout-all', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Auth-Token': sessionB.token }, body: JSON.stringify({ user_id: otherAccount.user.id }) });
+  check('خروج همه با سرصفحه جایگزین تأیید می‌شود', allLogout.status === 200 && (await allLogout.json()).ok === true);
+  r = await call('GET', '/api/auth/me', null, sessionB.token);
+  check('خروج همه نشست فراخواننده را باطل می‌کند', r.status === 401);
+  r = await call('GET', '/api/auth/me', null, sessionC.token);
+  check('خروج همه نشست هم‌زمان دیگر را باطل می‌کند', r.status === 401);
+  r = await call('GET', '/api/traveler/bookings', null, sessionC.token);
+  check('نشست باطل‌شده دیگر به رزروها دسترسی ندارد', r.status === 401);
+  r = await call('GET', '/api/auth/me', null, otherAccount.token);
+  check('شناسه ارسالی نمی‌تواند نشست حساب دیگری را باطل کند', r.status === 200);
+  r = await call('GET', '/api/auth/me', null, otherRole.token);
+  check('حساب نقش دیگر با همان شماره مستقل می‌ماند', r.status === 200 && r.data.role === 'translator');
+  r = await call('POST', '/api/auth/logout-all', null, sessionB.token);
+  check('توکن باطل‌شده مجوز خروج همه ندارد', r.status === 401);
+  const newSession = await sessionFor(phoneFor(base + 80));
+  r = await call('GET', '/api/auth/me', null, newSession.token);
+  check('پس از خروج همه می‌توان نشست تازه ساخت', r.status === 200);
+
   console.log('== خروج و فایل‌ها');
   r = await call('POST', '/api/auth/logout', null, tokT);
   r = await call('GET', '/api/auth/me', null, tokT);
