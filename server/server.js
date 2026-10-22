@@ -176,6 +176,8 @@ for (const sql of [
   "ALTER TABLE reservations ADD COLUMN service_code TEXT",
   "ALTER TABLE reservations ADD COLUMN service_started_at INTEGER",
   "ALTER TABLE reservations ADD COLUMN service_code_attempts INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE reservations ADD COLUMN finish_requested_at INTEGER",
+  "ALTER TABLE reservations ADD COLUMN finished_by TEXT",
   "ALTER TABLE reservations ADD COLUMN lat REAL",
   "ALTER TABLE reservations ADD COLUMN lng REAL",
   "CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL)",
@@ -851,6 +853,31 @@ route('GET', '/api/admin/summary', async (req, res) => {
   send(res, 200, { reservations, translators, payments_waiting, disputes });
 });
 
+// کدهای امنیتی قفل‌شده (۵ تلاش ناموفق): مدیر می‌تواند قفل را باز کند یا کد تازه بسازد. خود کد هرگز به پنل داده نمی‌شود.
+route('GET', '/api/admin/locked-service-codes', async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  const rows = db.prepare(`SELECT id, traveler_name, place, status, service_code_attempts, created_at
+    FROM reservations WHERE service_code_attempts >= 5 AND status = 'matched' ORDER BY created_at DESC LIMIT 100`).all();
+  send(res, 200, { locked: rows.map((r) => ({ id: r.id, traveler_name: r.traveler_name || '', place: r.place || '',
+    status: r.status, attempts: r.service_code_attempts, created_at: r.created_at })) });
+});
+
+route('POST', '/api/admin/reservations/:id/unlock-service-code', async (req, res, url, params) => {
+  if (!requireAdmin(req, res)) return;
+  const id = parseId(params.id);
+  const r = id && db.prepare('SELECT id FROM reservations WHERE id = ?').get(id);
+  if (!r) return send(res, 404, { error: 'not_found' });
+  const b = await readJson(req).catch(() => ({}));
+  if (b && b.regenerate === true) {
+    const fresh = String(crypto.randomInt(10000, 100000));
+    db.prepare('UPDATE reservations SET service_code = ?, service_code_attempts = 0, updated_at = ? WHERE id = ?')
+      .run(encryptServiceCode(fresh), now(), r.id);
+    return send(res, 200, { ok: true, regenerated: true });
+  }
+  db.prepare('UPDATE reservations SET service_code_attempts = 0, updated_at = ? WHERE id = ?').run(now(), r.id);
+  send(res, 200, { ok: true, regenerated: false });
+});
+
 route('GET', '/api/admin/translators', async (req, res) => {
   if (!requireAdmin(req, res)) return;
   const q = new URL(req.url, 'http://x').searchParams;
@@ -1097,6 +1124,20 @@ function matchedTranslatorInfo(r) {
   };
 }
 
+// کد امنیتی شروع خدمت در پایگاه داده رمزنگاری‌شده نگه داشته می‌شود (AES-256-GCM با همان کلید مدارک)؛
+// فقط مسافرِ صاحب رزرو آن را از سرور می‌گیرد. ردیف‌های قدیمیِ متن ساده هم خوانده می‌شوند تا رزرو باز خراب نشود.
+const SERVICE_CODE_PREFIX = 'enc1:';
+function encryptServiceCode(code) {
+  return SERVICE_CODE_PREFIX + encryptDoc(Buffer.from(String(code), 'utf8')).toString('base64');
+}
+function plainServiceCode(r) {
+  const raw = r && r.service_code;
+  if (!raw) return null;
+  if (!String(raw).startsWith(SERVICE_CODE_PREFIX)) return String(raw); // رزرو قدیمی پیش از رمزنگاری
+  try { return decryptDoc(Buffer.from(String(raw).slice(SERVICE_CODE_PREFIX.length), 'base64')).toString('utf8'); }
+  catch (e) { return null; }
+}
+
 // نمای مسافر از یک رزرو (بدون اطلاعات داخلی)
 function reservationView(r) {
   return {
@@ -1108,8 +1149,10 @@ function reservationView(r) {
     matched: !!r.translator_id, cancel_after_match: !!r.cancel_after_match,
     ...matchedTranslatorInfo(r),
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
-    service_code: r.service_code || null,
+    service_code: plainServiceCode(r),
     service_started: !!r.service_started_at,
+    finish_requested: !!r.finish_requested_at,
+    finished_by: r.finished_by || null,
     lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
     created_at: r.created_at,
     pending_change: pendingChangeOf(r.id),
@@ -1194,7 +1237,7 @@ route('POST', '/api/traveler/bookings', async (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(u.id, kind, b.origin_lang, b.dest_lang, field, place, notes, String(b.traveler_name || '').slice(0, 80), gender,
       scheduledAt, status, t, base + tax, Math.round(base * PRICING.TRANSLATOR_SHARE), t, t,
-      travelerGender, hours, car, party, base, tax, cityRes.city.id, serviceCode, lat, lng);
+      travelerGender, hours, car, party, base, tax, cityRes.city.id, encryptServiceCode(serviceCode), lat, lng);
   sweep();
   const row = db.prepare('SELECT * FROM reservations WHERE id = ?').get(info.lastInsertRowid);
   send(res, 201, reservationView(row));
@@ -1264,13 +1307,14 @@ route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, 
   const id = parseId(params.id);
   const r = id && db.prepare("SELECT * FROM reservations WHERE id = ? AND translator_id = ? AND status = 'matched'").get(id, u.id);
   if (!r) return send(res, 404, { error: 'not_found' });
-  if (!r.service_code) return send(res, 409, { error: 'no_service_code' });
+  const storedCode = plainServiceCode(r);
+  if (!storedCode) return send(res, 409, { error: 'no_service_code' });
   if (r.service_started_at) return send(res, 200, { ok: true, already_started: true });
   if ((r.service_code_attempts || 0) >= 5) return send(res, 423, { error: 'code_locked' });
   const b = await readJson(req);
   const code = String(b.code || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
   const given = Buffer.from(code);
-  const want = Buffer.from(r.service_code);
+  const want = Buffer.from(storedCode);
   if (given.length !== want.length || !crypto.timingSafeEqual(given, want)) {
     const attempts = (r.service_code_attempts || 0) + 1;
     db.prepare('UPDATE reservations SET service_code_attempts = ?, updated_at = ? WHERE id = ?').run(attempts, now(), r.id);
@@ -1280,19 +1324,57 @@ route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, 
   send(res, 200, { ok: true, started: true });
 });
 
+// مترجم به‌تنهایی خدمت را تمام نمی‌کند؛ فقط «درخواست پایان» می‌فرستد و مسافر باید قبول کند.
+// (پایان زودهنگام از سمت مترجم هم فقط در حد درخواست است؛ قبول یا رد با مسافر است.)
 route('POST', '/api/translator/missions/:id/finish', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const id = parseId(params.id);
   const r = id && db.prepare("SELECT * FROM reservations WHERE id = ? AND translator_id = ? AND status = 'matched'").get(id, u.id);
   if (!r) return send(res, 404, { error: 'not_found' });
-  // پایان خدمت پیش از زمان قرار (رزرو زمان‌دار) ممکن نیست
+  // درخواست پایان پیش از زمان قرار (رزرو زمان‌دار) ممکن نیست
   if (r.scheduled_at && now() < r.scheduled_at) return send(res, 409, { error: 'too_early' });
-  // پایان خدمت فقط پس از شروع خدمت با کد امنیتی مسافر
+  // درخواست پایان فقط پس از شروع خدمت با کد امنیتی مسافر
   if (r.service_code && !r.service_started_at) return send(res, 409, { error: 'not_started' });
+  if (r.finish_requested_at) return send(res, 202, { ok: true, pending_finish: true, already_requested: true });
+  db.prepare('UPDATE reservations SET finish_requested_at = ?, updated_at = ? WHERE id = ?').run(now(), now(), r.id);
+  send(res, 202, { ok: true, pending_finish: true });
+});
+
+// اعمال پایان خدمت؛ مبلغ کاملِ توافق‌شده (total) دست نمی‌خورد، حتی اگر مسافر زودتر تمام کند.
+function applyFinish(r, by) {
   const t = now();
-  db.prepare("UPDATE reservations SET status = 'finished', finished_at = ?, updated_at = ? WHERE id = ?").run(t, t, r.id);
-  send(res, 200, { ok: true, status: 'finished' });
+  db.prepare("UPDATE reservations SET status = 'finished', finished_at = ?, finished_by = ?, finish_requested_at = NULL, updated_at = ? WHERE id = ?")
+    .run(t, by, t, r.id);
+}
+
+// مسافر هر وقت (حتی زودتر از موعد) می‌تواند خودش خدمت را تمام کند؛ تأیید مترجم لازم نیست،
+// اما مبلغ کاملِ رزرو باید پرداخت شود و پرداخت از همین‌جا به بعد ممکن می‌شود.
+route('POST', '/api/traveler/bookings/:id/finish', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'traveler'); if (!u) return;
+  const r = ownReservation(res, u, params); if (!r) return;
+  if (r.status !== 'matched') return send(res, 409, { error: 'not_in_service' });
+  if (r.service_code && !r.service_started_at) return send(res, 409, { error: 'not_started' });
+  applyFinish(r, 'traveler');
+  send(res, 200, { ok: true, status: 'finished', finished_by: 'traveler', total: r.total });
+});
+
+// قبول درخواست پایان مترجم از سوی مسافر
+route('POST', '/api/traveler/bookings/:id/finish-approve', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'traveler'); if (!u) return;
+  const r = ownReservation(res, u, params); if (!r) return;
+  if (r.status !== 'matched' || !r.finish_requested_at) return send(res, 409, { error: 'no_finish_request' });
+  applyFinish(r, 'translator');
+  send(res, 200, { ok: true, status: 'finished', finished_by: 'translator', total: r.total });
+});
+
+// رد درخواست پایان مترجم؛ خدمت ادامه پیدا می‌کند
+route('POST', '/api/traveler/bookings/:id/finish-reject', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'traveler'); if (!u) return;
+  const r = ownReservation(res, u, params); if (!r) return;
+  if (r.status !== 'matched' || !r.finish_requested_at) return send(res, 409, { error: 'no_finish_request' });
+  db.prepare('UPDATE reservations SET finish_requested_at = NULL, updated_at = ? WHERE id = ?').run(now(), r.id);
+  send(res, 200, { ok: true, status: 'matched' });
 });
 
 route('POST', '/api/traveler/bookings/:id/payment', async (req, res, url, params) => {
@@ -1565,7 +1647,7 @@ route('GET', '/api/translator/missions', async (req, res) => {
       AND COALESCE(scheduled_at, matched_at) > ? ORDER BY COALESCE(scheduled_at, matched_at)`).all(u.id, from)
     .map((r) => ({ id: 'R' + r.id, reservation_id: r.id, code: 'R-' + r.id, purpose: r.field, travelerName: r.traveler_name, place: r.place,
       lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
-      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at }));
+      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at, finish_requested: !!r.finish_requested_at }));
   // ماموریت‌های آزمایشی تزریقی (فقط حالت توسعه)
   const fromDev = db.prepare(`SELECT id, code, purpose, traveler_name, place, start_at, total, net, status FROM missions
       WHERE translator_id = ? AND status = 'accepted' AND start_at > ?`).all(u.id, from)
