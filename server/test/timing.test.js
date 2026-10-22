@@ -112,6 +112,25 @@ async function main() {
     }
     await call('POST', `/api/traveler/bookings/${rs.data.id}/cancel`, null, P);
   }
+  console.log('== پاسخ دیرهنگام به تمدید');
+  {
+    const created = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'تمدید منقضی', traveler_name: 'T' }, P);
+    const oa = (await call('GET', '/api/translator/offers', null, A)).data.offers;
+    const ob = (await call('GET', '/api/translator/offers', null, B)).data.offers;
+    const [owner, offer] = oa.some(o => o.place === 'تمدید منقضی') ? [A, oa.find(o => o.place === 'تمدید منقضی')] : [B, ob.find(o => o.place === 'تمدید منقضی')];
+    await call('POST', `/api/translator/offers/${offer.id}/accept`, null, owner);
+    await call('POST', `/api/translator/missions/${created.data.id}/verify-code`, { code: created.data.service_code }, owner);
+    const before = (await call('GET', `/api/translator/missions/${created.data.id}`, null, owner)).data;
+    const e = await call('POST', `/api/traveler/bookings/${created.data.id}/extend`, { extra_hours: 1 }, P);
+    check('تمدید دارای مهلت ساخته می‌شود', e.status === 202, JSON.stringify(e));
+    await sleep(3600);
+    check('نمای خصوصی، تمدید منقضی را منتظر نشان نمی‌دهد', (await call('GET', `/api/translator/extensions/${e.data.id}`, null, owner)).data.status === 'expired');
+    check('رد دیرهنگام تمدید تأیید کاذب ندارد', (await call('POST', `/api/translator/extensions/${e.data.id}/reject`, null, owner)).status === 410);
+    check('پذیرش دیرهنگام تمدید ممنوع است', (await call('POST', `/api/translator/extensions/${e.data.id}/accept`, null, owner)).status === 410);
+    const after = (await call('GET', `/api/translator/missions/${created.data.id}`, null, owner)).data;
+    check('انقضا ساعت، مبلغ و زمان شروع را تغییر نمی‌دهد', after.hours === before.hours && after.total === before.total && after.service_started_at === before.service_started_at);
+    await call('POST', `/api/traveler/bookings/${created.data.id}/finish`, null, P);
+  }
   console.log(`\nنتیجه: ${passed} موفق، ${failed} ناموفق`);
   process.exit(failed ? 1 : 0);
 }

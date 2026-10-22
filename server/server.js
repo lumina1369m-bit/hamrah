@@ -1314,6 +1314,18 @@ function settleIfBoth(r) {
 
 // مترجم کد امنیتی شروع خدمت را از مسافر می‌گیرد و ثبت می‌کند؛ شروع خدمت فقط با کد درست ممکن است.
 // پس از ۵ کد اشتباه، بررسی کد برای این رزرو قفل می‌شود و پرونده باید از پشتیبانی پیگیری شود.
+// Private canonical state for service-control reconciliation. Never expose the passenger's code.
+route('GET', '/api/translator/missions/:id', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const id = parseId(params.id);
+  const r = id && db.prepare('SELECT * FROM reservations WHERE id = ? AND translator_id = ?').get(id, u.id);
+  if (!r) return send(res, 404, { error: 'not_found' });
+  send(res, 200, { reservation_id: r.id, status: r.status, started: !!r.service_started_at,
+    service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null,
+    finish_requested: !!r.finish_requested_at, hours: r.hours, total: r.total, net: r.net });
+});
+
 route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
@@ -1777,6 +1789,15 @@ function ownExtension(res, u, params) {
   if (!e || e.tid !== u.id) { send(res, 404, { error: 'not_found' }); return null; }
   return e;
 }
+route('GET', '/api/translator/extensions/:id', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const e = ownExtension(res, u, params); if (!e) return;
+  send(res, 200, { id: e.id, reservation_id: e.reservation_id,
+    status: e.status === 'pending' && e.expires_at <= now() ? 'expired' : e.status,
+    extra_hours: e.extra_hours, extra_total: e.extra_base + e.extra_tax, extra_net: e.extra_net,
+    expires_at: new Date(e.expires_at).toISOString() });
+});
 route('POST', '/api/translator/extensions/:id/accept', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
@@ -1793,7 +1814,7 @@ route('POST', '/api/translator/extensions/:id/reject', async (req, res, url, par
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const e = ownExtension(res, u, params); if (!e) return;
-  if (e.status !== 'pending') return send(res, 410, { error: 'extension_expired' });
+  if (e.status !== 'pending' || e.expires_at <= now()) return send(res, 410, { error: 'extension_expired' });
   db.prepare("UPDATE extension_requests SET status = 'rejected', decided_at = ? WHERE id = ?").run(now(), e.id);
   send(res, 200, { ok: true });
 });
