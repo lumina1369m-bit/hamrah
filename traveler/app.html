@@ -553,7 +553,7 @@
 </div>
 <div class="flex flex-col">
 <span class="text-[12.5px] font-bold">مترجم به محل استقرار شما رسید!</span>
-<span class="text-[10px] opacity-90">خودروی پژو ۲۰۷ سفید در مقابل درب منتظر شماست.</span>
+<span class="text-[10px] opacity-90">مترجم منتظر شروع همراهی است.</span>
 </div>
 </div>
 <!-- Security Handshake PIN -->
@@ -1557,21 +1557,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nm) nm.classList.remove('hidden');
     window.showAppToast('مترجمی پیدا نشد. هیچ هزینه‌ای کسر نشده است', 'search_off');
   }
-  // کد امنیتی شروع: مثل سرور، یک بار برای هر درخواست صادر می‌شود و بعد از شروع خدمت باطل می‌شود
+  // کد امنیتی شروع خدمت را سرور هنگام ثبت رزرو صادر می‌کند؛ مرورگر فقط همان کد همگام‌شده را نمایش می‌دهد
   function setSecurityCode() {
     const el = document.getElementById('security-code');
-    if (!window.serviceCodeIssued) {
-      window.serviceCode = String(10000 + Math.floor(Math.random() * 90000));
-      window.serviceCodeIssued = true;
-    }
-    if (el) el.textContent = toPersianDigits(window.serviceCode);
+    if (!el) return;
+    let code = null;
+    try {
+      const list = JSON.parse(localStorage.getItem('hamzaban.bookings.v1') || '[]');
+      const active = list.find(b => b.serviceCode && (b.srvStatus === 'matched' || b.tab === 'live')) || list.find(b => b.serviceCode);
+      if (active) code = active.serviceCode;
+    } catch (e) {}
+    el.textContent = code ? toPersianDigits(code) : '۰۰۰۰۰';
   }
 
   function goToStage(num) {
     state.currentStage = num;
     if (num === 2) startSearchTimer(); else stopSearchTimer();
     if (num === 4) setSecurityCode();
-    if (num === 1) { window.serviceCodeIssued = false; window.serviceCode = null; }
     if (num === 5) sessionStart = Date.now();
     if (num === 6) updateInvoice();
     const nmBlock = document.getElementById('nomatch-block');
@@ -1779,7 +1781,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnConfirmStart = document.getElementById('btn-confirm-start');
   if (btnConfirmStart) {
     btnConfirmStart.addEventListener('click', () => {
-      window.serviceCodeIssued = false; window.serviceCode = null; // کد یک‌بارمصرف است
       goToStage(5);
       window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
     });
@@ -1977,7 +1978,7 @@ document.addEventListener('DOMContentLoaded', function() {
           lb = { id: 's' + sb.id, serverId: sb.id, mode: sb.kind, title: LANG_LABEL[sb.origin_lang] + ' ← ' + LANG_LABEL[sb.dest_lang],
             field: FIELD_LABEL[sb.field] || '', hours: '', amount: (Number(sb.total) || 0).toLocaleString('fa-IR') + ' تومان',
             when: sb.scheduled_at ? (window.jLabel ? window.jLabel(Date.parse(sb.scheduled_at)) : sb.scheduled_at) : 'فوری',
-            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null };
+            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null };
           list.unshift(lb); changed = true;
         }
         if (lb.tab !== m.tab || lb.statusLabel !== m.label || lb.srvStatus !== sb.status) {
@@ -1987,6 +1988,7 @@ document.addEventListener('DOMContentLoaded', function() {
           lb.total = Number(sb.total) || 0; lb.base = sb.base; lb.tax = sb.tax; lb.payMethod = sb.pay_method || null; lb.payState = sb.pay_state || null; changed = true;
         }
         if (lb.place !== (sb.place || '') || lb.notes !== (sb.notes || '')) { lb.place = sb.place || ''; lb.notes = sb.notes || ''; changed = true; }
+        if (lb.serviceCode !== (sb.service_code || null)) { lb.serviceCode = sb.service_code || null; changed = true; }
         if (lb.payState !== (sb.pay_state || null)) { lb.payState = sb.pay_state || null; changed = true; }
         if (lb.total !== (Number(sb.total) || 0)) { lb.total = Number(sb.total) || 0; changed = true; }
         var pc = sb.pending_change || null;
@@ -2028,7 +2030,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (kind === 'scheduled') body.scheduled_at = new Date(s.startAt).toISOString();
     srvCall('POST', '/traveler/bookings', body).then(function (sb) {
       var m = localStateOf(sb) || {};
-      s.serverId = sb.id; s.srvStatus = sb.status; s.tab = m.tab || s.tab; s.statusLabel = m.label || s.statusLabel;
+      s.serverId = sb.id; s.srvStatus = sb.status; s.serviceCode = sb.service_code || null; s.tab = m.tab || s.tab; s.statusLabel = m.label || s.statusLabel;
       addBooking(s); syncServer();
     }).catch(function (e) {
       var msgs = { too_soon: 'زمان قرار باید حداقل ۲ ساعت بعد از اکنون باشد.', invalid_place: 'مکان ملاقات را انتخاب کنید.' };

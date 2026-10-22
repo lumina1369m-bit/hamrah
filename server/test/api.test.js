@@ -88,8 +88,11 @@ async function main() {
   check('مسافر به API مترجم دسترسی ندارد', r.status === 403);
   r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'x', traveler_name: 'Ali' }, tokP);
   check('مسافر رزرو فوری ثبت می‌کند', r.status === 201 && r.data.status === 'searching', JSON.stringify(r));
+  check('کد امنیتی شروع خدمت را سرور صادر می‌کند (۵ رقم)', /^[0-9]{5}$/.test(r.data.service_code || ''), JSON.stringify(r.data.service_code));
+  const firstServiceCode = r.data.service_code;
   r = await call('GET', '/api/traveler/bookings', null, tokP);
   check('رزرو در لیست مسافر است', r.status === 200 && r.data.bookings.length === 1 && r.data.bookings[0].kind === 'instant');
+  check('کد امنیتی در فهرست رزروهای مسافر همان کد صادرشده است', r.data.bookings[0].service_code === firstServiceCode);
   // این رزرو فقط برای بررسی فهرست بود؛ لغو می‌شود تا پیشنهادش به مترجمان بعدی نرسد
   await call('POST', `/api/traveler/bookings/${r.data.bookings[0].id}/cancel`, null, tokP);
 
