@@ -273,6 +273,8 @@ async function main() {
   check('رزرو برای پایان خدمت پذیرفته شد', !!pid);
   const missionView = (await call('GET', '/api/translator/missions', null, T9)).data.missions.find((m) => m.reservation_id === pid);
   check('مختصات محل در نمای مأموریت مترجم هست', !!missionView && missionView.lat === 35.72 && missionView.lng === 51.41, JSON.stringify(missionView));
+  const matchedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
+  check('نمای مسافر پس از تطبیق مشخصات مترجم را دارد', !!matchedView && 'translator_name' in matchedView && 'translator_car' in matchedView && matchedView.service_started === false, JSON.stringify(matchedView));
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
   check('پرداخت پیش از پایان خدمت ممنوع است', r.status === 409 && r.data.error === 'not_payable', JSON.stringify(r));
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
@@ -282,6 +284,7 @@ async function main() {
   check('کد امنیتی اشتباه پذیرفته نمی‌شود', r.status === 401 && r.data.error === 'wrong_code' && r.data.attempts_left === 4, JSON.stringify(r));
   r = await startService(pid, T9, tokP9);
   check('شروع خدمت با کد صادرشده‌ی سرور ثبت می‌شود', r.status === 200 && r.data.started === true, JSON.stringify(r));
+  check('مسافر شروع خدمت را در نمای رزرو می‌بیند', (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid).service_started === true);
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
   check('مترجم خدمت را پایان می‌دهد', r.status === 200);
   r = await call('GET', '/api/translator/payments', null, T9);

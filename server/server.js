@@ -1073,6 +1073,17 @@ function sweep() {
   for (const r of db.prepare("SELECT * FROM reservations WHERE status IN ('searching','matching')").all()) offerNext(r);
 }
 
+// نام و خودروی مترجمِ تطبیق‌یافته برای نمایش به مسافر (از پروفایل ثبت‌نامی؛ بدون داده‌ی خصوصی)
+function matchedTranslatorInfo(r) {
+  if (!r.translator_id) return { translator_name: null, translator_car: null };
+  const t = db.prepare('SELECT profile FROM translators WHERE user_id = ?').get(r.translator_id);
+  let p = {}; try { p = JSON.parse((t && t.profile) || '{}'); } catch (e) {}
+  return {
+    translator_name: [p.first_name, p.last_name].filter(Boolean).join(' ') || null,
+    translator_car: p.car_model || null,
+  };
+}
+
 // نمای مسافر از یک رزرو (بدون اطلاعات داخلی)
 function reservationView(r) {
   return {
@@ -1082,6 +1093,7 @@ function reservationView(r) {
     scheduled_at: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : null,
     total: r.total, base: r.base == null ? undefined : r.base, tax: r.tax == null ? undefined : r.tax,
     matched: !!r.translator_id, cancel_after_match: !!r.cancel_after_match,
+    ...matchedTranslatorInfo(r),
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
     service_code: r.service_code || null,
     service_started: !!r.service_started_at,
