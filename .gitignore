@@ -15,3 +15,7 @@ tests/assets/bad.txt
 .env.*
 *.pem
 *.key
+
+# محیط مجازی محلی تست
+.venv/
+.cache/

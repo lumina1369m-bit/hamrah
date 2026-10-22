@@ -21,7 +21,8 @@ async def main():
         ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, service_workers='block')
         page = await ctx.new_page()
         page.set_default_timeout(20000)
-        errors = []
+        errors, payment_posts = [], []
+        page.on('request', lambda r: payment_posts.append(r.url) if r.url.endswith('/payment') and r.method == 'POST' else None)
         page.on('pageerror', lambda e: errors.append(str(e)))
         release = asyncio.Event()
         admin_token = None
@@ -79,6 +80,7 @@ async def main():
             await button.click()
             await expect(page.locator('#toast-text')).to_have_text('این روش پرداخت فعال نیست.')
             await unchanged()
+            assert not payment_posts, 'Do not silently pay using the enabled cash fallback'
             print('PASS: newly disabled online payment keeps the invoice open, with no false success')
 
             await page.locator('#pay-method-cash').click()

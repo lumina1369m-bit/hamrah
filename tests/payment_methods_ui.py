@@ -90,11 +90,29 @@ async def main():
                 await page.locator('nav a[data-nav=map]').click()
                 print(f'PASS: cash={cash}, online={online}; invoice and freshly opened modal agree')
 
-            # A failed configuration request cannot leave stale active buttons.
+            # A method can be disabled while its list modal is already open.
+            await settings(True, False)
+            await page.locator('nav a[data-nav=bookings]').click()
+            await page.locator('#bk-tabs').get_by_role('button', name='در جریان', exact=True).click()
+            await page.locator('#bk-list').get_by_role('button', name='پرداخت', exact=True).click()
+            await expect(page.locator('#bk-modal')).to_be_visible()
+            await settings(False, False)
+            await page.locator('#bk-modal').get_by_role('button', name='نقدی پرداخت کردم', exact=True).click()
+            await expect(page.locator('#toast-text')).to_have_text('این روش پرداخت فعال نیست.')
+            await page.locator('nav a[data-nav=map]').click()
+            assert not payments
+            print('PASS: disabling cash while its modal is open blocks the pending attempt without any payment POST')
+
+            # A failed pre-payment config request cannot leave stale active buttons.
+            await settings(True, False)
+            await refresh()
+            await expect(page.locator('#btn-settle-return')).to_be_enabled()
             async def disconnected(route):
                 await route.abort('internetdisconnected')
             await page.route('**/api/config', disconnected)
-            await refresh()
+            await page.locator('#btn-settle-return').click()
+            await expect(page.locator('#toast-text')).to_have_text('روش‌های پرداخت دریافت نشد. دوباره تلاش کنید.')
+            await expect(page.locator('#stage-6')).to_be_visible()
             await expect(page.locator('#payment-method-status')).to_have_text('روش‌های پرداخت دریافت نشد. دوباره تلاش کنید.')
             await expect(page.locator('#btn-settle-return')).to_be_disabled()
             await expect(page.locator('#pay-method-cash')).to_be_hidden()
