@@ -1,4 +1,5 @@
-# تست دکمه‌ی «تأیید کارشناس (آزمایشی)»: باید پس از ورود از طریق API، مترجم را به میز کار ببرد.
+# بررسی انتشار: دکمه‌ی «تأیید کارشناس (آزمایشی)» نباید در رابط کاربری باشد؛ تأیید فقط از مسیر سرور/کارشناس انجام می‌شود.
+# این ابزار تشخیصی پس از ورود از طریق API بررسی می‌کند دکمه وجود ندارد و ورود به میز کار با تأیید سرور انجام می‌شود.
 import asyncio, re, random
 from playwright.async_api import async_playwright
 async def m():
@@ -15,8 +16,9 @@ async def m():
         await pg.reload(); await pg.wait_for_timeout(900)
         await pg.evaluate("()=>{document.querySelectorAll('.step-content').forEach(p=>p.classList.remove('active'));document.getElementById('step-panel-success').classList.add('active')}")
         await pg.wait_for_timeout(300)
-        print('test btn visible (TEST_OTP on):', await pg.is_visible('#test-approve-btn'))
-        await pg.click('#test-approve-btn'); await pg.wait_for_timeout(1500)
+        print('test-approve button absent (expected):', await pg.evaluate("()=>!document.getElementById('test-approve-btn')"))
+        await pg.evaluate("""async()=>{const t=HZ.load().token; await fetch('/api/dev/approve-translator',{method:'POST',headers:{Authorization:'Bearer '+t}}); enterDesk();}""")
+        await pg.wait_for_timeout(1500)
         print('desk url:', pg.url.split('/')[-1], '| errs:', [e for e in errs if 'tailwind' not in e] or 'none')
         await b.close()
 asyncio.run(m())
