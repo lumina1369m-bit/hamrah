@@ -32,6 +32,14 @@ const CONFIG = {
   DEV_CODE: '123456',
 };
 
+// بررسی ایمنی پیکربندی در حالت انتشار، پیش از ساخت پایگاه داده و کلید مدارک انجام می‌شود تا
+// سرور با تنظیمات ناامن اصلاً بالا نیاید (fail closed). این بررسی باید همین‌جا و زود انجام شود؛
+// وگرنه خروج زودهنگامِ نبودِ HZ_DOC_KEY در بخش مدارک جلوی پیام یکپارچه‌ی «پیکربندی ناامن» را می‌گیرد.
+if (require.main === module) {
+  const cfgErrors = productionErrors(process.env);
+  if (cfgErrors.length) { console.error('پیکربندی ناامن؛ سرور بالا نمی‌آید:\n - ' + cfgErrors.join('\n - ')); process.exit(1); }
+}
+
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
@@ -1704,8 +1712,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 if (require.main === module) {
-  const cfgErrors = productionErrors(process.env);
-  if (cfgErrors.length) { console.error('پیکربندی ناامن؛ سرور بالا نمی‌آید:\n - ' + cfgErrors.join('\n - ')); process.exit(1); }
+  // بررسی ایمنی پیکربندی انتشار بالاتر (ابتدای فایل) انجام شده است.
   setInterval(sweep, Math.max(100, 3000 * SCALE)).unref(); // موتور تطبیق هر ۳ ثانیه (در حالت فشرده کوتاه‌تر)
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`همراه: http://0.0.0.0:${PORT}  (حالت توسعه: ${DEV ? 'روشن' : 'خاموش'}، پایگاه داده: ${DB_PATH})`);
