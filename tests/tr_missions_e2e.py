@@ -46,7 +46,7 @@ async def run(w, missions, label):
         await pg.goto('http://127.0.0.1:8081/translator/app.html'); await pg.wait_for_timeout(1500)
         info = await pg.evaluate("""()=>{const L=document.getElementById('missions-list');
           const cards=[...L.children].map(c=>c.textContent.replace(/\\s+/g,' ').trim());
-          return {url: location.pathname.split('/').pop(), count: L.children.length, cards, sampleHidden: document.getElementById('missions-sample').classList.contains('hidden'),
+          return {url: location.pathname.split('/').pop(), count: L.children.length, cards, sampleHidden: !document.getElementById('missions-sample'),
                   inCalendar: !!document.getElementById('calendar-section').querySelector('#missions-list')}}""")
         print(label, json.dumps(info, ensure_ascii=False))
         print('  errors:', [e for e in errs if 'tailwind' not in e] or 'none')

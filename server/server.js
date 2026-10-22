@@ -168,6 +168,7 @@ for (const sql of [
   "ALTER TABLE translator_documents ADD COLUMN expires_at INTEGER",
   "ALTER TABLE reservations ADD COLUMN base INTEGER",
   "ALTER TABLE reservations ADD COLUMN tax INTEGER",
+  "ALTER TABLE reservations ADD COLUMN service_code TEXT",
   "CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL)",
 ]) { try { db.exec(sql); } catch (e) { /* ستون از قبل وجود دارد */ } }
 
@@ -1012,6 +1013,7 @@ function reservationView(r) {
     total: r.total, base: r.base == null ? undefined : r.base, tax: r.tax == null ? undefined : r.tax,
     matched: !!r.translator_id, cancel_after_match: !!r.cancel_after_match,
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
+    service_code: r.service_code || null,
     created_at: r.created_at,
     pending_change: pendingChangeOf(r.id),
   };
@@ -1070,12 +1072,14 @@ route('POST', '/api/traveler/bookings', async (req, res) => {
   const base = (hourlyRate + car * getSetting('car_fee_per_hour')) * hours;
   const tax = Math.round(base * PRICING.TAX_PERCENT / 100);
   const status = kind === 'instant' ? 'searching' : 'waiting_schedule';
+  // کد امنیتی شروع خدمت را سرور صادر می‌کند (۵ رقم)؛ مسافر هنگام شروع آن را به مترجم اعلام می‌کند.
+  const serviceCode = String(crypto.randomInt(10000, 100000));
   const info = db.prepare(`INSERT INTO reservations (traveler_id, kind, origin_lang, dest_lang, field, place, notes, traveler_name, gender_pref,
-      scheduled_at, status, search_started_at, total, net, created_at, updated_at, traveler_gender, hours, car, party, base, tax, city_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      scheduled_at, status, search_started_at, total, net, created_at, updated_at, traveler_gender, hours, car, party, base, tax, city_id, service_code)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(u.id, kind, b.origin_lang, b.dest_lang, field, place, notes, String(b.traveler_name || '').slice(0, 80), gender,
       scheduledAt, status, t, base + tax, Math.round(base * PRICING.TRANSLATOR_SHARE), t, t,
-      travelerGender, hours, car, party, base, tax, cityRes.city.id);
+      travelerGender, hours, car, party, base, tax, cityRes.city.id, serviceCode);
   sweep();
   const row = db.prepare('SELECT * FROM reservations WHERE id = ?').get(info.lastInsertRowid);
   send(res, 201, reservationView(row));

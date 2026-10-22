@@ -41,14 +41,15 @@ async def main():
         srv = await pg.evaluate("async()=>{const t=HZ.load().token; const r=await fetch('/api/translator/status',{headers:{Authorization:'Bearer '+t}}); return (await r.json()).status;}")
         log.append(('server status before approval', srv))
         assert srv == 'pending_review', f'server status {srv}'
-        # 3. test approval -> desk
-        await pg.click('#test-approve-btn'); await pg.wait_for_timeout(1500)
+        # 3. approval via dev API (UI has no test-approve button anymore) -> desk
+        await pg.evaluate("""async()=>{const t=HZ.load().token; await fetch('/api/dev/approve-translator',{method:'POST',headers:{Authorization:'Bearer '+t}});}""")
+        await pg.evaluate('()=>document.querySelector("#step-panel-success button[onclick*=enterDesk]").click()'); await pg.wait_for_timeout(1500)
         log.append(('desk url', pg.url.split('/')[-1]))
         # 4. desk checks
         d = await pg.evaluate("""()=>({h: document.querySelector('h1,h2') && document.querySelector('h2').textContent.trim(),
             missions: [...document.getElementById('missions-list').children].map(c=>c.textContent.trim().slice(0,30)),
             schedule: document.getElementById('schedule-list').children.length,
-            sampleHidden: document.getElementById('missions-sample').classList.contains('hidden'),
+            sampleHidden: !document.getElementById('missions-sample'),
             hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth})""")
         log.append(('desk info', d))
         print(f'== full e2e {W}px')
