@@ -64,6 +64,9 @@ async def scenario(browser, own_finish):
             'localStorage.setItem("hamzaban.user.v1", ' + json.dumps(json.dumps(user)) + ');'
             'localStorage.setItem("hamzaban_lang", "fa");')
         await traveler.goto(BASE + '/traveler/app.html')
+        await traveler.locator('#confirm-location-btn').click()
+        await traveler.locator('.cat-chip[data-cat=general]').click()
+        await traveler.locator('#btn-toggle-car').click()  # Default is car; test translator is pedestrian.
         # Actual booking button and actual server synchronization, not a local FSM shortcut.
         async with traveler.expect_response(lambda r: r.url.endswith('/api/traveler/bookings')
                                              and r.request.method == 'POST') as result:
@@ -71,6 +74,7 @@ async def scenario(browser, own_finish):
         response = await result.value
         assert response.status == 201, await response.text()
         created = await response.json()
+        assert created['field'] == 'general' and not created['car'], created
         bid, total = created['id'], created['total']
         assert total > 0
         offers = await api(translator_ctx.request, 'GET', '/translator/offers', ttok)
