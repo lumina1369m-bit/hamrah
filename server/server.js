@@ -1151,6 +1151,8 @@ function reservationView(r) {
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
     service_code: plainServiceCode(r),
     service_started: !!r.service_started_at,
+    service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null,
+    finished_at: r.finished_at ? new Date(r.finished_at).toISOString() : null,
     finish_requested: !!r.finish_requested_at,
     finished_by: r.finished_by || null,
     lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
