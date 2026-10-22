@@ -32,6 +32,7 @@ async def booking(request, token, bid):
 
 async def scenario(browser, own_finish):
     label = 'traveler-early-finish' if own_finish else 'reject-then-approve'
+    category = 'business' if own_finish else 'general'
     traveler_ctx = await browser.new_context(viewport={'width': 390, 'height': 844},
                                              service_workers='block')
     translator_ctx = await browser.new_context(viewport={'width': 390, 'height': 844},
@@ -72,7 +73,7 @@ async def scenario(browser, own_finish):
         await expect(traveler.locator('#selected-location-title')).to_have_text('تهران، محل آزمون مرورگر')
         await traveler.locator('#confirm-location-btn').click()
         await expect(traveler.locator('#bottom-sheet')).to_be_visible()
-        await traveler.locator('.cat-chip[data-cat=general]').click()
+        await traveler.locator(f'.cat-chip[data-cat={category}]').click()
         await traveler.locator('#btn-toggle-car').click()  # Default is car; test translator is pedestrian.
         # Actual booking button and actual server synchronization, not a local FSM shortcut.
         async with traveler.expect_response(lambda r: r.url.endswith('/api/traveler/bookings')
@@ -81,9 +82,9 @@ async def scenario(browser, own_finish):
         response = await result.value
         assert response.status == 201, await response.text()
         created = await response.json()
-        assert created['field'] == 'general', created
+        assert created['field'] == category, created
         sent = response.request.post_data_json
-        assert sent['category'] == 'general' and sent['car'] is False, sent
+        assert sent['category'] == category and sent['car'] is False, sent
         bid, total = created['id'], created['total']
         assert total > 0
         offers = await api(translator_ctx.request, 'GET', '/translator/offers', ttok)
