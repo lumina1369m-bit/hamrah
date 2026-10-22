@@ -869,6 +869,7 @@
     }
 
     function showOtpStep(text) {
+      showErr('otp-err', '');
       $('target-recipient').textContent = text;
       $('step-identifier').classList.add('hidden');
       $('step-otp').classList.remove('hidden');
@@ -921,7 +922,7 @@
           if (t.length === 6) handleVerifyOTP();
         };
       });
-      setTimeout(() => bs[0].focus(), 150);
+      bs[0].focus();
     }
 
     function fillTestCode() {
