@@ -1010,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var p = state.lastPrice || {};
     var n = document.getElementById('notes-input');
     return {
-      rate: state.hourlyRate, hours: state.hours, car: state.hasCar, pax: state.passengers,
+      category: state.category, rate: state.hourlyRate, hours: state.hours, car: state.hasCar, pax: state.passengers,
       notes: n ? n.value.slice(0, CONFIG.notesMax) : '',
       startAt: scheduled ? getScheduledStart() : null,
       base: p.base || 0, tax: p.tax || 0, total: p.total || 0
@@ -2126,7 +2126,7 @@ document.addEventListener('DOMContentLoaded', function() {
       traveler_gender: uu.gender === 'مرد' ? 'male' : uu.gender === 'زن' ? 'female' : null,
       gender_pref: s.gender === 'female' || s.gender === 'male' ? s.gender : 'any',
       hours: Number(s.hoursNum) || 1, car: !!s.car && window.HZ_FEAT('car_mode'), party: Number(s.pax) || 1,
-      category: state.category || 'general'
+      category: s.category || 'general'
     };
     var cityId = window.HZ_NEAREST_CITY ? window.HZ_NEAREST_CITY() : null;
     if (cityId) body.city_id = cityId;
@@ -2611,7 +2611,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var pill = $('scheduled-summary-pill');
     var pr = (window.getBookingPricing ? window.getBookingPricing(scheduled) : {});
     return {
-      place: faText($('selected-location-title')), lat: (window.meetingPoint && isFinite(window.meetingPoint.lat)) ? window.meetingPoint.lat : null, lng: (window.meetingPoint && isFinite(window.meetingPoint.lng)) ? window.meetingPoint.lng : null, rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
+      category: pr.category || 'general', place: faText($('selected-location-title')), lat: (window.meetingPoint && isFinite(window.meetingPoint.lat)) ? window.meetingPoint.lat : null, lng: (window.meetingPoint && isFinite(window.meetingPoint.lng)) ? window.meetingPoint.lng : null, rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
       title: faText($('txt-origin-lang')) + ' ← ' + faText($('txt-dest-lang')),
       field: faText($('label-price-note')),
       hours: faText($('label-hours-count')),

@@ -62,7 +62,10 @@ async def main():
         if o:
             await T.evaluate(API, ['POST', f"/translator/offers/{o['id']}/accept", None, ttok])
             await T.evaluate(API, ['POST', f'/translator/missions/{bid}/verify-code', {'code': created['data']['service_code']}, ttok])
-            await T.evaluate(API, ['POST', f'/translator/missions/{bid}/finish', None, ttok])
+            requested = await T.evaluate(API, ['POST', f'/translator/missions/{bid}/finish', None, ttok])
+            assert requested['status'] == 202, requested
+            approved = await P.evaluate(API, ['POST', f'/traveler/bookings/{bid}/finish-approve', None, ptok])
+            assert approved['status'] == 200, approved
         await P.wait_for_timeout(6500)
         # پرداخت آنلاین: رزرو به «انجام‌شده» (settled) می‌رسد
         await P.evaluate("()=>{ window.payChoice = 'online'; document.getElementById('btn-settle-return').click(); }")

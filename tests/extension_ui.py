@@ -32,6 +32,10 @@ async def m():
         print('warning has no button:', info['warnHasButton'] is False)
         print('status element exists:', info['statusEl'])
         print('errors:', [e for e in errs if 'tailwind' not in e] or 'none')
+        assert info['cardInStage5'] and info['btnInCard'] and not info['cardHidden'], info
+        assert 'تمدید خدمت' in info['btnText'], info
+        assert info['warnHasButton'] is False and info['statusEl'], info
+        assert not errs, errs
         await b.close()
 
 asyncio.run(m())
