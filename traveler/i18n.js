@@ -4,6 +4,10 @@
 (function () {
   var DICT = {
     en: {
+  "شروع خدمت با کد امنیتی در سرور تأیید شد.": "The service start with the security code was confirmed by the server.",
+  "خدمت هنوز با کد امنیتی در سرور شروع نشده است.": "The service has not started with the security code on the server yet.",
+  "عملیات خدمت تأیید نشد. وضعیت را بررسی کنید و دوباره تلاش کنید.": "The service action was not confirmed. Check its status and try again.",
+
   "برای این کار، ورود و رزرو معتبر سروری لازم است.": "This action requires sign-in and a valid server booking.",
   "لغو رزرو در سرور تأیید شد.": "Booking cancellation was confirmed by the server.",
   "جستجوی دوباره در سرور تأیید شد.": "The new search was confirmed by the server.",
@@ -439,6 +443,10 @@
   "حساب شما حذف شد. اطلاعات شخصی ظرف ۳۰ روز پاک می‌شود.": "Your account was deleted. Personal data will be erased within 30 days."
 },
     ar: {
+  "شروع خدمت با کد امنیتی در سرور تأیید شد.": "تم تأكيد بدء الخدمة برمز الأمان من الخادم.",
+  "خدمت هنوز با کد امنیتی در سرور شروع نشده است.": "لم تبدأ الخدمة برمز الأمان على الخادم بعد.",
+  "عملیات خدمت تأیید نشد. وضعیت را بررسی کنید و دوباره تلاش کنید.": "لم يتم تأكيد إجراء الخدمة. تحقّق من حالتها وحاول مجدداً.",
+
   "برای این کار، ورود و رزرو معتبر سروری لازم است.": "يتطلب هذا الإجراء تسجيل الدخول وحجزاً صالحاً على الخادم.",
   "لغو رزرو در سرور تأیید شد.": "تم تأكيد إلغاء الحجز من الخادم.",
   "جستجوی دوباره در سرور تأیید شد.": "تم تأكيد البحث مجدداً من الخادم.",

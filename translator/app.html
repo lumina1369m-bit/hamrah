@@ -1315,7 +1315,7 @@
       };
       card.appendChild(finBtn);
     }
-    if (m.reservation_id) {
+    if (m.reservation_id && !m.started) {
       var cancelBtn = el('button', 'self-start px-3 py-1.5 rounded-xl neu-raised text-[11px] font-bold text-error cursor-pointer', 'لغو ماموریت');
       cancelBtn.type = 'button';
       cancelBtn.onclick = function () {

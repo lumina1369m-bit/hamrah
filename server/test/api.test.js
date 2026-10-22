@@ -292,6 +292,10 @@ async function main() {
   check('پس از شروع خدمت، لغو با کارمزد جایگزین پایان با مبلغ کامل نمی‌شود', r.status === 409 && r.data.error === 'service_already_started', JSON.stringify(r));
   const afterBlockedCancel = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('رد لغو، خدمت شروع‌شده و مبلغ توافق را دست‌نخورده نگه می‌دارد', afterBlockedCancel.status === 'matched' && afterBlockedCancel.service_started === true && afterBlockedCancel.total === matchedView.total);
+  r = await call('POST', `/api/translator/missions/${pid}/cancel`, null, T9);
+  check('مترجم پس از شروع نمی‌تواند با لغو، خدمت را یک‌طرفه قطع یا واگذار کند', r.status === 409 && r.data.error === 'service_already_started', JSON.stringify(r));
+  const afterTranslatorCancel = (await call('GET', '/api/translator/missions', null, T9)).data.missions.find((m) => m.reservation_id === pid);
+  check('رد لغو مترجم، مأموریت شروع‌شده و مبلغ کامل را نگه می‌دارد', !!afterTranslatorCancel && afterTranslatorCancel.started === true && afterTranslatorCancel.total === matchedView.total);
   // تمدید زمان خدمت: درخواست مسافر فقط با تأیید مترجم اعمال می‌شود
   const beforeExt = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('زمان واقعی شروع خدمت با قالب ISO به مسافر می‌رسد', Number.isFinite(Date.parse(beforeExt.service_started_at)) && Date.parse(beforeExt.service_started_at) <= Date.now() && beforeExt.finished_at === null);
