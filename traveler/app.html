@@ -2054,6 +2054,14 @@ document.addEventListener('DOMContentLoaded', function() {
     return srvCall('GET', '/traveler/bookings', null, { signal: signal }).then(function (d) {
       if (srvToken() !== sessionToken || revision !== bookingRevision) return null;
       if (!d || !Array.isArray(d.bookings)) return null;
+      // Reject malformed snapshots before they can drive the stage/timer loop.
+      if (!d.bookings.every(function (row) {
+        return row && Number.isInteger(row.id) && row.id > 0 && ['instant', 'scheduled'].includes(row.kind) &&
+          !!localStateOf(row) && Number.isFinite(row.total) && row.total >= 0 && Number.isFinite(row.hours) && row.hours >= 1 &&
+          typeof row.service_started === 'boolean' && (!row.service_started ||
+            (Number.isFinite(Date.parse(row.service_started_at)) &&
+             (!['finished', 'done'].includes(row.status) || Number.isFinite(Date.parse(row.finished_at)))));
+      })) return null;
       var list = getBk(), changed = false;
       d.bookings.forEach(function (sb) {
         if (pendingAtStart.includes(String(sb.id)) && sb.id !== allowPendingId) return;

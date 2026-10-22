@@ -75,12 +75,22 @@ async def scenario(browser, lang):
             url = '**/api/traveler/bookings' + (f'/{bid}/{action}' if method == 'POST' else '')
             modes = ['offline','503','empty','false','string','malformed','partial']
             if method == 'POST': modes.append('misleading_success')
+            else: modes.extend(['bad_start_snapshot','bad_finish_snapshot'])
             for mode in modes:
                 async def failure(route, request, *, mode=mode):
                     if request.method != method:
                         await route.fallback()
                     elif mode == 'offline':
                         await route.abort('failed')
+                    elif mode in ['bad_start_snapshot','bad_finish_snapshot']:
+                        response = await route.fetch()
+                        snapshot = await response.json()
+                        row = next(x for x in snapshot['bookings'] if x['id']==bid)
+                        row['service_started']=True
+                        if mode == 'bad_start_snapshot': row['service_started_at']='invalid'
+                        else:
+                            row['status']='finished'; row['finished_at']=None; row['service_started_at']='2026-01-01T00:00:00Z'
+                        await route.fulfill(json=snapshot)
                     elif mode == 'misleading_success':
                         if action == 'extend':
                             payload={'pending':True,'id':999999,'extra_hours':1,'extra_total':100,'new_total':total+100,'expires_at':'2099-01-01T00:00:00Z'}
@@ -120,6 +130,8 @@ async def scenario(browser, lang):
 
         extend = page.locator('#btn-extend-one-hour')
         await faults('extend',extend)
+        await faults('finish',page.locator('#btn-finish-service'),method='GET')
+        await expect(page.locator('#stage-6')).to_be_hidden()
         unchanged = await booking(setup.request,token,bid)
         assert unchanged['hours'] == hours and unchanged['total'] == total and unchanged['pending_extension'] is None
         # Real deadline; no hanging intercepted route after an intentional abort.
