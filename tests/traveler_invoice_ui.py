@@ -61,6 +61,7 @@ async def main():
         check('مترجم پیشنهاد را دید', o is not None)
         if o:
             await T.evaluate(API, ['POST', f"/translator/offers/{o['id']}/accept", None, ttok])
+            await T.evaluate(API, ['POST', f'/translator/missions/{bid}/verify-code', {'code': created['data']['service_code']}, ttok])
             await T.evaluate(API, ['POST', f'/translator/missions/{bid}/finish', None, ttok])
         await P.wait_for_timeout(6500)
         # پرداخت آنلاین: رزرو به «انجام‌شده» (settled) می‌رسد

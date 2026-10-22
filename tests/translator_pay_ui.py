@@ -47,6 +47,11 @@ async def main():
         check('مترجم در میز کار پیشنهاد را پذیرفت', ok_btn)
         await T.wait_for_timeout(1500)
         await T.reload(); await T.wait_for_timeout(1200)
+        # شروع خدمت با کد امنیتی مسافر از روی کارت ماموریت
+        scode = next(x['service_code'] for x in (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings'] if x['id'] == bid)
+        started = await T.evaluate("""(code)=>{const inp=document.querySelector('#missions-list input'); if(!inp) return false; inp.value=code; const b=[...document.querySelectorAll('#missions-list button')].find(x=>x.textContent.trim()==='ثبت کد و شروع خدمت'); if(!b) return false; b.click(); return true;}""", scode)
+        check('شروع خدمت با کد امنیتی از میز کار', started)
+        await T.wait_for_timeout(1500); await T.reload(); await T.wait_for_timeout(1200)
         check('دکمه‌ی «پایان خدمت» روی ماموریت است', await T.evaluate("()=>[...document.querySelectorAll('#missions-list button')].some(x=>x.textContent.trim()==='پایان خدمت')"))
         await T.evaluate("()=>{const b=[...document.querySelectorAll('#missions-list button')].find(x=>x.textContent.trim()==='پایان خدمت'); b && b.click();}")
         await T.wait_for_timeout(1500)
