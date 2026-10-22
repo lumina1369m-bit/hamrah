@@ -1120,12 +1120,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updateInvoice() {
-    const p = state.lastPrice;
+    const booking = serviceBooking();
+    const p = booking ? { base: Number(booking.base) || 0, tax: Number(booking.tax) || 0,
+      total: Number(booking.total) || 0, hours: booking.hoursNum } : state.lastPrice;
     if (!p) return;
     const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
-    set('inv-label', `خدمت همراهی ${toPersianDigits(p.hours)} ساعت${state.hasCar ? ' با خودروی اختصاصی' : ''}`);
+    set('inv-label', `خدمت همراهی ${toPersianDigits(p.hours)} ساعت${!booking && state.hasCar ? ' با خودروی اختصاصی' : ''}`);
     set('inv-base', formatToman(p.base));
-    set('inv-tax-label', `مالیات و خدمات رفاهی (${toPersianDigits(Math.round(CONFIG.taxRate * 100))}٪)`);
+    set('inv-tax-label', booking ? 'مالیات و خدمات رفاهی' : `مالیات و خدمات رفاهی (${toPersianDigits(Math.round(CONFIG.taxRate * 100))}٪)`);
     set('inv-tax', formatToman(p.tax));
     set('inv-total', formatToman(p.total));
   }
@@ -1535,6 +1537,21 @@ document.addEventListener('DOMContentLoaded', function() {
   let searchTimer = null;
   let searchLeft = 0;
   let sessionStart = 0;
+  let serviceBookingId = null;
+  let restoredService = false;
+  function serviceBooking() {
+    const list = readLocalBookings().filter(b => !window.hzSyncedBookingIds || window.hzSyncedBookingIds.includes(b.serverId));
+    return list.find(b => b.serverId === serviceBookingId)
+      || list.find(b => b.serverId && b.srvStatus === 'matched' && b.serviceStarted)
+      || list.find(b => b.serverId && b.srvStatus === 'finished' && !b.payState);
+  }
+  function syncServiceClock(b) {
+    if (!b) return;
+    serviceBookingId = b.serverId;
+    const started = Date.parse(b.serviceStartedAt);
+    if (Number.isFinite(started)) sessionStart = started;
+    if (b.hoursNum) state.hours = b.hoursNum;
+  }
   const pad2 = (n) => String(n).padStart(2, '0');
   function startSearchTimer() {
     clearInterval(searchTimer);
@@ -1573,7 +1590,11 @@ document.addEventListener('DOMContentLoaded', function() {
     state.currentStage = num;
     if (num === 2) startSearchTimer(); else stopSearchTimer();
     if (num === 4) setSecurityCode();
-    if (num === 5) sessionStart = Date.now();
+    if (num === 5) {
+      const b = serviceBooking();
+      if (b) syncServiceClock(b);
+      else if (!sessionStart) sessionStart = Date.now(); // local-only demo
+    }
     if (num === 6) updateInvoice();
     const nmBlock = document.getElementById('nomatch-block');
     if (nmBlock) nmBlock.classList.add('hidden');
@@ -1731,6 +1752,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.showAppToast('رزرو زمان‌دار ثبت شد. تطبیق یک ساعت قبل از موعد انجام می‌شود', 'event_available');
         return;
       }
+      serviceBookingId = null; sessionStart = 0;
       goToStage(2);
       window.showAppToast('رادار جستجوی مترجم فعال شد', 'radar');
     });
@@ -1784,9 +1806,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   setInterval(() => {
-    if (state.currentStage !== 2 && state.currentStage !== 3 && state.currentStage !== 4 && state.currentStage !== 5) return;
     const list = readLocalBookings();
-    const b = list.find(x => x.serverId && ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched', 'finished'].indexOf(x.srvStatus) !== -1)
+    // Restore once, and only after an authenticated server refresh (not stale local storage).
+    if (!restoredService && window.hzBookingsSynced) {
+      restoredService = true;
+      const active = serviceBooking();
+      if (active && state.currentStage === 1) {
+        syncServiceClock(active);
+        document.getElementById('location-picker-bar').classList.add('hidden');
+        bottomSheet.classList.remove('hidden');
+        goToStage(active.srvStatus === 'finished' ? 6 : 5);
+      }
+    }
+    if (state.currentStage === 6) { updateInvoice(); return; }
+    if (state.currentStage !== 2 && state.currentStage !== 3 && state.currentStage !== 4 && state.currentStage !== 5) return;
+    const b = list.find(x => x.serverId === serviceBookingId) || list.find(x => x.serverId && ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched', 'finished'].indexOf(x.srvStatus) !== -1)
       || list.find(x => x.serverId);
     if (!b) return;
     if (state.currentStage === 2) {
@@ -1798,6 +1832,7 @@ document.addEventListener('DOMContentLoaded', function() {
       goToStage(5);
       window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
     } else if (state.currentStage === 5) {
+      syncServiceClock(b);
       updateExtensionUi(b);
       var frb = document.getElementById('finish-request-banner');
       if (frb) frb.classList.toggle('hidden', !b.finishRequested);
@@ -1953,7 +1988,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const timerValEl = document.getElementById('live-timer-val');
   setInterval(() => {
     if (state.currentStage !== 5 || !timerValEl) return;
-    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    const b = serviceBooking();
+    if (b) syncServiceClock(b);
+    if (!sessionStart) return;
+    const finished = b && Date.parse(b.finishedAt);
+    const elapsed = Math.max(0, Math.floor(((Number.isFinite(finished) ? finished : Date.now()) - sessionStart) / 1000));
     timerValEl.textContent = toPersianDigits(`${pad2(Math.floor(elapsed / 3600))}:${pad2(Math.floor((elapsed % 3600) / 60))}:${pad2(elapsed % 60)}`);
     const left = state.hours * 3600 - elapsed;
     const warn = document.getElementById('expiry-warning');
@@ -2072,7 +2111,7 @@ document.addEventListener('DOMContentLoaded', function() {
           lb = { id: 's' + sb.id, serverId: sb.id, mode: sb.kind, title: LANG_LABEL[sb.origin_lang] + ' ← ' + LANG_LABEL[sb.dest_lang],
             field: FIELD_LABEL[sb.field] || '', hours: '', amount: (Number(sb.total) || 0).toLocaleString('fa-IR') + ' تومان',
             when: sb.scheduled_at ? (window.jLabel ? window.jLabel(Date.parse(sb.scheduled_at)) : sb.scheduled_at) : 'فوری',
-            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started, hoursNum: sb.hours || null, pendingExtension: sb.pending_extension || null, lastExtensionStatus: sb.last_extension_status || null, finishRequested: !!sb.finish_requested, finishedBy: sb.finished_by || null };
+            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started, serviceStartedAt: sb.service_started_at || null, finishedAt: sb.finished_at || null, hoursNum: sb.hours || null, pendingExtension: sb.pending_extension || null, lastExtensionStatus: sb.last_extension_status || null, finishRequested: !!sb.finish_requested, finishedBy: sb.finished_by || null };
           list.unshift(lb); changed = true;
         }
         if (lb.tab !== m.tab || lb.statusLabel !== m.label || lb.srvStatus !== sb.status) {
@@ -2086,6 +2125,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lb.translatorName !== (sb.translator_name || null) || lb.translatorCar !== (sb.translator_car || null) || lb.serviceStarted !== !!sb.service_started) {
           lb.translatorName = sb.translator_name || null; lb.translatorCar = sb.translator_car || null; lb.serviceStarted = !!sb.service_started; changed = true;
         }
+        if (lb.serviceStartedAt !== (sb.service_started_at || null) || lb.finishedAt !== (sb.finished_at || null)) {
+          lb.serviceStartedAt = sb.service_started_at || null; lb.finishedAt = sb.finished_at || null; changed = true;
+        }
         if (lb.hoursNum !== (sb.hours || null) || JSON.stringify(lb.pendingExtension || null) !== JSON.stringify(sb.pending_extension || null) || lb.lastExtensionStatus !== (sb.last_extension_status || null)) {
           lb.hoursNum = sb.hours || null; lb.pendingExtension = sb.pending_extension || null; lb.lastExtensionStatus = sb.last_extension_status || null; changed = true;
         }
@@ -2098,6 +2140,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (JSON.stringify(lb.pendingChange || null) !== JSON.stringify(pc)) { lb.pendingChange = pc; changed = true; }
       });
       if (changed) { setBk(list); renderBookings(); }
+      window.hzSyncedBookingIds = (d.bookings || []).map(b => b.id);
+      window.hzBookingsSynced = true;
     }).catch(function () {});
   }
   function cancelServer(b) {

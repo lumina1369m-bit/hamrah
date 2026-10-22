@@ -275,6 +275,7 @@ async function main() {
   check('مختصات محل در نمای مأموریت مترجم هست', !!missionView && missionView.lat === 35.72 && missionView.lng === 51.41, JSON.stringify(missionView));
   const matchedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('نمای مسافر پس از تطبیق مشخصات مترجم را دارد', !!matchedView && 'translator_name' in matchedView && 'translator_car' in matchedView && matchedView.service_started === false, JSON.stringify(matchedView));
+  check('پیش از شروع، زمان شروع و پایان در نمای مسافر خالی است', matchedView.service_started_at === null && matchedView.finished_at === null);
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
   check('پرداخت پیش از پایان خدمت ممنوع است', r.status === 409 && r.data.error === 'not_payable', JSON.stringify(r));
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
@@ -289,6 +290,10 @@ async function main() {
   check('مسافر شروع خدمت را در نمای رزرو می‌بیند', (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid).service_started === true);
   // تمدید زمان خدمت: درخواست مسافر فقط با تأیید مترجم اعمال می‌شود
   const beforeExt = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
+  check('زمان واقعی شروع خدمت با قالب ISO به مسافر می‌رسد', Number.isFinite(Date.parse(beforeExt.service_started_at)) && Date.parse(beforeExt.service_started_at) <= Date.now() && beforeExt.finished_at === null);
+  r = await startService(pid, T9, tokP9);
+  const restartedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
+  check('تأیید دوباره کد، زمان شروع را صفر نمی‌کند', r.status === 200 && r.data.already_started === true && restartedView.service_started_at === beforeExt.service_started_at);
   r = await call('POST', `/api/traveler/bookings/${pid}/extend`, { extra_hours: 1 }, tokP9);
   check('مسافر در حین خدمت درخواست تمدید می‌دهد', r.status === 202 && r.data.pending === true && r.data.extra_total > 0, JSON.stringify(r));
   const extId = r.data.id;
@@ -337,6 +342,7 @@ async function main() {
   r = await call('POST', `/api/translator/missions/${pid}/cash-confirm`, null, T9);
   check('مترجم دریافت نقدی را تأیید می‌کند و رزرو تسویه می‌شود', r.status === 200 && r.data.settled === true, JSON.stringify(r));
   const view = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
+  check('زمان پایان ثبت می‌شود و زمان شروع پس از پایان و تسویه محفوظ است', Number.isFinite(Date.parse(view.finished_at)) && Date.parse(view.finished_at) >= Date.parse(view.service_started_at) && view.service_started_at === beforeExt.service_started_at);
   check('نمای مسافر: انجام‌شده و تسویه‌شده', view.status === 'done' && view.pay_state === 'settled', JSON.stringify(view));
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
   check('پرداخت دوباره ممنوع است', r.status === 409 && r.data.error === 'already_paid');
