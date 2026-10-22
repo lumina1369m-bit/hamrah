@@ -284,6 +284,20 @@ async function isolatedSecurityTests() {
     check('در انتشار، مسیرهای توسعه ۴۰۴ هستند', dev.status === 404);
     const adminNoPw = await rawCall(p, 'POST', '/api/admin/login', { password: 'x' });
     check('در انتشار، رمز اشتباه مدیر پذیرفته نمی‌شود', adminNoPw.status === 401);
+    // تغییر رمز مدیر از داخل پنل: رمز فعلی لازم است و رمز تازه باید قوی باشد
+    const admLogin = await rawCall(p, 'POST', '/api/admin/login', { password: 'a-much-longer-admin-pass-2026' });
+    check('در انتشار، ورود مدیر با رمز درست ممکن است', admLogin.status === 200 && !!admLogin.data.token);
+    const admH = { Authorization: 'Bearer ' + admLogin.data.token };
+    let cp = await rawCall(p, 'POST', '/api/admin/change-password', { current_password: 'wrong-current-pass', new_password: 'another-strong-pass-2027' }, admH);
+    check('تغییر رمز با رمز فعلی اشتباه: ۴۰۱', cp.status === 401 && cp.data.error === 'bad_current_password');
+    cp = await rawCall(p, 'POST', '/api/admin/change-password', { current_password: 'a-much-longer-admin-pass-2026', new_password: 'short' }, admH);
+    check('تغییر رمز با رمز تازه‌ی ضعیف: ۴۰۰', cp.status === 400 && cp.data.error === 'weak_password');
+    cp = await rawCall(p, 'POST', '/api/admin/change-password', { current_password: 'a-much-longer-admin-pass-2026', new_password: 'another-strong-pass-2027' }, admH);
+    check('تغییر رمز مدیر از پنل موفق است', cp.status === 200 && cp.data.ok === true);
+    const oldLogin = await rawCall(p, 'POST', '/api/admin/login', { password: 'a-much-longer-admin-pass-2026' });
+    check('پس از تغییر، رمز قبلی دیگر کار نمی‌کند', oldLogin.status === 401);
+    const newLogin = await rawCall(p, 'POST', '/api/admin/login', { password: 'another-strong-pass-2027' });
+    check('پس از تغییر، ورود با رمز تازه ممکن است', newLogin.status === 200 && !!newLogin.data.token);
     const otp = await rawCall(p, 'POST', '/api/auth/request-code', { phone: '9124444444', role: 'traveler' });
     check('در انتشار بدون پیامک‌دهنده، کد ارسال نمی‌شود (۵۰۳)', otp.status === 503 && otp.data.error === 'sms_provider_not_configured');
     good.child.kill('SIGTERM');

@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const Database = require('better-sqlite3');
-const { makeLimiter, clientIp, securityHeaders, productionErrors } = require('./lib/security');
+const { makeLimiter, clientIp, securityHeaders, productionErrors, isWeakAdminPassword } = require('./lib/security');
 const { FEATURES, FEATURE_KEYS, resolveFeatures, validateFeaturePatch } = require('./lib/features');
 
 const PORT = Number(process.env.PORT || 8080);
@@ -673,8 +673,27 @@ const PAYMENTS = {
 };
 
 // ---------- ورود مدیر ----------
-// رمز مدیر فقط از متغیر محیطی HZ_ADMIN_PASSWORD خوانده می‌شود؛ اگر تنظیم نشده باشد، پنل بسته است.
+// رمز آغازین مدیر از متغیر محیطی HZ_ADMIN_PASSWORD خوانده می‌شود؛ اگر تنظیم نشده باشد، پنل بسته است.
+// مدیر می‌تواند بعداً از داخل پنل رمز را عوض کند؛ در آن صورت هش ذخیره‌شده در پایگاه داده معتبر است و بر مقدار محیطی مقدم می‌شود.
 const ADMIN_PASSWORD = process.env.HZ_ADMIN_PASSWORD || '';
+function hashAdminPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return 'scrypt:' + salt + ':' + crypto.scryptSync(String(pw), salt, 64).toString('hex');
+}
+function verifyAdminPassword(pw) {
+  const stored = settingRaw('admin_password_hash');
+  if (stored) {
+    const parts = String(stored).split(':');
+    if (parts.length !== 3 || parts[0] !== 'scrypt') return false;
+    const given = crypto.scryptSync(String(pw || ''), parts[1], 64);
+    const want = Buffer.from(parts[2], 'hex');
+    return given.length === want.length && crypto.timingSafeEqual(given, want);
+  }
+  if (!ADMIN_PASSWORD) return false;
+  const given = crypto.createHash('sha256').update(String(pw || '')).digest();
+  const want = crypto.createHash('sha256').update(ADMIN_PASSWORD).digest();
+  return crypto.timingSafeEqual(given, want);
+}
 // محدودکننده‌ی تلاش: فقط شکست‌ها شمرده می‌شوند (ضد حدس رمز و کد)
 const RL = {
   adminFail: makeLimiter({ max: Number(process.env.HZ_RL_ADMIN_MAX) || 10, windowMs: 15 * 60 * 1000 }),
@@ -710,9 +729,7 @@ route('POST', '/api/admin/login', async (req, res) => {
   const gate = RL.adminFail.check(ip);
   if (!gate.ok) return send(res, 429, { error: 'too_many_attempts', retry_after: gate.retryAfter });
   const b = await readJson(req);
-  const given = crypto.createHash('sha256').update(String(b.password || '')).digest();
-  const want = crypto.createHash('sha256').update(ADMIN_PASSWORD).digest();
-  if (!crypto.timingSafeEqual(given, want)) { RL.adminFail.fail(ip); return send(res, 401, { error: 'bad_password' }); }
+  if (!verifyAdminPassword(b.password)) { RL.adminFail.fail(ip); return send(res, 401, { error: 'bad_password' }); }
   RL.adminFail.reset(ip);
   const token = crypto.randomBytes(32).toString('hex');
   db.prepare('INSERT INTO admin_sessions (token_hash, expires_at) VALUES (?, ?)').run(sha256(token), now() + ADMIN_SESSION_MS);
@@ -722,6 +739,22 @@ route('POST', '/api/admin/login', async (req, res) => {
 route('POST', '/api/admin/logout', async (req, res) => {
   const tok = adminTokenOf(req);
   if (tok) db.prepare('DELETE FROM admin_sessions WHERE token_hash = ?').run(sha256(tok));
+  send(res, 200, { ok: true });
+});
+
+// تغییر رمز مدیر از داخل پنل: رمز فعلی لازم است، رمز تازه حداقل ۱۲ کاراکتر و غیرآزمایشی.
+// هش رمز تازه (scrypt) در پایگاه داده ذخیره می‌شود و از آن پس بر رمز محیطی مقدم است.
+// نشست‌های دیگر مدیر باطل می‌شوند؛ نشست فعلی می‌ماند. خودِ رمز هیچ‌جا ثبت نمی‌شود.
+route('POST', '/api/admin/change-password', async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  const b = await readJson(req);
+  if (!verifyAdminPassword(b.current_password)) return send(res, 401, { error: 'bad_current_password' });
+  const next = String(b.new_password || '');
+  if (isWeakAdminPassword(next)) return send(res, 400, { error: 'weak_password' });
+  db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
+    .run('admin_password_hash', hashAdminPassword(next));
+  db.prepare('DELETE FROM admin_sessions WHERE token_hash != ?').run(sha256(adminTokenOf(req) || ''));
+  audit('admin.change_password', {});
   send(res, 200, { ok: true });
 });
 

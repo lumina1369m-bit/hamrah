@@ -72,6 +72,12 @@ function securityHeaders(pathname, frameAncestors) {
   return h;
 }
 
+// رمز مدیر ضعیف است؟ (کوتاه یا در فهرست رمزهای شناخته‌شده‌ی آزمایشی)
+function isWeakAdminPassword(pw) {
+  const p = String(pw || '');
+  return p.length < 12 || WEAK_ADMIN.has(p);
+}
+
 // بررسی ایمنی پیکربندی هنگام راه‌اندازی در حالت انتشار (غیر توسعه).
 // اگر خطایی برگردد، سرور بالا نمی‌آید (fail closed).
 const WEAK_ADMIN = new Set(['admin1234', 'test-admin-pass', 'password', '12345678']);
@@ -85,4 +91,4 @@ function productionErrors(env) {
   return errs;
 }
 
-module.exports = { makeLimiter, clientIp, securityHeaders, productionErrors };
+module.exports = { makeLimiter, clientIp, securityHeaders, productionErrors, isWeakAdminPassword };
