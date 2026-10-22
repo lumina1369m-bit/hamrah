@@ -233,6 +233,15 @@
       <div id="settings-form"></div>
       <div class="actions"><button type="button" id="save-settings">ذخیره تنظیمات</button></div>
     </div>
+    <div class="card">
+      <h2>تغییر رمز مدیر</h2>
+      <p class="hint">رمز تازه حداقل ۱۲ کاراکتر باشد. پس از تغییر، رمز تازه (به‌صورت رمزنگاری‌شده) در پایگاه داده ذخیره می‌شود و برای ورودهای بعدی همان معتبر است؛ نشست‌های دیگر مدیر هم باطل می‌شوند.</p>
+      <div class="row"><div><div>رمز فعلی</div></div><input type="password" id="pw-current" class="dir-ltr" autocomplete="current-password"></div>
+      <div class="row"><div><div>رمز تازه</div></div><input type="password" id="pw-new" class="dir-ltr" autocomplete="new-password"></div>
+      <div class="row"><div><div>تکرار رمز تازه</div></div><input type="password" id="pw-new2" class="dir-ltr" autocomplete="new-password"></div>
+      <div class="actions"><button type="button" id="change-pw">تغییر رمز</button></div>
+      <div class="msg" id="pw-msg"></div>
+    </div>
   </section>
 
   <section id="tab-system" class="hidden">
@@ -502,6 +511,21 @@
       if (res.status === 200) say('msg', 'تنظیمات ذخیره شد و از همین لحظه اعمال می‌شود.', 'ok');
       else if (res.status === 401) expired();
       else say('msg', 'ذخیره انجام نشد: ' + (res.data.error === 'invalid_value' && SETTINGS[res.data.key] ? 'مقدار نامعتبر در «' + SETTINGS[res.data.key].label + '»' : (res.data.error || 'خطا')), 'err');
+    });
+  };
+  $('change-pw').onclick = function () {
+    var cur = $('pw-current').value, nw = $('pw-new').value, nw2 = $('pw-new2').value;
+    if (!cur || !nw) return say('pw-msg', 'رمز فعلی و رمز تازه را وارد کنید.', 'err');
+    if (nw.length < 12) return say('pw-msg', 'رمز تازه باید حداقل ۱۲ کاراکتر باشد.', 'err');
+    if (nw !== nw2) return say('pw-msg', 'تکرار رمز تازه یکسان نیست.', 'err');
+    api('POST', '/admin/change-password', { current_password: cur, new_password: nw }).then(function (res) {
+      if (res.status === 401 && res.data.error === 'bad_current_password') return say('pw-msg', 'رمز فعلی نادرست است.', 'err');
+      if (res.status === 401) return expired();
+      if (res.status === 400) return say('pw-msg', 'رمز تازه ضعیف است؛ رمز دیگری انتخاب کنید.', 'err');
+      if (res.status === 200) {
+        $('pw-current').value = ''; $('pw-new').value = ''; $('pw-new2').value = '';
+        say('pw-msg', 'رمز مدیر عوض شد. از این پس برای ورود از رمز تازه استفاده کنید.', 'ok');
+      } else say('pw-msg', 'تغییر رمز انجام نشد.', 'err');
     });
   };
 
