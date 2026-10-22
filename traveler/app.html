@@ -2854,6 +2854,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   $('ac-logout').onclick = function () {
+    localStorage.removeItem(KEY_TOKEN_T);
     // خروج از این دستگاه: نشست را پاک می‌کند
     localStorage.removeItem(KEY_USER);
     show(null);
@@ -2861,6 +2862,7 @@ document.addEventListener('DOMContentLoaded', function() {
     toast('از این دستگاه خارج شدید');
   };
   $('ac-logout-all').onclick = function () {
+    localStorage.removeItem(KEY_TOKEN_T);
     // خروج از همه‌ی دستگاه‌ها: در نسخه‌ی واقعی نشست‌های سرور باطل می‌شوند
     localStorage.removeItem(KEY_USER);
     location.replace('index.html');
