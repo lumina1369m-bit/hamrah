@@ -1516,6 +1516,7 @@
   var offersBox = document.getElementById('offers-box');
   var lastOffers = [];
   var lastChanges = [];
+  var lastExtensions = [];
   var CHANGE_LABEL = { scheduled_at: 'زمان', place: 'محل ملاقات', origin_lang: 'زبان مبدأ', dest_lang: 'زبان مقصد', field: 'حوزه', hours: 'مدت', car: 'خودرو', party: 'تعداد همراه', gender_pref: 'ترجیح جنسیت' };
   function renderChange(c) {
     var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-secondary/40');
@@ -1546,10 +1547,36 @@
     card.appendChild(row);
     return card;
   }
+  function renderExtension(e) {
+    var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-amber-500/50');
+    card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تمدید خدمت'));
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant',
+      'مسافر: ' + (e.traveler_name || '—') + ' • ' + (e.place || '') + ' • تمدید ' + HZ.toFa(e.extra_hours || 1) + ' ساعت • سهم شما پس از تمدید: ' + HZ.money(e.new_net || 0)));
+    var row = el('div', 'flex items-center justify-between gap-2 pt-2 border-t border-surface-variant/40 text-[12px]');
+    var tm = el('span', 'font-bold text-secondary', HZ.toFa(Math.max(0, Math.ceil((Date.parse(e.expires_at) - Date.now()) / 1000))) + ' ثانیه');
+    tm.setAttribute('data-exp', e.expires_at); tm.setAttribute('data-pure', '1');
+    row.appendChild(tm);
+    var btns = el('div', 'flex gap-2');
+    var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
+    no.type = 'button';
+    no.onclick = function () { srv('POST', '/translator/extensions/' + e.id + '/reject').then(function () { HZ.toast('تمدید رد شد.'); refreshOffers(); }); };
+    var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
+    yes.type = 'button';
+    yes.onclick = function () {
+      srv('POST', '/translator/extensions/' + e.id + '/accept').then(function (res) {
+        HZ.toast(res.status === 200 ? 'تمدید پذیرفته شد؛ زمان و مبلغ خدمت به‌روز شد.' : 'مهلت پاسخ به تمدید تمام شده است.');
+        loadMissions(); refreshOffers();
+      });
+    };
+    btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
+    card.appendChild(row);
+    return card;
+  }
   function renderOffers() {
     if (!offersBox) return;
     offersBox.innerHTML = '';
-    if (!lastOffers.length && !lastChanges.length) return;
+    if (!lastOffers.length && !lastChanges.length && !lastExtensions.length) return;
+    lastExtensions.forEach(function (e) { offersBox.appendChild(renderExtension(e)); });
     lastChanges.forEach(function (c) { offersBox.appendChild(renderChange(c)); });
     offersBox.appendChild(el('span', 'text-[12px] font-bold text-on-surface-variant px-1', 'درخواست‌های جدید'));
     lastOffers.forEach(function (o) {
@@ -1588,7 +1615,8 @@
       if (res.status !== 200) return;
       lastOffers = res.data.offers || [];
       lastChanges = res.data.changes || [];
-      var sig = lastOffers.map(function (o) { return o.id; }).join(',') + '|' + lastChanges.map(function (c) { return c.id; }).join(',');
+      lastExtensions = res.data.extensions || [];
+      var sig = lastOffers.map(function (o) { return o.id; }).join(',') + '|' + lastChanges.map(function (c) { return c.id; }).join(',') + '|' + lastExtensions.map(function (e) { return e.id; }).join(',');
       if (sig !== offersSig) { offersSig = sig; renderOffers(); } // فقط وقتی فهرست عوض شود بازسازی کن (کلیک‌ها گم نشوند)
     });
   }
