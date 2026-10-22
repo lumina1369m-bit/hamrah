@@ -1301,12 +1301,15 @@
     if (m.reservation_id && m.started) {
       card.appendChild(el('span', 'self-start px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold', 'خدمت شروع شده'));
     }
-    if (m.reservation_id && m.started && Date.parse(m.startAt) <= Date.now()) {
-      var finBtn = el('button', 'self-start px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'پایان خدمت');
+    if (m.reservation_id && m.started && m.finish_requested) {
+      card.appendChild(el('span', 'self-start px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold', 'درخواست پایان فرستاده شده؛ منتظر تأیید مسافر'));
+    }
+    if (m.reservation_id && m.started && !m.finish_requested && Date.parse(m.startAt) <= Date.now()) {
+      var finBtn = el('button', 'self-start px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'درخواست پایان خدمت');
       finBtn.type = 'button';
       finBtn.onclick = function () {
         srv('POST', '/translator/missions/' + m.reservation_id + '/finish').then(function (res) {
-          HZ.toast(res.status === 200 ? 'خدمت پایان یافت. منتظر انتخاب پرداخت مسافر.' : 'پایان خدمت ثبت نشد.');
+          HZ.toast(res.status === 202 ? 'درخواست پایان برای مسافر فرستاده شد؛ تا تأیید او خدمت ادامه دارد.' : 'درخواست پایان ثبت نشد.');
           loadMissions(); loadPayments();
         });
       };

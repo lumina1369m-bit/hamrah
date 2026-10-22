@@ -591,7 +591,19 @@
           اگر زمان بیشتری لازم دارید، از کارت «تمدید زمان خدمت» در همین صفحه درخواست بدهید؛ مترجم باید آن را تأیید کند.
         </p>
 </div>
-<!-- Finish Service CTA -->
+<!-- درخواست پایان از سوی مترجم: قبول یا رد با مسافر است -->
+<div class="hidden p-3 rounded-2xl bg-amber-50 flex flex-col gap-2" id="finish-request-banner">
+<div class="flex items-center gap-1.5 text-amber-800 font-bold text-[11.5px]">
+<span class="material-symbols-outlined text-[17px]">notification_important</span>
+<span class="">مترجم درخواست پایان خدمت داده است</span>
+</div>
+<p class="text-[10.5px] text-on-surface-variant leading-relaxed">اگر قبول کنید، خدمت همین حالا با همان مبلغ کاملِ توافق‌شده تمام می‌شود و فاکتور صادر می‌گردد.</p>
+<div class="flex items-center gap-2">
+<button class="flex-1 py-2 px-3 rounded-xl bg-error text-white font-bold text-[11px] active:scale-95 transition-all cursor-pointer" id="btn-approve-finish" type="button">قبول پایان خدمت</button>
+<button class="flex-1 py-2 px-3 rounded-xl neu-flat text-on-surface-variant font-bold text-[11px] cursor-pointer" id="btn-reject-finish" type="button">ادامه‌ی خدمت</button>
+</div>
+</div>
+<!-- Finish Service CTA: مسافر هر وقت خواست خودش تمام می‌کند؛ مبلغ کامل پابرجاست -->
 <button class="w-full py-2.5 px-4 rounded-2xl neu-flat text-error font-bold text-[12px] active:neu-pressed transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-finish-service" type="button">
 <span class="material-symbols-outlined text-[18px]">stop_circle</span>
 <span class="">ثبت پایان رسمی خدمت و صدور فاکتور</span>
@@ -1787,6 +1799,8 @@ document.addEventListener('DOMContentLoaded', function() {
       window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
     } else if (state.currentStage === 5) {
       updateExtensionUi(b);
+      var frb = document.getElementById('finish-request-banner');
+      if (frb) frb.classList.toggle('hidden', !b.finishRequested);
       if (b.srvStatus === 'finished') {
         goToStage(6);
         window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long');
@@ -1830,13 +1844,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // مسافر هر وقت خواست خودش خدمت را تمام می‌کند (حتی زودتر)؛ تأیید مترجم لازم نیست و مبلغ کامل پابرجاست.
   const btnFinishService = document.getElementById('btn-finish-service');
   if (btnFinishService) {
     btnFinishService.addEventListener('click', () => {
       const b = readLocalBookings().find(x => x.serverId);
-      if (b && b.srvStatus !== 'finished') { window.showAppToast('پایان خدمت را مترجم ثبت می‌کند؛ بعد از آن فاکتور نمایش داده می‌شود', 'schedule'); return; }
-      goToStage(6);
-      window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long');
+      if (!b) { goToStage(6); window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long'); return; }
+      if (b.srvStatus === 'finished') { goToStage(6); return; }
+      let token = null;
+      try { token = localStorage.getItem('hamzaban.token.v1'); } catch (e) {}
+      if (!token) { window.showAppToast('برای پایان خدمت، ورود شما لازم است.', 'error'); return; }
+      fetch('/api/traveler/bookings/' + b.serverId + '/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+      }).then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          if (ok) window.showAppToast('خدمت تمام شد؛ مبلغ کامل در فاکتور است', 'receipt_long');
+          else window.showAppToast(d.error === 'not_started' ? 'خدمت هنوز با کد امنیتی شروع نشده است.' : 'پایان خدمت انجام نشد. دوباره تلاش کنید.', 'error');
+        })
+        .catch(() => window.showAppToast('پایان خدمت انجام نشد. اتصال اینترنت را بررسی کنید.', 'error'));
     });
   }
 
@@ -2046,7 +2072,7 @@ document.addEventListener('DOMContentLoaded', function() {
           lb = { id: 's' + sb.id, serverId: sb.id, mode: sb.kind, title: LANG_LABEL[sb.origin_lang] + ' ← ' + LANG_LABEL[sb.dest_lang],
             field: FIELD_LABEL[sb.field] || '', hours: '', amount: (Number(sb.total) || 0).toLocaleString('fa-IR') + ' تومان',
             when: sb.scheduled_at ? (window.jLabel ? window.jLabel(Date.parse(sb.scheduled_at)) : sb.scheduled_at) : 'فوری',
-            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started, hoursNum: sb.hours || null, pendingExtension: sb.pending_extension || null, lastExtensionStatus: sb.last_extension_status || null };
+            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started, hoursNum: sb.hours || null, pendingExtension: sb.pending_extension || null, lastExtensionStatus: sb.last_extension_status || null, finishRequested: !!sb.finish_requested, finishedBy: sb.finished_by || null };
           list.unshift(lb); changed = true;
         }
         if (lb.tab !== m.tab || lb.statusLabel !== m.label || lb.srvStatus !== sb.status) {
@@ -2062,6 +2088,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (lb.hoursNum !== (sb.hours || null) || JSON.stringify(lb.pendingExtension || null) !== JSON.stringify(sb.pending_extension || null) || lb.lastExtensionStatus !== (sb.last_extension_status || null)) {
           lb.hoursNum = sb.hours || null; lb.pendingExtension = sb.pending_extension || null; lb.lastExtensionStatus = sb.last_extension_status || null; changed = true;
+        }
+        if (lb.finishRequested !== !!sb.finish_requested || lb.finishedBy !== (sb.finished_by || null)) {
+          lb.finishRequested = !!sb.finish_requested; lb.finishedBy = sb.finished_by || null; changed = true;
         }
         if (lb.payState !== (sb.pay_state || null)) { lb.payState = sb.pay_state || null; changed = true; }
         if (lb.total !== (Number(sb.total) || 0)) { lb.total = Number(sb.total) || 0; changed = true; }
@@ -2286,6 +2315,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (b.srvStatus === 'finished' && b.payState === 'awaiting_cash') act.appendChild(bkAction('اختلاف', 'text-error font-bold text-[11.5px]', function () { srvPaySheet(b); }));
         if (b.srvStatus === 'no_match' && window.HZ_FEAT('booking_convert')) act.appendChild(bkAction('تبدیل به رزرو زمان‌دار', 'text-secondary font-bold text-[11.5px]', function () { srvConvertSheet(b); }));
         if (b.srvStatus === 'matched' && !b.pendingChange && window.HZ_FEAT('booking_change')) act.appendChild(bkAction('تغییر', 'text-secondary font-bold text-[11.5px]', function () { srvChangeSheet(b); }));
+        if (b.srvStatus === 'matched' && b.finishRequested) {
+          act.appendChild(bkAction('قبول پایان', 'text-error font-bold text-[11.5px]', function () {
+            srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-approve').then(function () { window.showAppToast('خدمت تمام شد؛ مبلغ کامل در فاکتور است', 'receipt_long'); syncServer(); }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
+          }));
+          act.appendChild(bkAction('ادامه‌ی خدمت', 'text-secondary font-bold text-[11.5px]', function () {
+            srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-reject').then(function () { window.showAppToast('خدمت ادامه پیدا می‌کند', 'schedule'); syncServer(); }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
+          }));
+        }
         if (srvOpen) act.appendChild(bkAction('لغو', 'text-error font-bold text-[11.5px]', function () { cancelServer(b); }));
       } else if (b.tab === 'pending' || b.tab === 'upcoming') {
         if (b.rate) act.appendChild(bkAction('ویرایش', 'text-secondary font-bold text-[11.5px]', function () { openEdit(b); }));
@@ -2593,6 +2630,21 @@ document.addEventListener('DOMContentLoaded', function() {
       var s2 = snapshot(false);
       submitBooking(Object.assign(s2, { tab: 'live', statusLabel: STATUS.live, when: 'فوری', mode: 'instant' }), 'instant');
     }
+  });
+  // قبول/رد درخواست پایان مترجم روی صفحه‌ی تایمر
+  var btnApproveFinish = $('btn-approve-finish');
+  if (btnApproveFinish) btnApproveFinish.addEventListener('click', function () {
+    var b = lastOpen(); if (!b || !b.serverId) return;
+    srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-approve').then(function () {
+      window.showAppToast('خدمت تمام شد؛ مبلغ کامل در فاکتور است', 'receipt_long'); syncServer();
+    }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
+  });
+  var btnRejectFinish = $('btn-reject-finish');
+  if (btnRejectFinish) btnRejectFinish.addEventListener('click', function () {
+    var b = lastOpen(); if (!b || !b.serverId) return;
+    srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-reject').then(function () {
+      window.showAppToast('خدمت ادامه پیدا می‌کند', 'schedule'); syncServer();
+    }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
   });
   // لغو از صفحه‌ی جستجو: رزرو روی سرور باید لغو شود، وگرنه همگام‌سازی آن را دوباره «در جستجو» می‌کند
   function cancelOpen() {
