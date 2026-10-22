@@ -2668,9 +2668,18 @@ document.addEventListener('DOMContentLoaded', function() {
   $('ac-delete-input').addEventListener('input', function () { $('ac-delete-confirm').disabled = this.value.trim() !== deleteWord(); });
   $('ac-delete-confirm').onclick = function () {
     if (lastOpen()) { toast('حذف حساب وقتی رزرو فعال دارید ممکن نیست'); return; }
-    localStorage.removeItem(KEY_USER); localStorage.removeItem(KEY_BK);
-    toast('حساب شما حذف شد. اطلاعات شخصی ظرف ۳۰ روز پاک می‌شود.');
-    setTimeout(function () { location.reload(); }, 1200);
+    var done = function () {
+      try { localStorage.removeItem(KEY_TOKEN_T); } catch (e) {}
+      localStorage.removeItem(KEY_USER); localStorage.removeItem(KEY_BK);
+      toast('حساب و داده‌های شما حذف شد.');
+      setTimeout(function () { location.replace('index.html'); }, 1200);
+    };
+    if (!srvToken()) { done(); return; }
+    // حذف واقعی روی سرور: حساب، نشست‌ها و داده‌های کاربر پاک می‌شوند
+    srvCall('DELETE', '/auth/account').then(done).catch(function (e) {
+      if (e && e.status === 409) { toast('حذف حساب وقتی رزرو یا کارِ باز دارید ممکن نیست'); return; }
+      toast('حذف حساب انجام نشد. اتصال اینترنت را بررسی کنید.');
+    });
   };
 
   // ---------- ناوبری بین صفحه‌ها ----------
