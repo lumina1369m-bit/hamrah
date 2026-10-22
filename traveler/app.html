@@ -155,6 +155,7 @@
 <style>.leaflet-container img.leaflet-tile{max-width:none !important;max-height:none !important}.leaflet-container{font-family:inherit}</style>
 <script src="i18n.js" defer></script>
 <script src="payment-methods.js" defer></script>
+<script src="support.js" defer></script>
 <link href="vendor/fonts.css" rel="stylesheet"/>
 <link href="vendor/tailwind.css" rel="stylesheet"/>
 <link href="vendor/theme.css" rel="stylesheet"/>
@@ -190,9 +191,9 @@
 </div>
 </div>
 <!-- Map Floating Control Actions -->
-<div class="absolute top-16 left-3.5 md:top-6 md:left-6 z-30 flex flex-col gap-2.5 pointer-events-auto"><button aria-label="ایمنی سفر و پشتیبانی" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-error hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm"><span class="material-symbols-outlined text-[20px]">shield_with_heart</span></button><button aria-label="موقعیت فعلی" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-secondary hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm" onclick="locateMe()"><span class="material-symbols-outlined text-[20px]">my_location</span></button><div class="flex flex-col neu-flat rounded-2xl overflow-hidden p-0.5 border border-white/60 shadow-sm"><button aria-label="بزرگنمایی" class="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-secondary active:neu-pressed transition-all" onclick="mapZoom(1)"><span class="material-symbols-outlined text-[19px]">add</span></button><div class="h-px bg-outline-variant/40 mx-1.5"></div><button aria-label="کوچک‌نمایی" class="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-secondary active:neu-pressed transition-all" onclick="mapZoom(-1)"><span class="material-symbols-outlined text-[19px]">remove</span></button></div><button aria-label="لایه‌ها" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-on-surface-variant hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm" onclick="showAppToast('لایه نقشه تغییر یافت', 'layers')"><span class="material-symbols-outlined text-[19px]">layers</span></button></div>
+<div class="absolute top-16 left-3.5 md:top-6 md:left-6 z-30 flex flex-col gap-2.5 pointer-events-auto"><button type="button" id="btn-safety-support" aria-label="ایمنی سفر و پشتیبانی" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-error hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm"><span class="material-symbols-outlined text-[20px]">shield_with_heart</span></button><button aria-label="موقعیت فعلی" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-secondary hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm" onclick="locateMe()"><span class="material-symbols-outlined text-[20px]">my_location</span></button><div class="flex flex-col neu-flat rounded-2xl overflow-hidden p-0.5 border border-white/60 shadow-sm"><button aria-label="بزرگنمایی" class="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-secondary active:neu-pressed transition-all" onclick="mapZoom(1)"><span class="material-symbols-outlined text-[19px]">add</span></button><div class="h-px bg-outline-variant/40 mx-1.5"></div><button aria-label="کوچک‌نمایی" class="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-secondary active:neu-pressed transition-all" onclick="mapZoom(-1)"><span class="material-symbols-outlined text-[19px]">remove</span></button></div><button aria-label="لایه‌ها" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-on-surface-variant hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm" onclick="showAppToast('لایه نقشه تغییر یافت', 'layers')"><span class="material-symbols-outlined text-[19px]">layers</span></button></div>
 <!-- Top Header Bar -->
-<header class="fixed top-0 left-0 right-0 z-40 pt-safe pointer-events-none md:pt-4 md:right-auto md:left-24"><div class="max-w-md md:max-w-none mx-auto px-4 py-3 md:py-0 flex items-center justify-between md:justify-start md:gap-3 pointer-events-auto"><div class="neu-card rounded-full px-3.5 py-1.5 flex items-center gap-2 border border-white/70 shadow-md"><div class="w-8 h-8 rounded-full neu-pressed flex items-center justify-center text-primary relative"><span class="material-symbols-outlined text-[20px]">translate</span><span class="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span></div><div class="flex flex-col text-right leading-tight"><span class="font-bold text-[14px] text-primary tracking-tight">همراه</span><span class="text-[10px] text-on-surface-variant font-medium">اعزام و رزرو هوشمند مترجم</span></div></div><div class="flex items-center gap-2"><button aria-label="اعلان‌ها" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-on-surface-variant hover:scale-105 active:neu-pressed transition-all border border-white/50" onclick="showAppToast('اعلان جدیدی وجود ندارد', 'notifications')"><span class="material-symbols-outlined text-[19px]">notifications</span></button><button aria-label="پشتیبانی سریع" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-secondary hover:scale-105 active:neu-pressed transition-all border border-white/50" onclick="showAppToast('مرکز پشتیبانی ۲۴ ساعته همراه آماده پاسخگویی است', 'support_agent')"><span class="material-symbols-outlined text-[19px]">chat</span></button></div></div></header>
+<header class="fixed top-0 left-0 right-0 z-40 pt-safe pointer-events-none md:pt-4 md:right-auto md:left-24"><div class="max-w-md md:max-w-none mx-auto px-4 py-3 md:py-0 flex items-center justify-between md:justify-start md:gap-3 pointer-events-auto"><div class="neu-card rounded-full px-3.5 py-1.5 flex items-center gap-2 border border-white/70 shadow-md"><div class="w-8 h-8 rounded-full neu-pressed flex items-center justify-center text-primary relative"><span class="material-symbols-outlined text-[20px]">translate</span><span class="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span></div><div class="flex flex-col text-right leading-tight"><span class="font-bold text-[14px] text-primary tracking-tight">همراه</span><span class="text-[10px] text-on-surface-variant font-medium">اعزام و رزرو هوشمند مترجم</span></div></div><div class="flex items-center gap-2"><button aria-label="اعلان‌ها" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-on-surface-variant hover:scale-105 active:neu-pressed transition-all border border-white/50" onclick="showAppToast('اعلان جدیدی وجود ندارد', 'notifications')"><span class="material-symbols-outlined text-[19px]">notifications</span></button><button type="button" id="btn-quick-support" aria-label="پشتیبانی سریع" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-secondary hover:scale-105 active:neu-pressed transition-all border border-white/50"><span class="material-symbols-outlined text-[19px]">support_agent</span></button></div></div></header>
 <!-- ========================================================================= -->
 <!-- STAGE 1: FLOATING LOCATION PICKER BAR ON MAP                             -->
 <!-- ========================================================================= -->
@@ -505,24 +506,25 @@
 </div>
 <!-- Masked Contacts Row -->
 <div class="grid grid-cols-4 gap-2 pt-0.5">
-<button class="py-2 rounded-xl neu-flat text-secondary text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-pointer" id="btn-call-masked" type="button">
+<button class="py-2 rounded-xl neu-flat text-secondary text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-not-allowed opacity-60" id="btn-call-masked" type="button" disabled aria-describedby="trip-contact-unavailable">
 <span class="material-symbols-outlined text-[18px]">call</span>
 <span class="">تماس امن</span>
 </button>
-<button class="py-2 rounded-xl neu-flat text-secondary text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-pointer" id="btn-chat-inapp" type="button">
+<button class="py-2 rounded-xl neu-flat text-secondary text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-not-allowed opacity-60" id="btn-chat-inapp" type="button" disabled aria-describedby="trip-contact-unavailable">
 <span class="material-symbols-outlined text-[18px]">chat</span>
 <span class="">پیامک</span>
 </button>
-<button class="py-2 rounded-xl neu-flat text-on-surface-variant text-[10.5px] font-medium flex flex-col items-center gap-1 active:neu-pressed cursor-pointer" id="btn-share-ride" type="button">
+<button class="py-2 rounded-xl neu-flat text-on-surface-variant text-[10.5px] font-medium flex flex-col items-center gap-1 active:neu-pressed cursor-not-allowed opacity-60" id="btn-share-ride" type="button" disabled aria-describedby="trip-contact-unavailable">
 <span class="material-symbols-outlined text-[18px]">share_location</span>
 <span class="">اشتراک سفر</span>
 </button>
 <button class="py-2 rounded-xl neu-flat text-error text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-pointer" id="btn-sos" type="button">
 <span class="material-symbols-outlined text-[18px]">shield_person</span>
-<span class="">اضطراری</span>
+<span class="">راهنمای اضطراری</span>
 </button>
 </div>
 </div>
+<p id="trip-contact-unavailable" class="text-[10px] text-on-surface-variant leading-relaxed">تماس امن، پیامک با مترجم و ردیابی زنده هنوز فعال نیستند.</p>
 <!-- تأیید واقعی مسافر هنگام رسیدن مترجم؛ بعد کد امنیتی شروع خدمت نمایش داده می‌شود -->
 <button class="w-full py-2.5 px-3 rounded-2xl bg-secondary text-on-secondary font-bold text-[12px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-arrived" type="button">
 <span class="material-symbols-outlined text-[18px]">location_on</span>
@@ -890,6 +892,20 @@
 </section>
 </div></div>
 
+
+<!-- No automatic emergency alert is sent; only an explicitly configured phone may be dialed. -->
+<dialog id="support-dialog" aria-labelledby="support-title" aria-describedby="support-safety-note" class="neu-card rounded-3xl text-on-surface" style="width:calc(100% - 2rem);max-width:32rem;max-height:85vh;overflow:auto;border:0;padding:1.25rem;margin:auto">
+<div class="flex flex-col gap-3 text-[12px]">
+<h2 id="support-title" class="font-extrabold text-[15px]">پشتیبانی و ایمنی</h2>
+<p id="support-safety-note" class="font-bold text-error leading-relaxed">این دکمه هشدار اضطراری ارسال نمی‌کند. در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
+<p class="text-on-surface-variant leading-relaxed">تماس با پشتیبانی از طریق شماره‌گیر دستگاه انجام می‌شود؛ این سرویس، تماس امن یا اعزام اضطراری نیست.</p>
+<p id="support-status" role="status" aria-live="polite" class="text-on-surface-variant"></p>
+<a id="support-call" class="hidden min-h-[44px] px-3 py-2 rounded-xl neu-flat text-secondary font-bold" dir="auto"><span>باز کردن شماره‌گیر پشتیبانی</span> · <bdi id="support-phone" dir="ltr"></bdi></a>
+<button id="support-retry" type="button" class="min-h-[44px] px-3 rounded-xl neu-flat text-secondary font-bold">تازه‌سازی شمارهٔ پشتیبانی</button>
+<button id="support-close" type="button" class="min-h-[44px] px-3 rounded-xl neu-flat font-bold" autofocus>بستن</button>
+</div>
+</dialog>
+<style>#support-dialog::backdrop{background:rgba(0,0,0,.45)}</style>
 
 <!-- Toast Notification -->
 <div class="fixed top-16 left-4 right-4 z-50 md:left-auto md:right-12 md:max-w-sm p-3 rounded-2xl bg-on-surface text-surface-container-lowest shadow-2xl flex items-center justify-between gap-2 text-[11px] font-medium hidden" id="toast-pill">
@@ -1862,22 +1878,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  const btnCallMasked = document.getElementById('btn-call-masked');
-  if (btnCallMasked) {
-    btnCallMasked.addEventListener('click', () => window.showAppToast('تماس امن دوطرفه از طریق سرور متصل شد', 'call'));
-  }
-  const btnChatInapp = document.getElementById('btn-chat-inapp');
-  if (btnChatInapp) {
-    btnChatInapp.addEventListener('click', () => window.showAppToast('صفحه پیامک با مترجم باز شد', 'chat'));
-  }
-  const btnShareRide = document.getElementById('btn-share-ride');
-  if (btnShareRide) {
-    btnShareRide.addEventListener('click', () => window.showAppToast('لینک ردیابی زنده برای همراهان کپی شد', 'share_location'));
-  }
-  const btnSos = document.getElementById('btn-sos');
-  if (btnSos) {
-    btnSos.addEventListener('click', () => window.showAppToast('مرکز فوریت‌های همراه در جریان قرار گرفت', 'shield_with_heart'));
-  }
+  // Trip communication and live sharing are unavailable; safety opens the support dialog.
 
   const btnConfirmStart = document.getElementById('btn-confirm-start');
   if (btnConfirmStart) {
