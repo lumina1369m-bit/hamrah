@@ -1640,6 +1640,7 @@ route('POST', '/api/translator/missions/:id/cancel', async (req, res, url, param
   const id = parseId(params.id);
   const r = id && db.prepare("SELECT * FROM reservations WHERE id = ? AND translator_id = ? AND status = 'matched'").get(id, u.id);
   if (!r) return send(res, 404, { error: 'not_found' });
+  if (r.service_started_at) return send(res, 409, { error: 'service_already_started' });
   const t = now();
   let next = 'searching';
   if (r.kind === 'scheduled') next = t >= r.scheduled_at - TIMING.SCHEDULE_MATCH_BEFORE_MS ? 'matching' : 'waiting_schedule';

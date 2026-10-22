@@ -1598,13 +1598,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function setSecurityCode() {
     const el = document.getElementById('security-code');
     if (!el) return;
-    let code = null;
-    try {
-      const list = JSON.parse(localStorage.getItem('hamzaban.bookings.v1') || '[]');
-      const active = list.find(b => b.serviceCode && (b.srvStatus === 'matched' || b.tab === 'live')) || list.find(b => b.serviceCode);
-      if (active) code = active.serviceCode;
-    } catch (e) {}
-    el.textContent = code ? toPersianDigits(code) : '۰۰۰۰۰';
+    const b = readLocalBookings().find(x => x.serverId === (serviceBookingId || searchBookingId));
+    el.textContent = b && /^[0-9]{5}$/.test(b.serviceCode || '') ? toPersianDigits(b.serviceCode) : '—';
   }
 
   function goToStage(num) {
@@ -1614,7 +1609,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (num === 5) {
       const b = serviceBooking();
       if (b) syncServiceClock(b);
-      else if (!sessionStart) sessionStart = Date.now(); // local-only demo
+      // Without a confirmed server start there is no running service clock.
     }
     if (num === 6) {
       const booking = serviceBooking();
@@ -1774,6 +1769,18 @@ document.addEventListener('DOMContentLoaded', function() {
   // The request bridge is called only after an authenticated server response.
   window.HZ_BOOKING_SCREEN = {
     currentId: () => searchBookingId,
+    serviceId: () => state.currentStage >= 5 ? (serviceBooking() || {}).serverId : (searchBookingId || (serviceBooking() || {}).serverId),
+    serviceConfirmed: (action, id) => {
+      if (id !== window.HZ_BOOKING_SCREEN.serviceId()) return;
+      const b = readLocalBookings().find(x => x.serverId === id);
+      if (!b) return;
+      serviceBookingId = id;
+      if (b.serviceStarted) syncServiceClock(b);
+      if (action === 'arrived') goToStage(b.serviceStarted ? 5 : 4);
+      else if (action === 'start-check') goToStage(5);
+      else if (action === 'finish' || action === 'finish-approve') goToStage(6);
+      else if (action === 'extend') updateExtensionUi(b);
+    },
     confirmed: (action, id) => {
       if (action === 'created') {
         searchBookingId = id; serviceBookingId = null; sessionStart = 0; goToStage(2);
@@ -1808,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.disabled = true; btn.classList.add('opacity-50');
       return;
     }
-    btn.disabled = false; btn.classList.remove('opacity-50');
+    btn.disabled = !!(window.HZ_SERVICE_BUSY && window.HZ_SERVICE_BUSY(b.serverId)); btn.classList.remove('opacity-50');
     if (extUiState.pendingId) {
       extUiState.pendingId = null;
       if (b.lastExtensionStatus === 'accepted') {
@@ -1871,85 +1878,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 1000);
 
-  // تأیید واقعی مسافر: مترجم رسیده است؛ کد امنیتی شروع خدمت نمایش داده می‌شود.
-  const btnArrived = document.getElementById('btn-arrived');
-  if (btnArrived) {
-    btnArrived.addEventListener('click', () => {
-      goToStage(4);
-      window.showAppToast('کد امنیتی را به مترجم اعلام کنید تا خدمت شروع شود', 'where_to_vote');
+  // Showing a code, entering the timer and changing service state all require
+  // a fresh server booking. No local-only start/finish/extension simulation.
+  [['btn-arrived', 'arrived'], ['btn-confirm-start', 'start-check'],
+   ['btn-finish-service', 'finish'], ['btn-extend-one-hour', 'extend']].forEach(([id, action]) => {
+    const button = document.getElementById(id);
+    if (button) button.addEventListener('click', () => {
+      if (window.HZ_SERVICE_ACTION) window.HZ_SERVICE_ACTION(action);
     });
-  }
-
-  // Trip communication and live sharing are unavailable; safety opens the support dialog.
-
-  const btnConfirmStart = document.getElementById('btn-confirm-start');
-  if (btnConfirmStart) {
-    btnConfirmStart.addEventListener('click', () => {
-      const b = readLocalBookings().find(x => x.serverId);
-      if (b && !b.serviceStarted) { window.showAppToast('کد امنیتی را به مترجم اعلام کنید؛ خدمت وقتی مترجم کد را ثبت کند، شروع می‌شود', 'key'); return; }
-      goToStage(5);
-      window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
-    });
-  }
-
-  // مسافر هر وقت خواست خودش خدمت را تمام می‌کند (حتی زودتر)؛ تأیید مترجم لازم نیست و مبلغ کامل پابرجاست.
-  const btnFinishService = document.getElementById('btn-finish-service');
-  if (btnFinishService) {
-    btnFinishService.addEventListener('click', () => {
-      const b = readLocalBookings().find(x => x.serverId);
-      if (!b) { goToStage(6); window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long'); return; }
-      if (b.srvStatus === 'finished') { goToStage(6); return; }
-      let token = null;
-      try { token = localStorage.getItem('hamzaban.token.v1'); } catch (e) {}
-      if (!token) { window.showAppToast('برای پایان خدمت، ورود شما لازم است.', 'error'); return; }
-      fetch('/api/traveler/bookings/' + b.serverId + '/finish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
-      }).then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => {
-          if (ok) window.showAppToast('خدمت تمام شد؛ مبلغ کامل در فاکتور است', 'receipt_long');
-          else window.showAppToast(d.error === 'not_started' ? 'خدمت هنوز با کد امنیتی شروع نشده است.' : 'پایان خدمت انجام نشد. دوباره تلاش کنید.', 'error');
-        })
-        .catch(() => window.showAppToast('پایان خدمت انجام نشد. اتصال اینترنت را بررسی کنید.', 'error'));
-    });
-  }
-
-  // تمدید واقعی: درخواست برای مترجم می‌رود و فقط با تأیید او ساعت و مبلغ اضافه می‌شود.
-  const btnExtendOneHour = document.getElementById('btn-extend-one-hour');
-  if (btnExtendOneHour) {
-    btnExtendOneHour.addEventListener('click', () => {
-      const b = readLocalBookings().find(x => x.serverId);
-      if (!b) { // حالت محلی بدون رزرو سرور
-        if (state.hours >= CONFIG.hoursMax) { window.showAppToast('حداکثر مدت همراهی ' + toPersianDigits(CONFIG.hoursMax) + ' ساعت است', 'info'); return; }
-        state.hours += 1;
-        updatePricing();
-        updateInvoice();
-        window.showAppToast('خدمت ۱ ساعت تمدید شد. مبلغ کل جدید: ' + formatToman(state.lastPrice.total), 'add_circle');
-        return;
-      }
-      if (b.pendingExtension) { window.showAppToast('درخواست تمدید قبلی منتظر پاسخ مترجم است', 'schedule'); return; }
-      let token = null;
-      try { token = localStorage.getItem('hamzaban.token.v1'); } catch (e) {}
-      if (!token) { window.showAppToast('برای تمدید، ورود شما لازم است.', 'error'); return; }
-      fetch('/api/traveler/bookings/' + b.serverId + '/extend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ extra_hours: 1 })
-      }).then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => {
-          if (ok) {
-            const list = readLocalBookings();
-            const f = list.find(x => x.serverId === b.serverId);
-            if (f) { f.pendingExtension = { id: d.id, extra_hours: 1 }; try { localStorage.setItem('hamzaban.bookings.v1', JSON.stringify(list)); } catch (e) {} }
-            window.showAppToast('درخواست تمدید برای مترجم فرستاده شد؛ منتظر تأیید او هستیم', 'more_time');
-          } else {
-            const msgs = { extension_not_allowed: 'تمدید فقط وقتی خدمت در جریان است ممکن است.', extension_pending: 'یک درخواست تمدید منتظر پاسخ مترجم است.', extension_limit: 'سقف مدت خدمت پر شده است.' };
-            window.showAppToast(msgs[d.error] || 'تمدید انجام نشد. دوباره تلاش کنید.', 'error');
-          }
-        })
-        .catch(() => window.showAppToast('تمدید انجام نشد. اتصال اینترنت را بررسی کنید.', 'error'));
-    });
-  }
+  });
 
   // Payment Selection
   const payMethodOnline = document.getElementById('pay-method-online');
@@ -2117,6 +2054,14 @@ document.addEventListener('DOMContentLoaded', function() {
     return srvCall('GET', '/traveler/bookings', null, { signal: signal }).then(function (d) {
       if (srvToken() !== sessionToken || revision !== bookingRevision) return null;
       if (!d || !Array.isArray(d.bookings)) return null;
+      // Reject malformed snapshots before they can drive the stage/timer loop.
+      if (!d.bookings.every(function (row) {
+        return row && Number.isInteger(row.id) && row.id > 0 && ['instant', 'scheduled'].includes(row.kind) &&
+          !!localStateOf(row) && Number.isFinite(row.total) && row.total >= 0 && Number.isFinite(row.hours) && row.hours >= 1 &&
+          typeof row.service_started === 'boolean' && (!row.service_started ||
+            (Number.isFinite(Date.parse(row.service_started_at)) &&
+             (!['finished', 'done'].includes(row.status) || Number.isFinite(Date.parse(row.finished_at)))));
+      })) return null;
       var list = getBk(), changed = false;
       d.bookings.forEach(function (sb) {
         if (pendingAtStart.includes(String(sb.id)) && sb.id !== allowPendingId) return;
@@ -2182,6 +2127,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var submit = $('btn-main-submit');
     submit.disabled = submitBusy || (window.HZ_FEAT && !window.HZ_FEAT('traveler_booking'));
     if (submitBusy) submit.setAttribute('aria-busy', 'true'); else submit.removeAttribute('aria-busy');
+    var serviceId = window.HZ_BOOKING_SCREEN && window.HZ_BOOKING_SCREEN.serviceId();
+    var service = getBk().find(function (b) { return b.serverId === serviceId; });
+    ['btn-arrived', 'btn-confirm-start', 'btn-finish-service', 'btn-extend-one-hour', 'btn-approve-finish', 'btn-reject-finish'].forEach(function (id) {
+      var button = $(id), pending = !!bookingActions[serviceId];
+      button.disabled = pending || (id === 'btn-extend-one-hour' && !!(service && service.pendingExtension));
+      if (pending) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+    });
     var active = searchBooking(), busy = active && !!bookingActions[active.serverId];
     ['btn-cancel-search', 'btn-cancel-nomatch', 'btn-retry-search', 'btn-to-scheduled'].forEach(function (id) {
       var button = $(id); button.disabled = !!busy;
@@ -2227,6 +2179,85 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function cancelServer(b) { return bookingAction(b, 'cancel'); }
   function retryServer(b) { return bookingAction(b, 'retry'); }
+  window.HZ_SERVICE_BUSY = function (id) { return !!bookingActions[id]; };
+  window.HZ_SERVICE_ACTION = function (action) {
+    var id = window.HZ_BOOKING_SCREEN && window.HZ_BOOKING_SCREEN.serviceId();
+    return serviceAction(getBk().find(function (b) { return b.serverId === id; }), action);
+  };
+  function serviceAction(b, action) {
+    if (!b || !b.serverId || !srvToken()) {
+      toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return Promise.resolve(false);
+    }
+    if (bookingSubmissionPending || bookingActions[b.serverId] || logoutPending || deletePending) return Promise.resolve(false);
+    var id = b.serverId, token = srvToken();
+    bookingActions[id] = action; bookingRevision++; updateBookingActionControls();
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 10000);
+    function readFresh() {
+      if (srvToken() !== token) return Promise.reject(new Error('session_changed'));
+      return syncServer(id, controller.signal).then(function (d) {
+        if (srvToken() !== token) throw new Error('session_changed');
+        var row = d && d.bookings.find(function (r) { return r.id === id; });
+        if (!row) throw new Error('state_not_confirmed');
+        return row;
+      });
+    }
+    return readFresh().then(function (before) {
+      if (before.status !== 'matched') throw new Error('not_in_service');
+      if (action === 'arrived') {
+        if (!/^[0-9]{5}$/.test(before.service_code || '')) throw new Error('no_service_code');
+        return before;
+      }
+      if (before.service_started !== true || !Number.isFinite(Date.parse(before.service_started_at))) throw new Error('not_started');
+      if (action === 'start-check') return before;
+      if (action === 'extend' && before.pending_extension) throw new Error('extension_pending');
+      if ((action === 'finish-approve' || action === 'finish-reject') && before.finish_requested !== true) throw new Error('no_finish_request');
+      return srvCall('POST', '/traveler/bookings/' + id + '/' + action,
+        action === 'extend' ? { extra_hours: 1 } : null, { signal: controller.signal }).then(function (receipt) {
+          if (action === 'extend') {
+            if (!receipt || receipt.pending !== true || !Number.isInteger(receipt.id) || receipt.id <= 0 || receipt.extra_hours !== 1 ||
+                !Number.isFinite(receipt.extra_total) || receipt.extra_total < 0 || !Number.isFinite(receipt.new_total) ||
+                !Number.isFinite(Date.parse(receipt.expires_at))) throw new Error('extension_not_confirmed');
+          } else {
+            if (!receipt || receipt.ok !== true) throw new Error('finish_not_confirmed');
+            if (action === 'finish-reject') {
+              if (receipt.status !== 'matched') throw new Error('finish_not_confirmed');
+            } else if (receipt.status !== 'finished' || receipt.finished_by !== (action === 'finish' ? 'traveler' : 'translator') ||
+                       !Number.isFinite(receipt.total) || receipt.total < 0) throw new Error('finish_not_confirmed');
+          }
+          return readFresh().then(function (after) {
+            if (action === 'extend') {
+              if (after.status !== 'matched' || !after.pending_extension || after.pending_extension.id !== receipt.id) throw new Error('state_not_confirmed');
+            } else if (action === 'finish-reject') {
+              if (after.status !== 'matched' || after.finish_requested !== false) throw new Error('state_not_confirmed');
+            } else if (!['finished', 'done'].includes(after.status) || after.finished_by !== receipt.finished_by ||
+                       after.total !== receipt.total || !Number.isFinite(Date.parse(after.finished_at))) throw new Error('state_not_confirmed');
+            return after;
+          });
+        });
+    }).then(function (actual) {
+      if (srvToken() !== token) return false;
+      if (window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.serviceConfirmed(action, id);
+      var messages = {
+        arrived: 'کد امنیتی را به مترجم اعلام کنید تا خدمت شروع شود',
+        'start-check': 'شروع خدمت با کد امنیتی در سرور تأیید شد.',
+        extend: 'درخواست تمدید برای مترجم فرستاده شد؛ منتظر تأیید او هستیم',
+        finish: 'خدمت تمام شد؛ مبلغ کامل در فاکتور است',
+        'finish-approve': 'خدمت تمام شد؛ مبلغ کامل در فاکتور است',
+        'finish-reject': 'خدمت ادامه پیدا می‌کند'
+      };
+      toast(messages[action], action === 'extend' ? 'more_time' : 'check_circle'); return true;
+    }).catch(function (e) {
+      if (srvToken() !== token) return false;
+      var messages = {
+        not_started: 'خدمت هنوز با کد امنیتی در سرور شروع نشده است.',
+        extension_pending: 'درخواست تمدید قبلی منتظر پاسخ مترجم است'
+      };
+      toast(messages[e && e.message] || 'عملیات خدمت تأیید نشد. وضعیت را بررسی کنید و دوباره تلاش کنید.', 'error'); return false;
+    }).finally(function () {
+      clearTimeout(timeout); delete bookingActions[id]; bookingRevision++; updateBookingActionControls();
+    });
+  }
+
   // Booking creation requires a confirmed server record; never create a local-only success.
   function submitBooking(s, kind) {
     if (bookingSubmissionPending || Object.keys(bookingActions).length || logoutPending || deletePending || !window.HZ_FEAT('traveler_booking')) return;
@@ -2445,10 +2476,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (b.srvStatus === 'matched' && !b.pendingChange && window.HZ_FEAT('booking_change')) act.appendChild(bkAction('تغییر', 'text-secondary font-bold text-[11.5px]', function () { srvChangeSheet(b); }));
         if (b.srvStatus === 'matched' && b.finishRequested) {
           act.appendChild(bkAction('قبول پایان', 'text-error font-bold text-[11.5px]', function () {
-            srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-approve').then(function () { window.showAppToast('خدمت تمام شد؛ مبلغ کامل در فاکتور است', 'receipt_long'); syncServer(); }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
+            serviceAction(b, 'finish-approve');
           }));
           act.appendChild(bkAction('ادامه‌ی خدمت', 'text-secondary font-bold text-[11.5px]', function () {
-            srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-reject').then(function () { window.showAppToast('خدمت ادامه پیدا می‌کند', 'schedule'); syncServer(); }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
+            serviceAction(b, 'finish-reject');
           }));
         }
         if (srvOpen && !b.serviceStarted) act.appendChild(bkAction('لغو', 'text-error font-bold text-[11.5px]', function () { cancelServer(b); }));
@@ -2591,20 +2622,9 @@ document.addEventListener('DOMContentLoaded', function() {
       submitBooking(Object.assign(s2, { tab: 'live', statusLabel: STATUS.live, when: 'فوری', mode: 'instant' }), 'instant');
     }
   });
-  // قبول/رد درخواست پایان مترجم روی صفحه‌ی تایمر
-  var btnApproveFinish = $('btn-approve-finish');
-  if (btnApproveFinish) btnApproveFinish.addEventListener('click', function () {
-    var b = lastOpen(); if (!b || !b.serverId) return;
-    srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-approve').then(function () {
-      window.showAppToast('خدمت تمام شد؛ مبلغ کامل در فاکتور است', 'receipt_long'); syncServer();
-    }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
-  });
-  var btnRejectFinish = $('btn-reject-finish');
-  if (btnRejectFinish) btnRejectFinish.addEventListener('click', function () {
-    var b = lastOpen(); if (!b || !b.serverId) return;
-    srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-reject').then(function () {
-      window.showAppToast('خدمت ادامه پیدا می‌کند', 'schedule'); syncServer();
-    }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
+  // Timer controls use the same per-booking lock as the booking cards.
+  [['btn-approve-finish', 'finish-approve'], ['btn-reject-finish', 'finish-reject']].forEach(function (pair) {
+    $(pair[0]).addEventListener('click', function () { window.HZ_SERVICE_ACTION(pair[1]); });
   });
   // لغو از صفحه‌ی جستجو: رزرو روی سرور باید لغو شود، وگرنه همگام‌سازی آن را دوباره «در جستجو» می‌کند
   ['btn-cancel-search', 'btn-cancel-nomatch'].forEach(function (id) {
