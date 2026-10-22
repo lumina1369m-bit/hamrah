@@ -22,18 +22,24 @@ async def main():
         b = await p.chromium.launch(args=['--no-sandbox'])
         ctx = await b.new_context(viewport={'width': 390, 'height': 900})
         await ctx.route(re.compile(r'https://(unpkg\.com|cdn\.|fonts\.).*'), lambda r: r.abort())
+        place = 'لغو جستجو ' + str(random.randint(100, 999))
+        await ctx.route('https://nominatim.openstreetmap.org/**', lambda r: r.fulfill(json={'display_name': place}))
+        await ctx.route('https://*.tile.openstreetmap.org/**', lambda r: r.abort())
         P = await ctx.new_page(); errs = []; P.on('pageerror', lambda e: errs.append(str(e)[:120]))
         await P.goto(BASE + '/traveler/index.html'); await P.wait_for_timeout(500)
         await P.evaluate(TRAV_LOGIN, '9' + str(random.randint(100000000, 999999999)))
         await P.goto(BASE + '/traveler/app.html'); await P.wait_for_timeout(1200)
-        place = 'لغو جستجو ' + str(random.randint(100, 999))
-        created = await P.evaluate("""async (place)=>{const t=localStorage.getItem('hamzaban.token.v1');
-            const r=await fetch('/api/traveler/bookings',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},
-              body:JSON.stringify({kind:'instant',origin_lang:'ar',dest_lang:'fa',place,traveler_name:'علی رضایی'})});
-            return {status:r.status, body: await r.json()};}""", place)
+        await P.wait_for_function('() => !!window.HZ_NEAREST_CITY()')
+        await P.wait_for_function('(p) => document.getElementById("selected-location-title").textContent === p', arg=place)
+        await P.locator('#confirm-location-btn').click()
+        await P.locator('#btn-toggle-car').click()
+        async with P.expect_response(lambda r: r.url.endswith('/api/traveler/bookings') and r.request.method == 'POST') as pending:
+            await P.locator('#btn-main-submit').click()
+        response = await pending.value
+        created = {'status': response.status, 'body': await response.json()}
         check('رزرو فوری ساخته شد', created['status'] == 201)
         bid = created['body']['id']
-        await P.wait_for_timeout(6000) # همگام‌سازی رزرو ساخته‌شده از API به فهرست محلی
+        await P.locator('#stage-2').wait_for(state='visible')
         await P.evaluate("()=>document.getElementById('btn-cancel-search').click()")
         await P.wait_for_timeout(1500)
         st = await P.evaluate("""async (bid)=>{const t=localStorage.getItem('hamzaban.token.v1');

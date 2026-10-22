@@ -1558,6 +1558,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let searchLeft = 0;
   let sessionStart = 0;
   let serviceBookingId = null;
+  let searchBookingId = null;
   let restoredService = false;
   function serviceBooking() {
     const list = readLocalBookings().filter(b => !window.hzSyncedBookingIds || window.hzSyncedBookingIds.includes(b.serverId));
@@ -1579,7 +1580,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const el = document.getElementById('search-timer-display');
     const step = () => {
       if (el) el.textContent = toPersianDigits(`${pad2(Math.floor(searchLeft / 60))}:${pad2(searchLeft % 60)}`);
-      if (searchLeft <= 0) { clearInterval(searchTimer); showNoMatch(); return; }
+      if (searchLeft <= 0) { clearInterval(searchTimer); return; } // Only server status may declare no match.
       searchLeft--;
     };
     step();
@@ -1591,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (s2) s2.classList.add('hidden');
     const nm = document.getElementById('nomatch-block');
     if (nm) nm.classList.remove('hidden');
-    window.showAppToast('مترجمی پیدا نشد. هیچ هزینه‌ای کسر نشده است', 'search_off');
+    stopSearchTimer();
   }
   // کد امنیتی شروع خدمت را سرور هنگام ثبت رزرو صادر می‌کند؛ مرورگر فقط همان کد همگام‌شده را نمایش می‌دهد
   function setSecurityCode() {
@@ -1770,27 +1771,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Stage Transitions
-  if (btnMainSubmit) {
-    btnMainSubmit.addEventListener('click', () => {
-      if (state.bookingMode === 'scheduled') {
-        if (!slotAllowed(state.scheduledTime)) { window.showAppToast('حداقل ۲ ساعت قبل از موعد می‌توان رزرو کرد', 'schedule'); return; }
-        window.showAppToast('رزرو زمان‌دار ثبت شد. تطبیق یک ساعت قبل از موعد انجام می‌شود', 'event_available');
-        return;
+  // The request bridge is called only after an authenticated server response.
+  window.HZ_BOOKING_SCREEN = {
+    currentId: () => searchBookingId,
+    confirmed: (action, id) => {
+      if (action === 'created') {
+        searchBookingId = id; serviceBookingId = null; sessionStart = 0; goToStage(2);
+      } else if (searchBookingId === id) {
+        if (action === 'retry') goToStage(2);
+        else if (action === 'cancel' || action === 'convert') { searchBookingId = null; goToStage(1); }
       }
-      serviceBookingId = null; sessionStart = 0;
-      goToStage(2);
-      window.showAppToast('رادار جستجوی مترجم فعال شد', 'radar');
-    });
-  }
-
-  const btnCancelSearch = document.getElementById('btn-cancel-search');
-  if (btnCancelSearch) {
-    btnCancelSearch.addEventListener('click', () => {
-      goToStage(1);
-      window.showAppToast('درخواست بدون هزینه لغو شد', 'cancel');
-    });
-  }
+    }
+  };
 
   // جلو رفتن صفحه‌ها فقط با وضعیت واقعی رزرو روی سرور است (بدون دکمه‌ی شبیه‌سازی):
   // تطبیق‌یافتن مترجم ← صفحه‌ی «در راه است»، شروع خدمت با کد امنیتی ← تایمر، پایان خدمت ← فاکتور.
@@ -1842,13 +1834,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('location-picker-bar').classList.add('hidden');
         bottomSheet.classList.remove('hidden');
         goToStage(active.srvStatus === 'finished' ? 6 : 5);
+      } else if (state.currentStage === 1) {
+        const searching = list.find(b => b.serverId && b.mode === 'instant' &&
+          ['searching', 'no_match', 'matched'].includes(b.srvStatus) && !b.serviceStarted &&
+          (!window.hzSyncedBookingIds || window.hzSyncedBookingIds.includes(b.serverId)));
+        if (searching) {
+          searchBookingId = searching.serverId;
+          document.getElementById('location-picker-bar').classList.add('hidden');
+          bottomSheet.classList.remove('hidden'); goToStage(2);
+        }
       }
     }
     if (state.currentStage === 6) { updateInvoice(); return; }
     if (state.currentStage !== 2 && state.currentStage !== 3 && state.currentStage !== 4 && state.currentStage !== 5) return;
-    const b = list.find(x => x.serverId === serviceBookingId) || list.find(x => x.serverId && ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched', 'finished'].indexOf(x.srvStatus) !== -1)
+    const b = (state.currentStage <= 4 && searchBookingId ? list.find(x => x.serverId === searchBookingId) : null) || list.find(x => x.serverId === serviceBookingId) || list.find(x => x.serverId && ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched', 'finished'].indexOf(x.srvStatus) !== -1)
       || list.find(x => x.serverId);
     if (!b) return;
+    if (b.srvStatus === 'cancelled' && state.currentStage <= 4) { searchBookingId = null; goToStage(1); return; }
     if (state.currentStage === 2) {
       if (b.srvStatus === 'matched') { fillMatchedTranslator(b); goToStage(3); window.showAppToast('مترجم سفر را پذیرفت', 'check_circle'); }
       else if (b.srvStatus === 'no_match' || b.srvStatus === 'unmatched_ask') showNoMatch();
@@ -2024,13 +2026,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // No-match actions
-  const btnRetry = document.getElementById('btn-retry-search');
-  if (btnRetry) btnRetry.addEventListener('click', () => { goToStage(2); window.showAppToast('تلاش دوباره از شعاع اولیه آغاز شد', 'radar'); });
-  const btnToSched = document.getElementById('btn-to-scheduled');
-  if (btnToSched) btnToSched.addEventListener('click', () => { goToStage(1); btnModeScheduled.click(); window.showAppToast('حالا زمان حضور را انتخاب کنید', 'event_available'); });
-  const btnCancelNo = document.getElementById('btn-cancel-nomatch');
-  if (btnCancelNo) btnCancelNo.addEventListener('click', () => { goToStage(1); window.showAppToast('درخواست بدون هزینه لغو شد', 'cancel'); });
+  // No-match actions are bound to the real reservation API below.
 
   // Default schedule: امروز؛ اگر هیچ ساعتی امروز مجاز نیست، فردا (در همین ماه)
   let defDay = todayJ[2];
@@ -2073,6 +2069,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ---------- همگام‌سازی رزروها با سرور ----------
   var KEY_TOKEN_T = 'hamzaban.token.v1';
+  var bookingActions = Object.create(null), bookingRevision = 0, bookingSubmissionPending = false;
   function srvToken() { try { return localStorage.getItem(KEY_TOKEN_T); } catch (e) { return null; } }
   function srvCall(method, path, body, options) {
     var t = srvToken(); if (!t) return Promise.reject({ status: 401 });
@@ -2112,14 +2109,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     return null;
   }
-  function syncServer() {
+  function syncServer(allowPendingId, signal) {
     if (deletePending) return; // Do not race deletion confirmation with background polling.
     var sessionToken = srvToken();
     if (!sessionToken) return;
-    srvCall('GET', '/traveler/bookings').then(function (d) {
-      if (srvToken() !== sessionToken) return;
+    var revision = bookingRevision, pendingAtStart = Object.keys(bookingActions);
+    return srvCall('GET', '/traveler/bookings', null, { signal: signal }).then(function (d) {
+      if (srvToken() !== sessionToken || revision !== bookingRevision) return null;
+      if (!d || !Array.isArray(d.bookings)) return null;
       var list = getBk(), changed = false;
-      (d.bookings || []).forEach(function (sb) {
+      d.bookings.forEach(function (sb) {
+        if (pendingAtStart.includes(String(sb.id)) && sb.id !== allowPendingId) return;
         var lb = list.find(function (x) { return x.serverId === sb.id; });
         var m = localStateOf(sb);
         if (!m) return;
@@ -2129,6 +2129,11 @@ document.addEventListener('DOMContentLoaded', function() {
             when: sb.scheduled_at ? (window.jLabel ? window.jLabel(Date.parse(sb.scheduled_at)) : sb.scheduled_at) : 'فوری',
             startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started, serviceStartedAt: sb.service_started_at || null, finishedAt: sb.finished_at || null, hoursNum: sb.hours || null, pendingExtension: sb.pending_extension || null, lastExtensionStatus: sb.last_extension_status || null, finishRequested: !!sb.finish_requested, finishedBy: sb.finished_by || null };
           list.unshift(lb); changed = true;
+        }
+        var startAt = sb.scheduled_at ? Date.parse(sb.scheduled_at) : null;
+        if (lb.mode !== sb.kind || lb.startAt !== startAt) {
+          lb.mode = sb.kind; lb.startAt = startAt;
+          lb.when = startAt ? (window.jLabel ? window.jLabel(startAt) : sb.scheduled_at) : 'فوری'; changed = true;
         }
         if (lb.tab !== m.tab || lb.statusLabel !== m.label || lb.srvStatus !== sb.status) {
           lb.tab = m.tab; lb.statusLabel = m.label; lb.srvStatus = sb.status; changed = true;
@@ -2158,24 +2163,75 @@ document.addEventListener('DOMContentLoaded', function() {
       if (changed) { setBk(list); renderBookings(); }
       window.hzSyncedBookingIds = (d.bookings || []).map(b => b.id);
       window.hzBookingsSynced = true;
-    }).catch(function () {});
+      return d;
+    }).catch(function () { return null; });
   }
-  function cancelServer(b) {
-    srvCall('POST', '/traveler/bookings/' + b.serverId + '/cancel').then(function (d) {
-      var list = getBk(); var f = list.find(function (x) { return x.serverId === b.serverId; });
-      if (f) { f.tab = 'cancelled'; f.statusLabel = STATUS.cancelled; f.srvStatus = 'cancelled'; f.cancelFee = d.fee_percent ? d.fee_percent + '٪' : 0; setBk(list); }
-      renderBookings();
-      window.showAppToast(d.fee_percent ? 'رزرو لغو شد. کارمزد طبق قوانین اعمال می‌شود.' : 'رزرو بدون هزینه لغو شد', 'cancel');
-    }).catch(function () { window.showAppToast('لغو انجام نشد. دوباره تلاش کنید.', 'error'); });
+  function searchBooking() {
+    var id = window.HZ_BOOKING_SCREEN && window.HZ_BOOKING_SCREEN.currentId();
+    return getBk().find(function (b) { return b.serverId === id; });
   }
-  function retryServer(b) {
-    srvCall('POST', '/traveler/bookings/' + b.serverId + '/retry').then(function () {
-      window.showAppToast('جستجو دوباره شروع شد', 'search'); syncServer();
-    }).catch(function () { window.showAppToast('تلاش دوباره ممکن نیست.', 'error'); });
+  function updateBookingActionControls() {
+    document.querySelectorAll('[data-booking-id]').forEach(function (group) {
+      var busy = !!bookingActions[group.dataset.bookingId];
+      group.querySelectorAll('button').forEach(function (button) {
+        button.disabled = busy;
+        if (busy) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+      });
+    });
+    var submitBusy = bookingSubmissionPending || Object.keys(bookingActions).length > 0;
+    var submit = $('btn-main-submit');
+    submit.disabled = submitBusy || (window.HZ_FEAT && !window.HZ_FEAT('traveler_booking'));
+    if (submitBusy) submit.setAttribute('aria-busy', 'true'); else submit.removeAttribute('aria-busy');
+    var active = searchBooking(), busy = active && !!bookingActions[active.serverId];
+    ['btn-cancel-search', 'btn-cancel-nomatch', 'btn-retry-search', 'btn-to-scheduled'].forEach(function (id) {
+      var button = $(id); button.disabled = !!busy;
+      if (busy) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+    });
   }
-  // ثبت رزرو: اگر کاربر با شماره وارد شده، روی سرور ثبت می‌شود؛ وگرنه مثل قبل محلی است
+  function bookingAction(b, action, body) {
+    if (!b || !b.serverId || !srvToken()) {
+      toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return Promise.resolve(false);
+    }
+    if (bookingSubmissionPending || bookingActions[b.serverId] || logoutPending || deletePending) return Promise.resolve(false);
+    var token = srvToken(), id = b.serverId;
+    bookingActions[id] = action; bookingRevision++; updateBookingActionControls();
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 10000);
+    return srvCall('POST', '/traveler/bookings/' + id + '/' + action, body, { signal: controller.signal }).then(function (d) {
+      if (!d || d.ok !== true) throw new Error('action_not_confirmed');
+      if (srvToken() !== token) return false;
+      if (action === 'cancel') {
+        if (typeof d.fee_percent !== 'number' || !Number.isFinite(d.fee_percent) || d.fee_percent < 0 || d.fee_percent > 100) throw new Error('invalid_cancel_fee');
+        var found = findBk(b.id);
+        if (found.b) { found.b.tab = 'cancelled'; found.b.statusLabel = STATUS.cancelled; found.b.srvStatus = 'cancelled'; found.b.cancelFee = d.fee_percent; setBk(found.list); }
+        renderBookings();
+        if (window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.confirmed(action, id);
+        toast('لغو رزرو در سرور تأیید شد.', 'cancel'); return true;
+      }
+      // A retry/conversion receipt alone must not fabricate a new search state.
+      return syncServer(id, controller.signal).then(function (fresh) {
+        if (srvToken() !== token) return false;
+        var actual = fresh && fresh.bookings.find(function (row) { return row.id === id; });
+        if (!actual) throw new Error('state_not_confirmed');
+        if (action === 'retry' && !['searching', 'matching', 'matched'].includes(actual.status)) throw new Error('state_not_confirmed');
+        if (action === 'convert' && actual.kind !== 'scheduled') throw new Error('state_not_confirmed');
+        if (window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.confirmed(action, id);
+        toast(action === 'retry' ? 'جستجوی دوباره در سرور تأیید شد.' : 'تبدیل رزرو در سرور تأیید شد.', 'check_circle'); return true;
+      });
+    }).catch(function (e) {
+      if (srvToken() !== token) return false;
+      toast(e && e.message === 'service_already_started' ? 'خدمت شروع شده است؛ برای پایان زودتر، پایان خدمت را انتخاب کنید. مبلغ کامل پابرجاست.' : 'عملیات رزرو تأیید نشد. وضعیت را بررسی کنید و دوباره تلاش کنید.', 'error');
+      return false;
+    }).finally(function () {
+      clearTimeout(timeout); delete bookingActions[id]; bookingRevision++; updateBookingActionControls();
+    });
+  }
+  function cancelServer(b) { return bookingAction(b, 'cancel'); }
+  function retryServer(b) { return bookingAction(b, 'retry'); }
+  // Booking creation requires a confirmed server record; never create a local-only success.
   function submitBooking(s, kind) {
-    if (!srvToken()) { addBooking(s); return; }
+    if (bookingSubmissionPending || Object.keys(bookingActions).length || logoutPending || deletePending || !window.HZ_FEAT('traveler_booking')) return;
+    if (!srvToken()) { toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return; }
+    var submitToken = srvToken();
     var uu = load(KEY_USER, null) || {};
     var body = {
       kind: kind,
@@ -2192,13 +2248,24 @@ document.addEventListener('DOMContentLoaded', function() {
     if (cityId) body.city_id = cityId;
     if (s.lat != null && s.lng != null) { body.lat = s.lat; body.lng = s.lng; }
     if (kind === 'scheduled') body.scheduled_at = new Date(s.startAt).toISOString();
-    srvCall('POST', '/traveler/bookings', body).then(function (sb) {
+    bookingSubmissionPending = true;
+    var submit = $('btn-main-submit'); submit.disabled = true; submit.setAttribute('aria-busy', 'true');
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 10000);
+    srvCall('POST', '/traveler/bookings', body, { signal: controller.signal }).then(function (sb) {
+      if (!sb || !Number.isInteger(sb.id) || sb.id <= 0 || sb.kind !== kind || !localStateOf(sb) || !Number.isFinite(sb.total)) throw new Error('booking_not_confirmed');
+      if (srvToken() !== submitToken) return;
+      s.total = sb.total; s.base = sb.base; s.tax = sb.tax; s.amount = fmtT(sb.total);
       var m = localStateOf(sb) || {};
       s.serverId = sb.id; s.srvStatus = sb.status; s.serviceCode = sb.service_code || null; s.tab = m.tab || s.tab; s.statusLabel = m.label || s.statusLabel;
       addBooking(s); syncServer();
+      if (kind === 'instant' && window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.confirmed('created', sb.id);
+      toast('ثبت رزرو در سرور تأیید شد.', 'check_circle');
     }).catch(function (e) {
+      if (srvToken() !== submitToken) return;
       var msgs = { too_soon: 'زمان قرار باید حداقل ۲ ساعت بعد از اکنون باشد.', invalid_place: 'مکان ملاقات را انتخاب کنید.' };
-      window.showAppToast(msgs[e.message] || 'ثبت رزرو انجام نشد. اتصال اینترنت را بررسی کنید.', 'error');
+      window.showAppToast(msgs[e.message] || 'ثبت رزرو تأیید نشد. پیش از تلاش دوباره، فهرست رزروها را بررسی کنید.', 'error');
+    }).finally(function () {
+      clearTimeout(timeout); bookingSubmissionPending = false; submit.disabled = !window.HZ_FEAT('traveler_booking'); submit.removeAttribute('aria-busy');
     });
   }
   // ---- تغییر و تبدیل رزرو روی سرور (سند ۷.۱ و ۶) ----
@@ -2283,7 +2350,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function srvConvertSheet(b) {
     var ui = {};
-    openModal('تبدیل به رزرو زمان‌دار', function (body) {
+    var modal = openModal('تبدیل به رزرو زمان‌دار', function (body) {
       var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
       n.textContent = 'مترجمی برای الان پیدا نشد. زمان قرار را انتخاب کنید؛ مترجم یک ساعت قبل از قرار و در صورت نیاز با شعاع بزرگ‌تر جستجو می‌شود. حداقل ۲ ساعت بعد از اکنون.';
       body.appendChild(n);
@@ -2294,12 +2361,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!ui.dt.date.value) { window.showAppToast('تاریخ را انتخاب کنید', 'error'); return false; }
         var d = slotDate(ui.dt.date.value, ui.dt.slot.value);
         if (d.getTime() - Date.now() < 2 * 3600 * 1000) { window.showAppToast(srvErrText({ message: 'too_soon' }), 'error'); return false; }
-        srvCall('POST', '/traveler/bookings/' + b.serverId + '/convert', { scheduled_at: d.toISOString() }).then(function () {
-          window.showAppToast('رزرو زمان‌دار شد', 'info'); syncServer();
-        }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
-        return true;
+        bookingAction(b, 'convert', { scheduled_at: d.toISOString() }).then(function (ok) { if (ok) modal.remove(); });
+        return false;
       } }
     ]);
+    modal.dataset.bookingId = String(b.serverId);
   }
 
   // ---- پایان خدمت و پرداخت (سند ۷.۳) ----
@@ -2341,12 +2407,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var left = Math.max(0, Math.ceil((Date.parse(pc.expires_at) - Date.now()) / 60000));
     return 'درخواست تغییر در انتظار پاسخ مترجم است (حدود ' + faDigits(left) + ' دقیقه).';
   }
-  function lastOpen() { return getBk().find(function (b) { return b.tab === 'live' || b.tab === 'pending' || b.tab === 'upcoming'; }); }
-  function patchLast(tab) {
-    var list = getBk(); var b = list.find(function (x) { return x.tab === 'live' || x.tab === 'pending' || x.tab === 'upcoming'; });
-    if (b) { b.tab = tab; setBk(list); renderBookings(); }
-  }
+  function lastOpen() { return getBk().find(function (b) { return b.serverId && (b.tab === 'live' || b.tab === 'pending' || b.tab === 'upcoming'); }); }
   function renderBookings() {
+    updateBookingActionControls();
     var tabs = $('bk-tabs'); tabs.innerHTML = '';
     TABS.forEach(function (t) {
       var b = document.createElement('button'); b.type = 'button';
@@ -2360,6 +2423,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!items.length) { list.innerHTML = '<div class="neu-card rounded-2xl p-6 text-center text-[12px] text-on-surface-variant">در این بخش رزروی نیست.</div>'; return; }
     items.forEach(function (b) {
       var card = document.createElement('article');
+      if (b.serverId) card.dataset.bookingId = String(b.serverId);
       card.className = 'neu-card rounded-2xl p-3 flex flex-col gap-2 text-[12px]';
       card.innerHTML = '<div class="flex justify-between items-center"><span class="font-extrabold"></span><span class="text-[10px] font-bold text-secondary"></span></div>' +
         '<div class="text-[11px] text-on-surface-variant flex flex-wrap gap-x-3 gap-y-1"><span class="b-when"></span><span class="b-field"></span><span class="b-hours"></span></div>' +
@@ -2387,20 +2451,24 @@ document.addEventListener('DOMContentLoaded', function() {
             srvCall('POST', '/traveler/bookings/' + b.serverId + '/finish-reject').then(function () { window.showAppToast('خدمت ادامه پیدا می‌کند', 'schedule'); syncServer(); }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
           }));
         }
-        if (srvOpen) act.appendChild(bkAction('لغو', 'text-error font-bold text-[11.5px]', function () { cancelServer(b); }));
-      } else if (b.tab === 'pending' || b.tab === 'upcoming') {
-        if (b.rate) act.appendChild(bkAction('ویرایش', 'text-secondary font-bold text-[11.5px]', function () { openEdit(b); }));
-        act.appendChild(bkAction('لغو', 'text-error font-bold text-[11.5px]', function () { openCancel(b); }));
+        if (srvOpen && !b.serviceStarted) act.appendChild(bkAction('لغو', 'text-error font-bold text-[11.5px]', function () { cancelServer(b); }));
+      } else {
+        var legacy = document.createElement('p'); legacy.className = 'text-[11px] text-outline';
+        legacy.textContent = 'این سابقه فقط در مرورگر است؛ عملیات سروری برای آن ممکن نیست.'; card.appendChild(legacy);
+      }
+      if (b.tab === 'cancelled' && Number.isFinite(b.cancelFee)) {
+        var fee = document.createElement('p'), label = document.createElement('span');
+        fee.className = 'text-[11px] text-outline'; label.textContent = 'درصد کارمزد لغو اعلام‌شده از سرور:';
+        fee.appendChild(label); fee.appendChild(document.createTextNode(' ' + fa(b.cancelFee) + '٪')); card.appendChild(fee);
       }
       if (b.tab === 'done') {
         act.appendChild(bkAction('فاکتور', 'text-secondary font-bold text-[11.5px]', function () { openInvoice(b); }));
         act.appendChild(bkAction('PDF', 'text-secondary font-bold text-[11.5px]', function () { printInvoice(b); }));
       }
       if (b.pendingChange) { var pn = document.createElement('p'); pn.className = 'text-[11px] font-bold text-secondary'; pn.textContent = pendingChangeText(b.pendingChange); card.appendChild(pn); }
-      var hl = hoursLeftOf(b);
-      if (b.tab === 'pending' && b.startAt && hl !== null && hl * 60 <= CONFIG.retryPromptMin && hl > 0 && !b.retried) card.appendChild(retryBanner(b));
       list.appendChild(card);
     });
+    updateBookingActionControls();
   }
 
   var printStyle = document.createElement('style');
@@ -2422,11 +2490,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ---------- رزروها: ویرایش، لغو با کارمزد مرحله‌ای، فاکتور، یادآوری ۱۵ دقیقه‌ای (سند ۶.۵، ۷، ۹.۲) ----------
-  function calcTotals(rate, hours, car) {
-    var base = (rate + (car ? CONFIG.carFeePerHour : 0)) * hours;
-    var tax = Math.round(base * CONFIG.taxRate);
-    return { base: base, tax: tax, total: base + tax };
-  }
   function openModal(title, buildBody, actions) {
     var old = document.getElementById('bk-modal'); if (old) old.remove();
     var wrap = document.createElement('div');
@@ -2454,149 +2517,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return wrap;
   }
   function findBk(id) { var list = getBk(); return { list: list, b: list.find(function (x) { return x.id === id; }) }; }
-  function hoursLeftOf(b) { return b.startAt ? (b.startAt - Date.now()) / 3600000 : null; }
-
-  // کارمزد لغو (سند ۷.۲): فوری یا بیش از ۲۴ ساعت قبل از موعد = رایگان؛ از ۲۴ ساعت تا تطبیق = درصد یک ساعت؛ بعد از تطبیق = درصد پنل
-  function cancelFee(b) {
-    var left = hoursLeftOf(b);
-    if (left === null || left >= 24) return 0;
-    if (b.tab === 'upcoming') return Math.round((b.total || 0) * CONFIG.cancelAfterMatchPct / 100);
-    var oneHour = calcTotals(b.rate || 0, 1, b.car).total;
-    return Math.round(oneHour * CONFIG.cancelBeforeMatchPct / 100);
-  }
-
-  function openCancel(b) {
-    var fee = cancelFee(b);
-    openModal('لغو رزرو', function (body) {
-      var p = document.createElement('p'); p.className = 'leading-7';
-      p.textContent = fee === 0
-        ? 'این رزرو بدون هزینه لغو می‌شود.'
-        : 'کارمزد لغو: ' + fmtT(fee) + '. این مبلغ از روش پرداخت ثبت‌شده کسر می‌شود.';
-      body.appendChild(p);
-      if (b.tab === 'upcoming') {
-        var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
-        n.textContent = 'اگر مترجم در راه باشد، هزینه‌ی رفت‌وآمد او هم جبران می‌شود.';
-        body.appendChild(n);
-      }
-    }, [
-      { label: 'انصراف', onClick: function () { return true; } },
-      { label: 'تأیید لغو', danger: true, onClick: function () {
-        var f = findBk(b.id); if (f.b) { f.b.tab = 'cancelled'; f.b.statusLabel = STATUS.cancelled; f.b.cancelFee = fee; setBk(f.list); }
-        renderBookings();
-        window.showAppToast(fee === 0 ? 'رزرو بدون هزینه لغو شد' : 'رزرو لغو شد. کارمزد: ' + fmtT(fee), 'cancel');
-      } }
-    ]);
-  }
-
-  // ویرایش (سند ۷.۱): توضیحات آزاد است. مدت، خودرو و مسافران قبل از تطبیق؛ بعد از پذیرش فقط با موافقت مترجم
-  function openEdit(b) {
-    var st = { hours: b.hoursNum || 2, car: !!b.car, pax: b.pax || 1, notes: b.notes || '' };
-    var locked = b.tab === 'upcoming';
-    openModal('ویرایش رزرو', function (body) {
-      var lbl = function (t) { var l = document.createElement('label'); l.className = 'text-[11px] text-on-surface-variant font-bold'; l.textContent = t; return l; };
-      var ta = document.createElement('textarea');
-      ta.rows = 3; ta.maxLength = CONFIG.notesMax; ta.value = st.notes;
-      ta.className = 'w-full rounded-xl neu-pressed bg-transparent p-2 text-[12px] outline-none';
-      ta.setAttribute('aria-label', 'توضیحات برای مترجم');
-      body.appendChild(lbl('توضیحات برای مترجم (اختیاری، تا ' + fa(CONFIG.notesMax) + ' نویسه)'));
-      body.appendChild(ta);
-
-      var sum = document.createElement('p'); sum.className = 'text-[12px] font-bold text-primary';
-      var step = function (label, get, set, min, max, disabled) {
-        var row = document.createElement('div'); row.className = 'flex items-center justify-between gap-2';
-        var name = document.createElement('span'); name.textContent = label;
-        var ctrl = document.createElement('div'); ctrl.className = 'flex items-center gap-2';
-        var mk = function (t, d) { var x = document.createElement('button'); x.type = 'button'; x.textContent = t; x.disabled = disabled;
-          x.className = 'w-11 h-11 rounded-xl neu-flat font-bold text-[16px] cursor-pointer disabled:cursor-not-allowed'; x.onclick = function () { var v = get() + d; if (v >= min && v <= max) { set(v); refresh(); } }; return x; };
-        var val = document.createElement('span'); val.className = 'min-w-[2.5rem] text-center font-bold num';
-        ctrl.appendChild(mk('−', -1)); ctrl.appendChild(val); ctrl.appendChild(mk('+', 1));
-        row.appendChild(name); row.appendChild(ctrl); body.appendChild(row);
-        return val;
-      };
-      var hVal = step('مدت (ساعت)', function () { return st.hours; }, function (v) { st.hours = v; }, 1, CONFIG.hoursMax, locked);
-      var carRow = document.createElement('label'); carRow.className = 'flex items-center justify-between gap-2 min-h-[44px]';
-      var carCb = document.createElement('input'); carCb.type = 'checkbox'; carCb.className = 'w-5 h-5 accent-[#006a61]'; carCb.checked = st.car; carCb.disabled = locked;
-      carCb.onchange = function () { st.car = carCb.checked; if (st.car && st.pax > CONFIG.partyMax.car) st.pax = CONFIG.partyMax.car; refresh(); };
-      carRow.appendChild(document.createTextNode('همراه با خودرو')); carRow.appendChild(carCb); body.appendChild(carRow);
-      var pVal = step('تعداد مسافران', function () { return st.pax; }, function (v) { st.pax = v; }, 1, 5, locked);
-      var note = document.createElement('p'); note.className = 'text-[11px] leading-6 text-on-surface-variant';
-      note.textContent = locked
-        ? 'این رزرو پذیرفته شده است. تغییر مدت، خودرو یا مسافران فقط با موافقت مترجم ممکن است و در این نسخه ثبت نمی‌شود. توضیحات همیشه قابل ویرایش است.'
-        : 'تغییر زبان‌ها، زمینه، مدت، خودرو یا مسافران قیمت را دوباره حساب می‌کند. محل و زمان جداگانه ویرایش می‌شوند.';
-      body.appendChild(note);
-      body.appendChild(sum);
-      if (b.mode === 'scheduled' && b.startAt && !locked) {
-        var used = b.changes || 0, left = Math.max(0, CONFIG.maxImportantChanges - used);
-        var info = document.createElement('p'); info.className = 'text-[11px] text-on-surface-variant leading-6';
-        info.textContent = 'تغییر تاریخ، ساعت یا محل جمعاً حداکثر ' + fa(CONFIG.maxImportantChanges) + ' بار مجاز است. باقی‌مانده: ' + fa(left) + '.';
-        body.appendChild(info);
-        var field = function (label, el) { var w = document.createElement('div'); w.className = 'flex flex-col gap-1'; var l = document.createElement('span'); l.className = 'text-[11px] text-on-surface-variant font-bold'; l.textContent = label; w.appendChild(l); w.appendChild(el); body.appendChild(w); };
-        var dsel = document.createElement('select'); dsel.id = 'edit-date'; dsel.className = 'w-full min-h-[44px] rounded-xl neu-pressed bg-transparent px-2 text-[12px]';
-        var base0 = new Date(); base0.setHours(0, 0, 0, 0);
-        var cur = new Date(b.startAt); cur.setHours(0, 0, 0, 0);
-        for (var i = 0; i <= 30; i++) {
-          var dd = new Date(base0); dd.setDate(base0.getDate() + i);
-          var o = document.createElement('option'); o.value = String(dd.getTime()); o.textContent = window.jLabel(dd.getTime());
-          if (dd.getTime() === cur.getTime()) o.selected = true;
-          dsel.appendChild(o);
-        }
-        field('تاریخ', dsel);
-        var tsel = document.createElement('select'); tsel.id = 'edit-time'; tsel.className = dsel.className;
-        var curMin = new Date(b.startAt).getHours() * 60 + new Date(b.startAt).getMinutes();
-        for (var m = 8 * 60; m <= 21 * 60; m += 30) {
-          var to = document.createElement('option'); to.value = String(m);
-          to.textContent = fa(String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'));
-          if (m === curMin) to.selected = true;
-          tsel.appendChild(to);
-        }
-        field('ساعت', tsel);
-        var pin = document.createElement('input'); pin.id = 'edit-place'; pin.type = 'text'; pin.value = b.place || '';
-        pin.className = 'w-full min-h-[44px] rounded-xl neu-pressed bg-transparent px-3 text-[12px] outline-none';
-        pin.setAttribute('aria-label', 'محل ملاقات');
-        field('محل ملاقات', pin);
-        if (left <= 0) { dsel.disabled = true; tsel.disabled = true; pin.disabled = true; }
-      }
-      function refresh() {
-        var maxPax = st.car ? CONFIG.partyMax.car : CONFIG.partyMax.nocar;
-        if (st.pax > maxPax) st.pax = maxPax;
-        hVal.textContent = fa(st.hours);
-        pVal.textContent = fa(st.pax);
-        var rate = b.rate || 0;
-        var t = calcTotals(rate, st.hours, st.car);
-        sum.textContent = locked ? '' : 'مبلغ کل جدید: ' + fmtT(t.total);
-      }
-      refresh();
-    }, [
-      { label: 'انصراف', onClick: function () { return true; } },
-      { label: 'ذخیره', primary: true, onClick: function () {
-        var f = findBk(b.id); if (!f.b) return true;
-        var dsel2 = document.getElementById('edit-date'), tsel2 = document.getElementById('edit-time'), pin2 = document.getElementById('edit-place');
-        if (dsel2 && !dsel2.disabled) {
-          var ns = Number(dsel2.value) + Number(tsel2.value) * 60000;
-          if (ns - Date.now() < CONFIG.minLeadMin * 60000) { window.showAppToast('حداقل فاصله‌ی رزرو ' + fa(CONFIG.minLeadMin / 60) + ' ساعت قبل از موعد است', 'schedule'); return false; }
-          var placeNew = pin2 ? pin2.value.trim() : (f.b.place || '');
-          if (ns !== f.b.startAt || placeNew !== (f.b.place || '')) {
-            if (!placeNew) { window.showAppToast('محل ملاقات را وارد کنید', 'pin_drop'); return false; }
-            f.b.changes = (f.b.changes || 0) + 1;
-            f.b.startAt = ns; f.b.retried = false;
-            f.b.when = window.jLabel(ns) + ' · ' + fa(String(Math.floor(Number(tsel2.value) / 60)).padStart(2, '0') + ':' + String(Number(tsel2.value) % 60).padStart(2, '0'));
-            f.b.place = placeNew;
-          }
-        }
-        var notes = document.querySelector('#bk-modal textarea');
-        f.b.notes = notes ? notes.value.slice(0, CONFIG.notesMax) : f.b.notes;
-        if (!locked && b.rate) {
-          var t = calcTotals(b.rate, st.hours, st.car);
-          f.b.hours = fa(st.hours) + ' ساعت'; f.b.hoursNum = st.hours;
-          f.b.hoursNum = st.hours; f.b.car = st.car; f.b.pax = st.pax;
-          f.b.base = t.base; f.b.tax = t.tax; f.b.total = t.total;
-          f.b.amount = fmtT(t.total);
-        }
-        setBk(f.list); renderBookings();
-        window.showAppToast('تغییرات ذخیره شد', 'check_circle');
-      } }
-    ]);
-  }
 
   // فاکتور رزرو انجام‌شده (سند ۹.۲ و ۱۱.۲)
   // ردیف‌های فاکتور (سند ۷.۳): خدمت، مالیات، کل. رزرو سرور تفکیک را ندارد تا نرخ مالیات تعیین شود؛ فقط کل نشان داده می‌شود
@@ -2635,30 +2555,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, [{ label: 'بستن', primary: true, onClick: function () { return true; } }]);
   }
 
-  // یادآوری ۱۵ دقیقه‌ای (سند ۶.۵): مترجمی پیدا نشده؛ تلاش دوباره یا لغو؟
-  function sweepBookings() {
-    var list = getBk(), changed = false, now = Date.now();
-    list.forEach(function (b) {
-      if (b.tab === 'pending' && b.startAt && b.startAt <= now && !b.serverId) {
-        b.tab = 'cancelled'; b.statusLabel = STATUS.cancelled; b.cancelFee = 0; changed = true;
-        window.showAppToast('پاسخی نرسید؛ رزرو بدون هزینه لغو شد', 'cancel');
-      }
-    });
-    if (changed) { setBk(list); renderBookings(); }
-  }
-  function retryBanner(b) {
-    var box = document.createElement('div');
-    box.className = 'rounded-2xl p-3 flex flex-col gap-2 bg-amber-50 text-amber-900 text-[11.5px]';
-    box.setAttribute('role', 'alert');
-    var t = document.createElement('p'); t.className = 'font-bold'; t.textContent = 'مترجمی هنوز پیدا نشده. تلاش دوباره یا لغو؟'; box.appendChild(t);
-    var row = document.createElement('div'); row.className = 'flex gap-2';
-    var again = document.createElement('button'); again.type = 'button'; again.className = 'flex-1 min-h-[44px] rounded-xl bg-secondary text-on-secondary font-bold cursor-pointer'; again.textContent = 'تلاش دوباره';
-    again.onclick = function () { var f = findBk(b.id); if (f.b) { f.b.retried = true; setBk(f.list); } renderBookings(); window.showAppToast('جستجو با شعاع اولیه دوباره شروع شد', 'search'); };
-    var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'flex-1 min-h-[44px] rounded-xl neu-flat text-error font-bold cursor-pointer'; cancel.textContent = 'لغو';
-    cancel.onclick = function () { var f = findBk(b.id); if (f.b) { f.b.tab = 'cancelled'; f.b.statusLabel = STATUS.cancelled; f.b.cancelFee = 0; setBk(f.list); } renderBookings(); window.showAppToast('رزرو بدون هزینه لغو شد', 'cancel'); };
-    row.appendChild(again); row.appendChild(cancel); box.appendChild(row);
-    return box;
-  }
   function bkAction(label, cls, fn) {
     var btn = document.createElement('button'); btn.type = 'button'; btn.className = cls + ' cursor-pointer'; btn.textContent = label; btn.onclick = fn; return btn;
   }
@@ -2687,7 +2583,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var scheduled = !$('scheduled-panel').classList.contains('hidden');
     if (scheduled) {
       var s = snapshot(true);
-      var sNow = new Date();
+      if (!Number.isFinite(s.startAt) || s.startAt - Date.now() < 120 * 60000) { toast('زمان قرار باید حداقل ۲ ساعت بعد از اکنون باشد.', 'error'); return; }
       if (lastOpen()) { toast('یک رزرو باز دارید. ابتدا آن را تمام یا لغو کنید.'); return; }
       submitBooking(Object.assign(s, { tab: 'pending', statusLabel: STATUS.pending, mode: 'scheduled' }), 'scheduled');
     } else {
@@ -2711,12 +2607,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(function () { window.showAppToast('انجام نشد. دوباره تلاش کنید.', 'error'); });
   });
   // لغو از صفحه‌ی جستجو: رزرو روی سرور باید لغو شود، وگرنه همگام‌سازی آن را دوباره «در جستجو» می‌کند
-  function cancelOpen() {
-    var b = lastOpen();
-    if (b && b.serverId) cancelServer(b); else patchLast('cancelled');
-  }
   ['btn-cancel-search', 'btn-cancel-nomatch'].forEach(function (id) {
-    $(id).addEventListener('click', cancelOpen);
+    $(id).addEventListener('click', function () { cancelServer(searchBooking()); });
+  });
+  $('btn-retry-search').addEventListener('click', function () { retryServer(searchBooking()); });
+  $('btn-to-scheduled').addEventListener('click', function () {
+    var b = searchBooking();
+    if (!b || !b.serverId || !srvToken()) { toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return; }
+    if (!bookingActions[b.serverId] && window.HZ_FEAT('booking_convert')) srvConvertSheet(b);
   });
   function markCashPending(booking) {
     var f = findBk(booking.id); if (!f.b) return;
@@ -2760,8 +2658,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // ---------- حساب من ----------
-  sweepBookings();
-  setInterval(function () { sweepBookings(); }, 30000);
   syncServer();
   setInterval(syncServer, 5000);
   function renderAccount() {
@@ -2830,7 +2726,7 @@ document.addEventListener('DOMContentLoaded', function() {
     location.replace('index.html');
   }
   function logoutTraveler(allDevices) {
-    if (logoutPending || deletePending) return;
+    if (logoutPending || deletePending || bookingSubmissionPending || Object.keys(bookingActions).length) return;
     if (!srvToken()) {
       if (!allDevices) clearTravelerSession(false);
       else toast('برای خروج از همهٔ دستگاه‌ها، ابتدا وارد حساب شوید.', 'error');
@@ -2873,7 +2769,7 @@ document.addEventListener('DOMContentLoaded', function() {
   $('ac-delete-input').addEventListener('input', updateDeleteButton);
   $('ac-delete-confirm').onclick = function () {
     // Recheck the phrase in the handler too: disabled alone does not guard synthetic clicks.
-    if (deletePending || logoutPending || $('ac-delete-input').value.trim() !== deleteWord()) return;
+    if (bookingSubmissionPending || Object.keys(bookingActions).length || deletePending || logoutPending || $('ac-delete-input').value.trim() !== deleteWord()) return;
     if (lastOpen()) { toast('حذف حساب وقتی رزرو فعال دارید ممکن نیست'); return; }
     var deleteToken = srvToken();
     if (!deleteToken) { toast('برای حذف حساب، ابتدا وارد حساب شوید.', 'error'); return; }
@@ -3300,7 +3196,7 @@ document.addEventListener('DOMContentLoaded', function() {
     CITIES = cfg.cities || [];
     var bookingOn = window.HZ_FEAT('traveler_booking');
     var submit = document.getElementById('btn-main-submit');
-    if (submit) submit.disabled = !bookingOn;
+    if (submit) submit.disabled = !bookingOn || submit.getAttribute('aria-busy') === 'true';
     if (!bookingOn) setText('txt-main-submit', 'رزرو فعلاً در دسترس نیست');
     var instOn = window.HZ_FEAT('instant_booking'), schOn = window.HZ_FEAT('scheduled_booking');
     show('btn-mode-instant', instOn); show('btn-mode-scheduled', schOn);

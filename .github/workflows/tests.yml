@@ -92,16 +92,19 @@ jobs:
         working-directory: server
         run: |
           HZ_DEV=1 HZ_ADMIN_PASSWORD=test-admin-pass HZ_DB=/tmp/hz_browser.sqlite PORT=8081 node server.js > /tmp/browser-server.log 2>&1 &
-          for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:8081/api/config > /dev/null; then exit 0; fi
-            sleep 1
+          HZ_DEV=1 HZ_TIME_SCALE=0.01 HZ_DB=/tmp/hz_browser_fast.sqlite PORT=8082 node server.js > /tmp/browser-server-fast.log 2>&1 &
+          for port in 8081 8082; do
+            ok=0
+            for i in $(seq 1 30); do
+              if curl -sf "http://127.0.0.1:$port/api/config" > /dev/null; then ok=1; break; fi
+              sleep 1
+            done
+            if [ "$ok" != "1" ]; then cat /tmp/browser-server*.log; exit 1; fi
           done
-          cat /tmp/browser-server.log
-          exit 1
       - name: تست گزینه‌های رزرو، پایان خدمت و پرداخت در Chromium
         working-directory: tests
         run: |
-          for test in account_delete_ui.py traveler_support_ui.py account_truth_ui.py logout_sessions_ui.py traveler_auth_ui.py booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
+          for test in booking_actions_ui.py account_delete_ui.py traveler_support_ui.py account_truth_ui.py logout_sessions_ui.py traveler_auth_ui.py booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
             if python "$test" > /tmp/browser-test.log 2>&1; then
               cat /tmp/browser-test.log
             else
@@ -128,5 +131,7 @@ jobs:
             tests/assets/last_account_truth/
             tests/assets/last_traveler_support/
             tests/assets/last_account_delete/
+            tests/assets/last_booking_actions/
             /tmp/browser-server.log
+            /tmp/browser-server-fast.log
           retention-days: 7
