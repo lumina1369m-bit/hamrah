@@ -1,0 +1,1828 @@
+<!DOCTYPE html><html dir="rtl" lang="fa"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<title>میز کار مترجم - همراه (هم‌زبان)</title>
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: 'Vazirmatn', 'Plus Jakarta Sans', sans-serif;
+      }
+      body {
+        overscroll-behavior: none;
+        background-color: #f7f9ff;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Neumorphic Shadows */
+    .neu-raised {
+      box-shadow: -5px -5px 14px rgba(255, 255, 255, 0.95), 5px 5px 14px rgba(163, 180, 204, 0.42);
+    }
+    .neu-card {
+      box-shadow: -6px -6px 16px rgba(255, 255, 255, 0.95), 6px 6px 16px rgba(163, 180, 204, 0.42);
+    }
+    .neu-pressed {
+      box-shadow: inset 2px 2px 5px rgba(163, 180, 204, 0.5), inset -2px -2px 5px rgba(255, 255, 255, 0.95);
+    }
+    .neu-tab-active {
+      color: #005182 !important;
+      font-weight: 700 !important;
+      box-shadow: inset 2px 2px 6px rgba(163, 180, 204, 0.55), inset -2px -2px 6px rgba(255, 255, 255, 0.95) !important;
+      background-color: rgba(232, 238, 247, 0.9) !important;
+      border-radius: 0.75rem !important;
+    }
+    .badge-pressed {
+      box-shadow: inset 2px 2px 5px rgba(163, 180, 204, 0.6), inset -2px -2px 5px rgba(255, 255, 255, 0.95) !important;
+      background-color: #e2eaf5 !important;
+    }
+  </style>
+<link href="vendor/fonts.css" rel="stylesheet"/>
+<link href="vendor/tailwind.css" rel="stylesheet"/>
+<link href="vendor/theme.css" rel="stylesheet"/>
+<style>/* برچسب‌ها در تبلت نشکنند */
+#desktop-nav button, #desktop-nav span, #header-shift-text, #header-shift-text * { white-space: nowrap; }
+#header-shift-text { display: inline-block; }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md flex flex-col min-h-screen selection:bg-primary selection:text-on-primary">
+<!-- ========================================== -->
+<!-- HEADER -->
+<!-- ========================================== -->
+<header class="fixed top-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-xl pt-safe shadow-[0_4px_20px_rgba(163,180,204,0.22)] border-b border-surface-variant/30">
+<div class="h-20 px-4 md:px-8 max-w-7xl mx-auto flex items-center justify-between w-full">
+<!-- User Profile Identity Trigger -->
+<button aria-label="مشاهده پروفایل مترجم" class="flex items-center gap-3 text-right group focus:outline-none cursor-pointer p-1 rounded-2xl transition-all" id="header-profile-btn" onclick="toggleInlinePanel('profile')" type="button">
+<div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center shadow-[-2px_-2px_6px_rgba(255,255,255,0.9),2px_2px_6px_rgba(163,180,204,0.5)] group-hover:scale-105 transition-transform flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary text-[22px]">person</span>
+</div>
+<div class="flex flex-col text-right">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[16px] text-on-surface leading-tight group-hover:text-primary transition-colors">Workspace</span>
+<span class="material-symbols-outlined text-primary text-[18px]">translate</span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-medium leading-tight">مترجم همراه تشریفات • علیرضا راد</span>
+</div>
+</button>
+<!-- Desktop Navigation Bar (Direct Live Switching) -->
+<nav class="hidden md:flex items-center gap-1.5 bg-surface-container/60 p-1.5 rounded-2xl shadow-[inset_2px_2px_4px_rgba(163,180,204,0.4),inset_-2px_-2px_4px_rgba(255,255,255,0.9)]" id="desktop-nav">
+<button class="px-4 py-2 rounded-xl flex items-center gap-2 text-[14px] transition-all nav-tab-btn text-on-surface-variant" data-target="workspace" onclick="switchView('workspace')" type="button">
+<span class="material-symbols-outlined text-[19px]">dashboard</span>
+<span class="">میز کار</span>
+</button>
+<button class="px-4 py-2 rounded-xl hover:text-primary flex items-center gap-2 text-[14px] transition-all nav-tab-btn text-primary font-bold bg-surface shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.95)]" data-target="schedule" onclick="switchView('schedule')" type="button">
+<span class="material-symbols-outlined text-[19px]">calendar_month</span>
+<span class="">تقویم</span>
+</button>
+<button class="px-4 py-2 rounded-xl text-on-surface-variant hover:text-primary flex items-center gap-2 text-[14px] transition-all nav-tab-btn" data-target="earnings" onclick="switchView('earnings')" type="button">
+<span class="material-symbols-outlined text-[19px]">account_balance_wallet</span>
+<span class="">درآمد</span>
+</button>
+<button class="px-4 py-2 rounded-xl text-on-surface-variant hover:text-primary flex items-center gap-2 text-[14px] transition-all nav-tab-btn" data-target="credentials" onclick="switchView('credentials')" type="button">
+<span class="material-symbols-outlined text-[19px]">badge</span>
+<span class="">مدارک</span>
+</button>
+</nav>
+<!-- Quick Actions & Shift Badge -->
+<div class="flex items-center gap-2.5 sm:gap-3">
+<button aria-label="تغییر وضعیت شیفت" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.9)] cursor-pointer active:scale-95 transition-all" id="header-shift-badge" onclick="toggleShift()" type="button">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,106,97,0.7)] animate-pulse" id="header-shift-pulse"></span>
+<span class="text-[11px] text-secondary font-bold" id="header-shift-text">شیفت فعال</span>
+</button>
+<button aria-label="اعلان‌ها" class="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_8px_rgba(163,180,204,0.5)] active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] relative cursor-pointer" id="notifications-btn" onclick="toggleInlinePanel('notifications')" type="button">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface" id="notif-badge-dot"></span>
+</button>
+</div>
+</div>
+</header>
+<!-- ========================================== -->
+<!-- MAIN CONTAINER -->
+<!-- ========================================== -->
+<main class="flex flex-col relative w-full pt-24 pb-28 md:pb-12 bg-surface max-w-7xl mx-auto flex-1 min-h-[calc(100vh-5rem)] px-4 sm:px-6 lg:px-8">
+<!-- 1. INLINE HEADER PANEL: Profile Details (No Modal) -->
+<section class="hidden mb-6 w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20 transition-all duration-300" id="inline-profile-panel">
+<div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[24px]">account_box</span>
+<h3 class="font-bold text-[16px] text-on-surface">پروفایل و پرونده هویتی مترجم تشریفات</h3>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleInlinePanel('profile')" type="button">
+<span class="">بستن پنل</span>
+<span class="material-symbols-outlined text-[16px]">expand_less</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 items-center">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg text-[32px] flex-shrink-0">
+<span class="material-symbols-outlined text-[36px]">person</span>
+</div>
+<div>
+<h4 class="font-bold text-[16px] text-on-surface">علیرضا راد</h4>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold inline-block mt-0.5">مترجم ارشد تشریفات و همراه سلامت</span>
+<span class="text-[12px] text-on-surface-variant block mt-1">کد ملی: ۰۰۸****۳۲۱ • شناسه: CAP-100-IR41</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 text-right">
+<div class="p-3 rounded-xl bg-surface-container-low shadow-inner">
+<span class="text-[11px] text-on-surface-variant block">امتیاز کل:</span>
+<span class="text-[14px] text-on-surface font-bold">۴.۹۵ از ۵ (۱۲۸ نظر)</span>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-low shadow-inner">
+<span class="text-[11px] text-on-surface-variant block">ساعات مأموریت این ماه:</span>
+<span class="text-[14px] text-primary font-bold">۶۴ ساعت تشریفات</span>
+</div>
+</div>
+<div class="p-3.5 rounded-xl bg-surface-container-low border border-surface-variant/40 flex items-center justify-between">
+<div>
+<span class="text-[11px] text-on-surface-variant block">خودرو تایید شده سامانه:</span>
+<span class="text-[14px] text-on-surface font-bold">پژو ۲۰۷i سفید مدل ۱۴۰۲ (VIP)</span>
+<span class="text-[11px] text-secondary font-semibold block mt-0.5">دارای بیمه‌نامه کامل بدنه و سرنشین</span>
+</div>
+<span class="material-symbols-outlined text-[28px] text-primary">verified</span>
+</div>
+</div>
+</section>
+<!-- 2. INLINE HEADER PANEL: Notifications (No Modal) -->
+<section class="hidden mb-6 w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20 transition-all duration-300" id="inline-notifications-panel">
+<div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[24px]">notifications_active</span>
+<h3 class="font-bold text-[16px] text-on-surface">اعلان‌های سامانه اعزام و کیف پول</h3>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-primary text-[11px] font-semibold transition-colors cursor-pointer" onclick="markAllNotificationsRead()" type="button">علامت‌گذاری خوانده شده</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleInlinePanel('notifications')" type="button">
+<span class="">بستن</span>
+<span class="material-symbols-outlined text-[16px]">expand_less</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
+<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-start gap-3 border border-secondary/20">
+<span class="material-symbols-outlined text-secondary text-[22px] mt-0.5">account_balance</span>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-bold text-[14px] text-on-surface">واریز موفق پایا</span>
+<span class="text-[11px] text-outline">۲ ساعت پیش</span>
+</div>
+<span class="text-[12px] text-on-surface-variant mt-0.5 block">مبلغ ۱,۸۵۰,۰۰۰ تومان از مأموریت صبحگاهی تسویه شد.</span>
+</div>
+</div>
+<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-start gap-3 border border-primary/20">
+<span class="material-symbols-outlined text-primary text-[22px] mt-0.5">verified</span>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-bold text-[14px] text-on-surface">تمدید صلاحیت پزشکی CAP</span>
+<span class="text-[11px] text-outline">دیروز</span>
+</div>
+<span class="text-[12px] text-on-surface-variant mt-0.5 block">گواهی استاندارد مترجم همراه سلامت تا پاییز ۱۴۰۴ معتبر گردید.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. INLINE BADGE DETAIL BANNER -->
+<section class="hidden mb-6 w-full rounded-2xl bg-surface p-4 sm:p-5 neu-card border border-primary/30" id="inline-badge-detail-card">
+<div class="flex items-center justify-between pb-2 border-b border-surface-variant/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]" id="inline-badge-icon">verified_user</span>
+<h4 class="font-bold text-[15px] text-on-surface" id="inline-badge-title">تأییدیه صلاحیت</h4>
+</div>
+<button class="px-3 py-1 rounded-full bg-surface-container text-[12px] text-on-surface-variant hover:text-on-surface cursor-pointer" onclick="closeBadgeDetail()" type="button">بستن</button>
+</div>
+<p class="text-[13px] text-on-surface mt-2.5 leading-relaxed" id="inline-badge-desc">توضیحات صلاحیت ثبت شده در سازمان.</p>
+<div class="mt-3 p-3 rounded-xl bg-surface-container flex flex-wrap gap-4 justify-between text-[11px]">
+<div class="flex items-center gap-1.5"><span class="text-on-surface-variant">شماره استعلام:</span><span class="font-mono font-bold text-on-surface" id="inline-badge-code">CAP-84912-VERIFIED</span></div>
+<div class="flex items-center gap-1.5"><span class="text-on-surface-variant">وضعیت اعتبار:</span><span class="text-secondary font-bold">معتبر تا اسفند ۱۴۰۴ (تایید شده بیومتریک)</span></div>
+</div>
+</section>
+<!-- ======================================================== -->
+<!-- TAB VIEW 1: WORKSPACE / MEIZ KAR (DEFAULT ACTIVE TAB) -->
+<!-- ======================================================== -->
+<div class="tab-view-content flex flex-col w-full space-y-6 hidden" id="view-workspace">
+<!-- Multi-Vector Qualification Pills -->
+<section aria-label="مدل صلاحیت CAP" class="w-full flex items-center overflow-x-auto no-scrollbar py-1 gap-2.5 sm:gap-3 flex-nowrap lg:flex-wrap">
+<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('cap100')" type="button">
+<span class="material-symbols-outlined text-[17px] text-secondary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="text-[11px] text-on-surface font-medium">هویت CAP-100: تایید شده</span>
+</button>
+<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('lang')" type="button">
+<span class="material-symbols-outlined text-[17px] text-primary" style="font-variation-settings: 'FILL' 1;">translate</span>
+<span class="text-[11px] text-on-surface font-medium">عربی • انگلیسی C1</span>
+</button>
+<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('medical')" type="button">
+<span class="material-symbols-outlined text-[17px] text-tertiary" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+<span class="text-[11px] text-on-surface font-medium">صلاحیت تخصصی: پزشکی</span>
+</button>
+<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('car')" type="button">
+<span class="material-symbols-outlined text-[17px] text-secondary" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+<span class="text-[11px] text-on-surface font-medium">پژو ۲۰۷ تشریفات</span>
+</button>
+<button class="pill-badge hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('insurance')" type="button">
+<span class="material-symbols-outlined text-[17px] text-primary" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-[11px] text-on-surface font-medium">پوشش بیمه مأموریت فعال</span>
+</button>
+</section>
+<!-- Main Responsive Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-start">
+<!-- Main Primary Column -->
+<div class="w-full flex flex-col space-y-6 md:col-span-6 lg:col-span-7 xl:col-span-7">
+<!-- Shift Paused Banner (Visible when offline) -->
+<div class="hidden rounded-2xl bg-surface-container p-5 text-center shadow-[inset_2px_2px_5px_rgba(163,180,204,0.5),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] border border-surface-variant/40" id="shift-paused-notice">
+<div class="flex items-center justify-center gap-2 text-outline mb-1">
+<span class="material-symbols-outlined text-[24px]">bedtime</span>
+<span class="font-bold text-[15px] text-on-surface">شیفت شما غیرفعال و در حالت استراحت است</span>
+</div>
+<p class="text-[12px] text-on-surface-variant">برای دریافت مجدد اعزام‌های فوری فرودگاهی و بیمارستانی، شیفت را فعال کنید.</p>
+<button class="mt-3 px-5 py-2.5 rounded-xl bg-secondary text-on-secondary text-[13px] font-bold shadow-md hover:bg-secondary/90 transition-all cursor-pointer inline-flex items-center gap-2" onclick="setShiftState(true)" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="">فعال‌سازی فوری شیفت</span>
+</button>
+</div>
+<!-- DISPATCH MISSION CONTAINER (State 1: Offer | State 2: Active | State 3: Empty) -->
+<div class="relative w-full" id="dispatch-view-wrapper">
+<!-- State 1: Incoming Offer Card with Live Timer -->
+<section class="relative w-full rounded-2xl bg-surface p-5 sm:p-6 transition-all duration-300 neu-card space-y-5 overflow-hidden border border-white/60 hidden" id="dispatch-offer-card">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-primary-container/10 flex items-center justify-center text-primary shadow-[inset_2px_2px_4px_rgba(163,180,204,0.4),inset_-2px_-2px_4px_rgba(255,255,255,0.9)]">
+<span class="material-symbols-outlined text-[26px]">verified</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-[18px] text-on-surface">اعزام فوری پزشکی</h3>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-semibold">عربی (عراق) ⇄ فارسی</span>
+</div>
+<span class="text-[12px] text-on-surface-variant block mt-0.5">مأموریت با خودرو تشریفات • کد MAT-030</span>
+</div>
+</div>
+<!-- Animated Countdown Indicator Badge -->
+<div class="relative w-14 h-14 rounded-2xl bg-surface-container flex flex-col items-center justify-center shadow-[inset_2px_2px_5px_rgba(163,180,204,0.5),inset_-2px_-2px_5px_rgba(255,255,255,0.95)]">
+<span class="font-bold text-[18px] text-primary leading-none" id="countdown-number">0</span>
+<span class="text-[10px] text-outline mt-0.5">ثانیه</span>
+<div class="absolute bottom-1 inset-x-2 h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary transition-all duration-1000 rounded-full" id="countdown-progress" style="width: 0%;"></div>
+</div>
+</div>
+</div>
+<!-- Mission Route Box -->
+<div class="p-3.5 sm:p-4 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_6px_rgba(163,180,204,0.45),inset_-2px_-2px_6px_rgba(255,255,255,0.9)] space-y-3">
+<div class="flex items-start justify-between">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-[20px] mt-0.5">location_on</span>
+<div>
+<span class="text-[11px] text-on-surface-variant block">محل استقرار و ملاقات مسافر:</span>
+<span class="text-[14px] text-on-surface font-bold">تهران، خیابان ولیعصر، تقاطع توانیر، بیمارستان دی</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[20px]">near_me</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant text-[12px] pr-7">
+<span class="flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[15px] text-outline">near_me</span>فاصله: ۱.۸ کیلومتر</span>
+<span class="flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[15px] text-outline">schedule</span>زمان رسیدن: ۵ دقیقه</span>
+</div>
+<!-- Visual Map Graphic -->
+<div class="w-full h-32 sm:h-36 rounded-lg overflow-hidden relative shadow-inner border border-surface-variant/40 bg-surface-container flex items-center justify-center">
+<div class="absolute inset-0 opacity-80" style="background-image: radial-gradient(#c0c7d1 1px, transparent 1px); background-size: 16px 16px;"></div>
+<svg class="absolute inset-0 w-full h-full text-primary" fill="none" stroke="currentColor">
+<path d="M 50 110 Q 180 80 260 50 T 420 30" stroke="rgba(0,81,130,0.3)" stroke-dasharray="4 4" stroke-width="4"></path>
+<path d="M 60 100 Q 190 70 270 45" stroke="#005182" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute right-12 bottom-6 flex items-center gap-1 bg-surface/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-md text-primary text-[11px] font-bold">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="">موقعیت شما</span>
+</div>
+<div class="absolute left-14 top-5 flex items-center gap-1 bg-secondary text-on-secondary px-3 py-1 rounded-full shadow-md text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">local_hospital</span>
+<span class="">بیمارستان دی</span>
+</div>
+</div>
+</div>
+<!-- Fee Details -->
+<div class="flex items-center justify-between px-2">
+<div class="flex flex-col">
+<span class="text-[12px] text-on-surface-variant font-medium">حق‌الزحمه خالص واریزی</span>
+<span class="text-[11px] text-outline">محاسبه بر مبنای ۲ ساعت همراهی حضوری</span>
+</div>
+<div class="text-left">
+<span class="font-black text-[22px] text-secondary">۲,۳۵۰,۰۰۰</span>
+<span class="text-[12px] text-on-surface-variant mr-1">تومان</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-3 sm:gap-4 pt-1">
+<button class="w-full py-3.5 px-4 rounded-xl bg-surface text-on-surface-variant text-[14px] font-semibold transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_8px_rgba(163,180,204,0.5)] active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] hover:text-error flex items-center justify-center gap-2 cursor-pointer" id="reject-mission-btn" onclick="handleRejectMission()" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+<span class="">رد مأموریت</span>
+</button>
+<button class="w-full py-3.5 px-4 rounded-xl bg-[#006a61] text-on-primary text-[14px] font-bold transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_10px_rgba(0,81,130,0.4)] active:scale-[0.98] hover:bg-primary-container flex items-center justify-center gap-2 cursor-pointer" id="accept-mission-btn" onclick="handleAcceptMission()" type="button">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+<span class="">قبول و اعزام</span>
+</button>
+</div>
+</section>
+<!-- State 2: Active Dispatch Inline Tracker View -->
+<section class="hidden relative w-full rounded-2xl bg-surface p-5 sm:p-6 neu-card space-y-5 border-2 border-secondary/60 animate-in fade-in duration-300" id="inline-active-dispatch-card">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-secondary text-on-secondary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[28px] animate-spin">navigation</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-[17px] text-on-surface">در مسیر مأموریت - اعزام به بیمارستان دی</h3>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-secondary text-[11px] font-bold">MAT-030</span>
+</div>
+<span class="text-[12px] text-secondary font-semibold block mt-0.5" id="active-tracking-status-text">وضعیت: در حال حرکت به سمت بیمارستان دی</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-[11px] font-semibold flex items-center gap-1 cursor-pointer" onclick="revertToDispatchOffer()" type="button">
+<span class="material-symbols-outlined text-[16px]">undo</span>
+<span class="">بازگشت به نمای عادی</span>
+</button>
+</div>
+<!-- Mission Details -->
+<div class="p-4 rounded-2xl bg-surface-container-low space-y-2.5 border border-surface-variant/40 shadow-inner">
+<div class="flex items-center justify-between text-[13px]">
+<span class="text-on-surface-variant">نام مسافر / همراه:</span>
+<span class="font-bold text-on-surface">آقای عبدالرحمن السالم (بصره، عراق)</span>
+</div>
+<div class="flex items-center justify-between text-[13px]">
+<span class="text-on-surface-variant">مقصد هماهنگ‌شده:</span>
+<span class="font-bold text-primary">پذیرش بین‌الملل بیمارستان دی (خیابان توانیر)</span>
+</div>
+<div class="flex items-center justify-between text-[13px]">
+<span class="text-on-surface-variant">فاصله تخمینی تا مقصد:</span>
+<span class="font-bold text-secondary">۱.۸ کیلومتر • حدود ۴ دقیقه با خودرو</span>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-surface-variant/30 text-[13px]">
+<span class="text-on-surface-variant">حق‌الزحمه تعهد شده:</span>
+<span class="text-secondary font-bold">۲,۳۵۰,۰۰۰ تومان (تسویه خودکار پس از پایان مأموریت)</span>
+</div>
+</div>
+<!-- Active Navigation & Passenger Contact -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<button class="py-3 px-3 rounded-xl bg-surface text-primary border border-primary/30 text-[13px] font-bold hover:bg-primary-container/10 flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer" onclick="callPassengerSecurely()" type="button">
+<span class="material-symbols-outlined text-[20px]">call</span>
+<span class="">تماس با مسافر (+۹۶۴)</span>
+</button>
+<button class="py-3 px-3 rounded-xl bg-[#006a61] text-on-primary text-[13px] font-bold hover:bg-primary-container shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer" onclick="openNavigatorApp()" type="button">
+<span class="material-symbols-outlined text-[20px]">directions</span>
+<span class="">مسیریابی با نشان / بلد</span>
+</button>
+</div>
+<!-- Confirm Arrival & Start Timer -->
+<button class="w-full py-3.5 rounded-xl bg-secondary text-on-secondary text-[14px] font-bold hover:bg-secondary/90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer" id="inline-confirm-arrival-btn" onclick="confirmArrivalAtDestination()" type="button">
+<span class="material-symbols-outlined text-[22px]">where_to_vote</span>
+<span class="">اعلام رسیدن به محل و شروع همراهی</span>
+</button>
+<div class="hidden p-3.5 rounded-xl bg-secondary-fixed/40 text-secondary text-center text-[13px] font-bold" id="arrival-feedback-box">
+<span class="material-symbols-outlined text-[20px] align-middle ml-1">check_circle</span>
+<span class="">وضعیت شما «رسیده به محل بیمارستان دی» ثبت گردید. زمان‌سنج تشریفات فعال شد: <span class="font-mono" id="mission-live-timer">۰۰:۰۱</span></span>
+</div>
+</section>
+<!-- State 3: Rejected / Idle State Banner -->
+<section class="relative w-full rounded-2xl bg-surface p-6 neu-card border border-surface-variant/40 transition-all duration-300" id="dispatch-empty-card">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-secondary shadow-inner">
+<span class="material-symbols-outlined text-[26px]">radar</span>
+</div>
+<div>
+<h4 class="font-bold text-[15px] text-on-surface">هیچ مأموریت فوری جدیدی نیست</h4>
+<span class="text-[12px] text-on-surface-variant">در انتظار درخواست بعدی سامانه دیسپچ هوشمند...</span>
+</div>
+</div>
+<button class="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold cursor-pointer transition-colors" onclick="resetDispatchDemo()" type="button">
+                  بررسی مجدد اعزام
+                </button>
+</div>
+</section>
+</div>
+<!-- Fast Tools: Automatic Payout & SOS Emergency Safety (Inline Accordions) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+<!-- Instant Payout Card Trigger & Inline Expand Container -->
+<div class="w-full flex flex-col">
+<button class="p-5 rounded-2xl bg-surface flex flex-col justify-between text-right neu-raised active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] hover:scale-[1.01] transition-all cursor-pointer w-full" id="instant-payout-card-btn" onclick="togglePayoutInline()" type="button">
+<div class="flex items-center justify-between w-full">
+<div class="w-10 h-10 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary shadow-[inset_1px_1px_3px_rgba(163,180,204,0.4)]">
+<span class="material-symbols-outlined text-[22px]">account_balance_wallet</span>
+</div>
+<span class="text-[11px] text-secondary font-bold px-2 py-0.5 rounded-full bg-secondary-fixed/40">تسویه پایا خودکار</span>
+</div>
+<div class="mt-4 text-right w-full">
+<span class="text-[11px] text-on-surface-variant">موجودی قابل تسویه حساب</span>
+<div class="text-[22px] text-on-surface font-black mt-1">
+                    ۴,۹۲۰,۰۰۰ <span class="text-[11px] font-normal text-outline">تومان</span>
+</div>
+</div>
+<div class="mt-2 flex items-center justify-between text-primary text-[12px] font-bold">
+<span class="">مشاهده جزئیات حساب و تسویه آنی</span>
+<span class="material-symbols-outlined text-[18px] transition-transform duration-200" id="payout-card-chevron">expand_more</span>
+</div>
+</button>
+<!-- INLINE EXPANDED SETTLEMENT PANEL -->
+<div class="hidden mt-3 rounded-2xl bg-surface-container-low p-4 border border-secondary/30 shadow-inner space-y-3" id="inline-payout-panel">
+<div class="flex items-center justify-between pb-2 border-b border-surface-variant/40">
+<span class="text-[13px] font-bold text-on-surface">درخواست تسویه فوری به حساب شبا</span>
+<button class="text-on-surface-variant hover:text-primary text-[11px] font-semibold cursor-pointer" onclick="togglePayoutInline()" type="button">بستن</button>
+</div>
+<div class="space-y-2 text-[12px] text-on-surface">
+<div class="flex justify-between p-2 rounded-lg bg-surface"><span class="text-on-surface-variant">شماره شبا مقصد:</span><span class="font-mono font-bold">IR820170000000123456789012</span></div>
+<div class="flex justify-between p-2 rounded-lg bg-surface"><span class="text-on-surface-variant">بانک مقصد:</span><span class="font-bold">بانک ملی ایران • حساب حقوقی</span></div>
+<div class="flex justify-between p-2 rounded-lg bg-surface"><span class="text-on-surface-variant">مبلغ قابل برداشت:</span><span class="font-bold text-secondary">۴,۹۲۰,۰۰۰ تومان</span></div>
+</div>
+<div id="inline-payout-action-container">
+<button class="w-full py-3 rounded-xl bg-[#006a61] text-on-primary text-[13px] font-bold shadow hover:bg-primary-container transition-all flex items-center justify-center gap-2 cursor-pointer" id="inline-confirm-payout-btn" onclick="handleInstantPayoutRequest()" type="button">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span class="">درخواست تسویه آنی پایا</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tactical SOS Emergency Button & Inline Drawer -->
+<div class="w-full flex flex-col">
+<button class="p-5 rounded-2xl bg-surface flex flex-col justify-between text-right neu-raised active:shadow-[inset_3px_3px_6px_rgba(186,26,26,0.3),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] hover:scale-[1.01] transition-all cursor-pointer w-full" id="sos-btn" onclick="toggleSosInline()" type="button">
+<div class="flex items-center justify-between w-full">
+<div class="w-10 h-10 rounded-xl bg-error-container flex items-center justify-center shadow-[inset_1px_1px_3px_rgba(186,26,26,0.2)]">
+<span class="material-symbols-outlined text-error text-[22px]">sos</span>
+</div>
+<span class="text-[11px] text-error font-bold px-2 py-0.5 rounded-full bg-error-container/60">پشتیبانی ۲۴/۷</span>
+</div>
+<div class="mt-4 text-right w-full">
+<span class="font-bold text-[18px] text-on-surface">حفاظت اضطراری</span>
+<span class="text-[11px] text-on-surface-variant block mt-1">مرکز امنیت و اعزام اسکورت محافظتی</span>
+</div>
+<div class="mt-2 flex items-center justify-between text-error text-[12px] font-bold">
+<span class="">مشاهده گزینه‌های امداد فوری</span>
+<span class="material-symbols-outlined text-[18px] transition-transform duration-200" id="sos-chevron">expand_more</span>
+</div>
+</button>
+<!-- INLINE EXPANDED SOS EMERGENCY CONTROL PANEL -->
+<div class="hidden mt-3 rounded-2xl bg-error-container/20 p-4 border border-error/30 shadow-inner space-y-3" id="inline-sos-panel">
+<div class="flex items-center justify-between pb-2 border-b border-error/20">
+<div class="flex items-center gap-1.5 text-error font-bold text-[13px]">
+<span class="material-symbols-outlined text-[18px]">shield</span>
+<span class="">واحد بحران و حفاظت اضطراری (SOS)</span>
+</div>
+<button class="text-on-surface-variant hover:text-error text-[11px] font-semibold cursor-pointer" onclick="toggleSosInline()" type="button">بستن</button>
+</div>
+<div class="p-2.5 rounded-xl bg-surface/90 border border-error/20 text-right">
+<span class="text-[12px] text-error font-bold block">موقعیت زنده شما به مرکز دیسپچ مخابره شد</span>
+<span class="text-[11px] text-on-surface-variant block mt-0.5">زمان تقریبی رسیدن گشت تشریفات: ۵ دقیقه</span>
+</div>
+<div class="space-y-2">
+<button class="w-full py-2.5 px-3 rounded-xl bg-error text-on-error text-[12px] font-bold flex items-center justify-center gap-2 hover:bg-error/90 transition-all cursor-pointer" onclick="handleEmergencySupportEscort()" type="button">
+<span class="material-symbols-outlined text-[18px]">shield_person</span>
+<span class="">درخواست اعزام تیم پشتیبانی میدانی</span>
+</button>
+<button class="w-full py-2.5 px-3 rounded-xl bg-surface text-on-surface text-[12px] font-bold flex items-center justify-center gap-2 border border-surface-variant shadow-sm hover:text-primary transition-all cursor-pointer" onclick="handleEmergencyCallOperator()" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary">call</span>
+<span class="">تماس با حراست و پشتیبانی (۰۲۱-۹۱۰۱۰۰۰۰)</span>
+</button>
+<button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center justify-center gap-2 hover:text-error transition-all cursor-pointer" onclick="handleEmergencyPolice()" type="button">
+<span class="material-symbols-outlined text-[18px] text-error">local_police</span>
+<span class="">تماس با فوریت‌های پلیسی ۱۱۰</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Left / Secondary Column (Shift Switch, Performance Counters, Upcoming Bookings Preview) -->
+<div class="w-full flex flex-col space-y-6 md:col-span-6 lg:col-span-5 xl:col-span-5">
+<!-- Shift Status Controller & Rapid Stats -->
+<section class="w-full rounded-2xl bg-surface p-5 sm:p-6 neu-card space-y-5">
+<!-- Interactive Neumorphic Shift Toggle Switch -->
+<div class="flex items-center justify-between bg-surface-container/60 p-3 sm:p-3.5 rounded-xl shadow-[inset_3px_3px_6px_rgba(163,180,204,0.5),inset_-3px_-3px_6px_rgba(255,255,255,0.9)]">
+<div class="flex items-center gap-3 pr-1">
+<div class="w-3.5 h-3.5 rounded-full bg-secondary shadow-[0_0_10px_rgba(0,106,97,0.7)] animate-pulse" id="shift-beacon"></div>
+<div class="flex flex-col">
+<span class="text-[14px] text-on-surface font-bold" id="shift-status-title">آماده به خدمت فوری</span>
+<span class="text-[11px] text-on-surface-variant" id="shift-status-desc">سامانه دیسپچ ماتریس اعزام ITP-541 فعال است</span>
+</div>
+</div>
+<!-- Tactile Toggle Button -->
+<button aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="true" class="relative w-16 h-9 rounded-full bg-surface p-1 transition-all duration-300 shadow-[-3px_-3px_6px_rgba(255,255,255,0.9),3px_3px_6px_rgba(163,180,204,0.6)] focus:outline-none flex-shrink-0 cursor-pointer" id="shift-toggle-btn" onclick="toggleShift()" type="button">
+<span class="block w-7 h-7 rounded-full bg-gradient-to-tr from-secondary to-secondary-fixed shadow-[0_2px_5px_rgba(0,106,97,0.5)] transform -translate-x-7 transition-transform duration-300 flex items-center justify-center" id="shift-knob">
+<span class="material-symbols-outlined text-[16px] text-on-secondary" id="shift-knob-icon">check</span>
+</span>
+</button>
+</div>
+<!-- Triple Recessed Performance Counters -->
+<div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+<div class="flex flex-col items-center justify-center py-3.5 px-1.5 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_5px_rgba(163,180,204,0.45),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] text-center">
+<span class="text-[11px] text-on-surface-variant mb-1">درآمد امروز</span>
+<span class="text-[16px] text-primary font-bold">۱,۸۵۰,۰۰۰</span>
+<span class="text-[10px] text-outline">تومان</span>
+</div>
+<div class="flex flex-col items-center justify-center py-3.5 px-1.5 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_5px_rgba(163,180,204,0.45),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] text-center">
+<span class="text-[11px] text-on-surface-variant mb-1">همراهی امروز</span>
+<span class="text-[16px] text-on-surface font-bold">۴:۰۰</span>
+<span class="text-[10px] text-outline">ساعت</span>
+</div>
+<div class="flex flex-col items-center justify-center py-3.5 px-1.5 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_5px_rgba(163,180,204,0.45),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] text-center">
+<span class="text-[11px] text-on-surface-variant mb-1">امتیاز رضایت</span>
+<div class="flex items-center gap-1">
+<span class="text-[16px] text-on-surface font-bold">۴.۹۵</span>
+<span class="material-symbols-outlined text-[15px] text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="text-[10px] text-outline">۱۲۸ مأموریت</span>
+</div>
+</div>
+</section>
+<!-- Scheduled Future Bookings Preview -->
+<section class="space-y-4 w-full" id="calendar-section">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">calendar_clock</span>
+<h2 class="font-bold text-[18px] text-on-surface">ماموریت‌های من</h2>
+</div>
+<button class="text-[12px] text-primary hover:underline font-semibold cursor-pointer" onclick="switchView('schedule')" type="button">مشاهده همه تقویم</button>
+</div>
+<!-- درخواست‌های جدید از سرور (مهلت پذیرش ۶۰ ثانیه) -->
+<div class="flex flex-col gap-3 w-full" id="offers-box"></div>
+<!-- ماموریت‌های واقعی: پذیرفته‌شده و آینده (سند) -->
+<div class="flex flex-col gap-3 w-full" id="missions-list"></div>
+<!-- نمونه‌های قدیمی برای چیدمان؛ قبل از انتشار حذف شوند -->
+<div class="hidden" id="missions-sample">
+<!-- Booking Card 1 -->
+<div class="booking-card-group flex flex-col w-full">
+<div class="booking-card w-full rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col space-y-3 hover:translate-y-[-2px] transition-all cursor-pointer" onclick="toggleBookingDetail('BKG-8841')">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.9)]">
+<span class="material-symbols-outlined text-primary text-[22px]">corporate_fare</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[14px] text-on-surface font-bold">مذاکره و نمایشگاه تجاری</span>
+<span class="text-[11px] text-on-surface-variant">مسافر: آقای کریستوفر رید (انگلیس)</span>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-primary text-[11px] font-bold shadow-[-2px_-2px_4px_rgba(255,255,255,0.9),2px_2px_4px_rgba(163,180,204,0.4)]">فردا • ۱۰:۰۰</span>
+</div>
+<div class="flex items-center justify-between pt-2.5 border-t border-surface-variant/40">
+<div class="flex items-center gap-3 text-on-surface-variant text-[11px]">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">location_on</span>نمایشگاه بین‌المللی تهران</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">timer</span>۴ ساعت</span>
+</div>
+<span class="text-[14px] text-secondary font-bold">۳,۲۰۰,۰۰۰ تومان</span>
+</div>
+</div>
+<!-- INLINE EXPANDED CARD 1 DETAILS -->
+<div class="hidden mt-2 p-4 rounded-2xl bg-surface-container-low border border-primary/30 shadow-inner space-y-3" id="inline-details-BKG-8841">
+<div class="flex items-center justify-between pb-2 border-b border-surface-variant/40">
+<span class="text-[13px] font-bold text-primary">جزئیات کامل رزرو BKG-8841</span>
+<button class="text-on-surface-variant hover:text-primary text-[11px] font-semibold cursor-pointer" onclick="toggleBookingDetail('BKG-8841')" type="button">بستن</button>
+</div>
+<div class="space-y-2 text-[12px] text-on-surface">
+<div class="flex justify-between"><span class="text-on-surface-variant">مسافر و هیئت:</span><span class="font-bold">کریستوفر رید (هیئت تجاری انگلستان)</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">زمان شروع و مدت:</span><span class="font-semibold text-primary">فردا، ساعت ۱۰:۰۰ تا ۱۴:۰۰ (۴ ساعت)</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">مختصات و آدرس:</span><span class="font-bold">بزرگراه چمران، سالن ملل نمایشگاه</span></div>
+<div class="flex justify-between p-2 rounded-xl bg-secondary-fixed/30 text-secondary font-bold"><span class="">حق‌الزحمه تعهد شده:</span><span class="">۳,۲۰۰,۰۰۰ تومان</span></div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="py-2.5 px-2 rounded-xl bg-surface border border-primary/30 text-primary text-[12px] font-bold flex items-center justify-center gap-1 cursor-pointer" onclick="handleBookingCall('کریستوفر رید (+44 7911 123456)')" type="button">
+<span class="material-symbols-outlined text-[18px]">call</span>
+<span class="">تماس با مسافر</span>
+</button>
+<button class="py-2.5 px-2 rounded-xl bg-[#006a61] text-on-primary text-[12px] font-bold flex items-center justify-center gap-1 shadow cursor-pointer" onclick="handleBookingConfirm('BKG-8841')" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="">تأیید آمادگی</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Booking Card 2 -->
+<div class="booking-card-group flex flex-col w-full">
+<div class="booking-card w-full rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col space-y-3 hover:translate-y-[-2px] transition-all cursor-pointer" onclick="toggleBookingDetail('BKG-9012')">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.9)]">
+<span class="material-symbols-outlined text-tertiary text-[22px]">shopping_bag</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[14px] text-on-surface font-bold">همراهی خرید و گردشگری</span>
+<span class="text-[11px] text-on-surface-variant">مسافر: خانم الزهرا الموسوی (عمان)</span>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-primary text-[11px] font-bold shadow-[-2px_-2px_4px_rgba(255,255,255,0.9),2px_2px_4px_rgba(163,180,204,0.4)]">پس‌فردا • ۱۶:۳۰</span>
+</div>
+<div class="flex items-center justify-between pt-2.5 border-t border-surface-variant/40">
+<div class="flex items-center gap-3 text-on-surface-variant text-[11px]">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">location_on</span>بازار بزرگ تهران، کاخ گلستان</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-outline">timer</span>۳ ساعت</span>
+</div>
+<span class="text-[14px] text-secondary font-bold">۲,۶۰۰,۰۰۰ تومان</span>
+</div>
+</div>
+<!-- INLINE EXPANDED CARD 2 DETAILS -->
+<div class="hidden mt-2 p-4 rounded-2xl bg-surface-container-low border border-primary/30 shadow-inner space-y-3" id="inline-details-BKG-9012">
+<div class="flex items-center justify-between pb-2 border-b border-surface-variant/40">
+<span class="text-[13px] font-bold text-primary">جزئیات کامل رزرو BKG-9012</span>
+<button class="text-on-surface-variant hover:text-primary text-[11px] font-semibold cursor-pointer" onclick="toggleBookingDetail('BKG-9012')" type="button">بستن</button>
+</div>
+<div class="space-y-2 text-[12px] text-on-surface">
+<div class="flex justify-between"><span class="text-on-surface-variant">مسافر / کشور:</span><span class="font-bold">خانم الزهرا الموسوی (مسقط، عمان)</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">زمان شروع و مدت:</span><span class="font-semibold text-primary">پس‌فردا، ساعت ۱۶:۳۰ تا ۱۹:۳۰ (۳ ساعت)</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">مختصات و آدرس:</span><span class="font-bold">میدان پانزده خرداد، ورودی کاخ گلستان</span></div>
+<div class="flex justify-between p-2 rounded-xl bg-secondary-fixed/30 text-secondary font-bold"><span class="">حق‌الزحمه تعهد شده:</span><span class="">۲,۶۰۰,۰۰۰ تومان</span></div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="py-2.5 px-2 rounded-xl bg-surface border border-primary/30 text-primary text-[12px] font-bold flex items-center justify-center gap-1 cursor-pointer" onclick="handleBookingCall('خانم الزهرا الموسوی (+968 9123 4567)')" type="button">
+<span class="material-symbols-outlined text-[18px]">call</span>
+<span class="">تماس با مسافر</span>
+</button>
+<button class="py-2.5 px-2 rounded-xl bg-[#006a61] text-on-primary text-[12px] font-bold flex items-center justify-center gap-1 shadow cursor-pointer" onclick="handleBookingConfirm('BKG-9012')" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="">تأیید آمادگی</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+<!-- ======================================================== -->
+<!-- TAB VIEW 2: SCHEDULE / CALENDAR (INLINE VIEW SWITCH) -->
+<!-- ======================================================== -->
+<div class="tab-view-content flex flex-col w-full space-y-6" id="view-schedule">
+<div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
+<div class="flex items-center gap-3 text-primary">
+<div class="w-10 h-10 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined text-[24px]">calendar_month</span>
+</div>
+<div>
+<h2 class="font-bold text-[18px] text-on-surface">ماموریت‌های پذیرفته‌شده و آینده‌ی شما</h2>
+<span class="text-[12px] text-on-surface-variant">برنامه هفتگی همراهی و مأموریت‌های تایید شده</span>
+</div>
+</div>
+<button class="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold flex items-center gap-1 cursor-pointer" onclick="switchView('workspace')" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+<span class="">بازگشت به میز کار</span>
+</button>
+</div>
+<!-- Weekly Horizontal Day Selector Bar (ساخته‌شده از تاریخ واقعی) -->
+<div class="w-full bg-surface p-3 rounded-2xl neu-raised overflow-x-auto no-scrollbar flex items-center gap-2" id="day-bar"></div>
+<!-- Schedule Cards List: همان منبع ماموریت‌های من -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="schedule-list"></div>
+</div>
+<!-- ======================================================== -->
+<!-- TAB VIEW 3: EARNINGS & WALLET (INLINE VIEW SWITCH) -->
+<!-- ======================================================== -->
+<div class="tab-view-content hidden flex flex-col w-full space-y-6" id="view-earnings">
+<div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
+<div class="flex items-center gap-3 text-primary">
+<div class="w-10 h-10 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+</div>
+<div>
+<h2 class="font-bold text-[18px] text-on-surface">گزارش درآمد، کیف پول و تسویه حساب آنی</h2>
+<span class="text-[12px] text-on-surface-variant">تسویه خودکار پایا و گزارش مأموریت‌های تسویه شده</span>
+</div>
+</div>
+<button class="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold flex items-center gap-1 cursor-pointer" onclick="switchView('workspace')" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+<span class="">بازگشت به میز کار</span>
+</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Balance Card & Payout Action -->
+<div class="lg:col-span-5 p-6 rounded-3xl bg-surface neu-card space-y-5 border border-primary/20">
+<div class="flex items-center justify-between">
+<span class="text-[12px] text-on-surface-variant font-medium">موجودی کیف پول آماده واریز</span>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold">تسویه بدون کارمزد</span>
+</div>
+<div class="font-black text-[32px] text-secondary">
+            ۴,۹۲۰,۰۰۰ <span class="text-[15px] font-normal text-on-surface">تومان</span>
+</div>
+<div class="p-4 rounded-2xl bg-surface-container-low text-[13px] space-y-2.5 border border-surface-variant/40 shadow-inner">
+<div class="flex justify-between items-center"><span class="text-on-surface-variant">شماره شبا مقصد:</span><span class="font-mono font-bold text-on-surface text-[12px]">IR820170000000123456789012</span></div>
+<div class="flex justify-between items-center"><span class="text-on-surface-variant">بانک مقصد:</span><span class="font-bold text-on-surface">ملی ایران • حساب تشریفات</span></div>
+<div class="flex justify-between items-center"><span class="text-on-surface-variant">صاحب حساب:</span><span class="font-bold text-on-surface">علیرضا راد</span></div>
+<div class="flex justify-between items-center pt-2 border-t border-surface-variant/30"><span class="text-on-surface-variant">نوع تسویه:</span><span class="font-bold text-secondary">آنی پایا شاپرک (زیر ۲ ساعت)</span></div>
+</div>
+<div id="earnings-payout-box">
+<button class="w-full py-4 rounded-xl bg-[#006a61] text-on-primary text-[14px] font-bold shadow-md hover:bg-primary-container transition-all flex items-center justify-center gap-2 cursor-pointer" onclick="handleInstantPayoutRequestEarnings()" type="button">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+<span class="">درخواست تسویه آنی پایا (۴,۹۲۰,۰۰۰ تومان)</span>
+</button>
+</div>
+</div>
+<!-- Weekly Performance Chart & History -->
+<div class="lg:col-span-7 flex flex-col space-y-5">
+<!-- Weekly Bar Representation -->
+<div class="p-5 rounded-3xl bg-surface neu-card space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-[15px] text-on-surface">نمودار درآمد ۷ روز گذشته</h3>
+<span class="text-[12px] text-secondary font-bold">مجموع هفته: ۱۱,۳۵۰,۰۰۰ تومان</span>
+</div>
+<!-- Tactile Bar Visual -->
+<div class="grid grid-cols-7 gap-2 items-end h-28 pt-4 px-2">
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] text-outline">۱.۲م</span>
+<div class="w-full bg-surface-container rounded-t-lg transition-all" style="height: 45%;"></div>
+<span class="text-[10px] text-on-surface-variant">ش</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] text-outline">۲.۴م</span>
+<div class="w-full bg-surface-container rounded-t-lg transition-all" style="height: 75%;"></div>
+<span class="text-[10px] text-on-surface-variant">ی</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] text-outline">۰.۸م</span>
+<div class="w-full bg-surface-container rounded-t-lg transition-all" style="height: 30%;"></div>
+<span class="text-[10px] text-on-surface-variant">د</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] text-outline">۱.۹م</span>
+<div class="w-full bg-surface-container rounded-t-lg transition-all" style="height: 60%;"></div>
+<span class="text-[10px] text-on-surface-variant">س</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] text-outline">۱.۶م</span>
+<div class="w-full bg-surface-container rounded-t-lg transition-all" style="height: 50%;"></div>
+<span class="text-[10px] text-on-surface-variant">چ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] text-outline">۱.۶م</span>
+<div class="w-full bg-surface-container rounded-t-lg transition-all" style="height: 50%;"></div>
+<span class="text-[10px] text-on-surface-variant">پ</span>
+</div>
+<div class="flex flex-col items-center gap-1.5 h-full justify-end">
+<span class="text-[9px] font-bold text-secondary">۱.۸۵م</span>
+<div class="w-full bg-secondary rounded-t-lg shadow-sm transition-all" style="height: 65%;"></div>
+<span class="text-[10px] font-bold text-secondary">امروز</span>
+</div>
+</div>
+</div>
+<!-- Transaction History -->
+<div class="p-5 rounded-3xl bg-surface neu-card space-y-3">
+<h3 class="font-bold text-[15px] text-on-surface">آخرین واریزی‌های مأموریت</h3>
+<div class="space-y-2.5 text-[13px]">
+<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-center justify-between border border-surface-variant/30">
+<div>
+<span class="font-bold text-on-surface block">همراهی هیئت تجاری امارات</span>
+<span class="text-on-surface-variant text-[11px]">دیروز • تسویه پایا شاپرک #48190</span>
+</div>
+<span class="text-[15px] text-secondary font-bold">+ ۲,۴۰۰,۰۰۰ تومان</span>
+</div>
+<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-center justify-between border border-surface-variant/30">
+<div>
+<span class="font-bold text-on-surface block">ترجمه پزشکی کلینیک نور</span>
+<span class="text-on-surface-variant text-[11px]">۳ روز پیش • تسویه آنی پایا #39104</span>
+</div>
+<span class="text-[15px] text-secondary font-bold">+ ۱,۸۵۰,۰۰۰ تومان</span>
+</div>
+<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-center justify-between border border-surface-variant/30">
+<div>
+<span class="font-bold text-on-surface block">ترانسفر CIP فرودگاه</span>
+<span class="text-on-surface-variant text-[11px]">۵ روز پیش • تسویه هفتگی پایا #22819</span>
+</div>
+<span class="text-[15px] text-secondary font-bold">+ ۱,۶۰۰,۰۰۰ تومان</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ======================================================== -->
+<!-- TAB VIEW 4: DOCUMENTS & QUALIFICATIONS (INLINE VIEW) -->
+<!-- ======================================================== -->
+<div class="tab-view-content hidden flex flex-col w-full space-y-6" id="view-credentials">
+<div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
+<div class="flex items-center gap-3 text-primary">
+<div class="w-10 h-10 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined text-[24px]">badge</span>
+</div>
+<div>
+<h2 class="font-bold text-[18px] text-on-surface">وضعیت صلاحیت ۴ بُعدی CAP و مدارک</h2>
+<span class="text-[12px] text-on-surface-variant">احراز هویت، گواهی زبان C1، مجوز خودرو و عدم سوءپیشینه</span>
+</div>
+</div>
+<button class="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold flex items-center gap-1 cursor-pointer" onclick="switchView('workspace')" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+<span class="">بازگشت به میز کار</span>
+</button>
+</div>
+<section aria-label="وضعیت زنده‌ی مدارک" class="w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20 space-y-3">
+<h3 class="font-bold text-[16px] text-on-surface">وضعیت مدارک ارسالی شما</h3>
+<p class="text-[12px] text-on-surface-variant">مدارک را تیم احراز بررسی می‌کند. محتوای مدارک فقط برای تیم احراز قابل مشاهده است.</p>
+<div class="flex flex-col gap-2" id="live-docs-box"></div>
+<div class="flex flex-col gap-2" id="iv-box"></div>
+<div class="flex flex-col gap-2" id="notif-box"></div>
+<div class="flex flex-col gap-2" id="cap-box"></div>
+</section>
+<div class="hidden grid grid-cols-1 md:grid-cols-2 gap-5" id="static-cap-grid">
+<!-- Dimension 1: CAP-100 Identity -->
+<div class="p-5 sm:p-6 rounded-3xl bg-surface neu-card space-y-3.5 border border-secondary/30">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[26px]">verified_user</span>
+<h3 class="font-bold text-[16px] text-on-surface">۱. احراز هویت و صلاحیت امنیتی CAP-100</h3>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-secondary font-bold text-[11px]">تایید شده فعال</span>
+</div>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">احراز هویت بیومتریک، تایید آدرس سکونت، گواهی عدم اعتیاد و استعلام سیستمی سوءپیشینه از قوه قضاییه با موفقیت ثبت شده است.</p>
+<div class="p-3 rounded-xl bg-surface-container-low text-[11px] flex justify-between items-center text-on-surface">
+<span class="">شماره گواهی: <span class="font-mono font-bold">CAP-100-IR9921</span></span>
+<span class="text-secondary font-bold">اعتبار: پایان ۱۴۰۴</span>
+</div>
+<button class="w-full py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold transition-colors cursor-pointer" onclick="showToast('گواهی احراز هویت CAP معتبر است.', 'verified_user')" type="button">
+            مشاهده استعلام برخط گواهی
+          </button>
+</div>
+<!-- Dimension 2: Language Proficiency -->
+<div class="p-5 sm:p-6 rounded-3xl bg-surface neu-card space-y-3.5 border border-primary/30">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-[26px]">translate</span>
+<h3 class="font-bold text-[16px] text-on-surface">۲. آزمون زبان انگلیسی و عربی C1</h3>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-bold text-[11px]">امتیاز: ۴.۸ از ۵</span>
+</div>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">تاییدیه آزمون مکالمه گویشی عربی عراقی و خلیجی + تسلط به زبان انگلیسی تخصصی مذاکرات بازرگانی و پزشکی سطح پیشرفته C1.</p>
+<div class="p-3 rounded-xl bg-surface-container-low text-[11px] flex justify-between items-center text-on-surface">
+<span class="">ارزیابی شفاهی: <span class="font-bold text-primary">عالی (C1 Advanced)</span></span>
+<span class="text-primary font-bold">نمره: ۴.۸ / ۵</span>
+</div>
+<button class="w-full py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold transition-colors cursor-pointer" onclick="showToast('کارنامه مهارت زبانی آماده دریافت است.', 'description')" type="button">
+            مشاهده کارنامه سنجش زبانی
+          </button>
+</div>
+<!-- Dimension 3: Vehicle & VIP Clearance -->
+<div class="p-5 sm:p-6 rounded-3xl bg-surface neu-card space-y-3.5 border border-secondary/30">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[26px]">directions_car</span>
+<h3 class="font-bold text-[16px] text-on-surface">۳. خودروی تشریفاتی و بیمه‌نامه سرنشین</h3>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-secondary font-bold text-[11px]">VIP تایید شده</span>
+</div>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">پژو ۲۰۷i مدل ۱۴۰۲ سفید، دارای برچسب تشریفات رسمی، معاینه فنی سلامت ویژه، بیمه‌نامه کامل شخص ثالث و بدنه طلایی.</p>
+<div class="p-3 rounded-xl bg-surface-container-low text-[11px] flex justify-between items-center text-on-surface">
+<span class="">پلاک: <span class="font-bold">۶۶ الف ۹۴۱ - ایران ۴۴</span></span>
+<span class="text-secondary font-bold">بیمه‌نامه معتبر تا دی ۱۴۰۴</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button class="py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-[12px] font-semibold transition-colors cursor-pointer" onclick="showToast('تمدید مدارک خودرو در حال حاضر فعال است.', 'autorenew')" type="button">
+              درخواست تمدید
+            </button>
+<button class="py-2.5 rounded-xl bg-surface border border-secondary/40 text-secondary text-[12px] font-bold hover:bg-secondary/10 transition-colors cursor-pointer" onclick="showToast('بیمه‌نامه سرنشین برای تمام مأموریت‌ها فعال است.', 'verified')" type="button">
+              استعلام بیمه
+            </button>
+</div>
+</div>
+<!-- Dimension 4: Medical IPD & Clearance Documents -->
+<div class="p-5 sm:p-6 rounded-3xl bg-surface neu-card space-y-3.5 border border-tertiary/30">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-tertiary text-[26px]">medical_services</span>
+<h3 class="font-bold text-[16px] text-on-surface">۴. صلاحیت پزشکی بین‌الملل (IPD) و عدم سوءپیشینه</h3>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-tertiary font-bold text-[11px]">دارای مجوز ورود</span>
+</div>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">مجوز ورود رسمی به دپارتمان بیماران بین‌الملل (IPD) بیمارستان‌های دی، گاندی، نور و عرفان نیایش جهت هماهنگی درمانی و ترخیص.</p>
+<div class="p-3 rounded-xl bg-surface-container-low text-[11px] flex justify-between items-center text-on-surface">
+<span class="">کد مجوز سلامت: <span class="font-mono font-bold">MED-IPD-4401</span></span>
+<span class="text-secondary font-bold">گواهی عدم سوءپیشینه تایید</span>
+</div>
+<button class="w-full py-2.5 rounded-xl bg-[#006a61] text-on-primary text-[12px] font-bold shadow hover:bg-primary-container transition-colors cursor-pointer" onclick="showToast('درگاه بارگذاری مدارک تکمیلی آماده است.', 'upload_file')" type="button">
+            بارگذاری مدرک یا دوره جدید
+          </button>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================== -->
+<!-- MOBILE BOTTOM NAVIGATION (4 TABS) -->
+<!-- ========================================== -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 z-40 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(163,180,204,0.3)] border-t border-surface-variant/30" id="mobile-nav">
+<div class="flex justify-around items-center h-20 px-3 max-w-lg mx-auto">
+<button aria-current="page" class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 transition-all duration-200 nav-tab-btn cursor-pointer text-on-surface-variant" data-target="workspace" onclick="switchView('workspace')" type="button">
+<span class="material-symbols-outlined text-[24px]">dashboard</span>
+<span class="text-[11px]">میز کار</span>
+</button>
+
+<button class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 text-on-surface-variant hover:text-primary transition-all duration-200 nav-tab-btn cursor-pointer" data-target="earnings" onclick="switchView('earnings')" type="button">
+<span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+<span class="text-[11px]">درآمد</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 text-on-surface-variant hover:text-primary transition-all duration-200 nav-tab-btn cursor-pointer" data-target="credentials" onclick="switchView('credentials')" type="button">
+<span class="material-symbols-outlined text-[24px]">badge</span>
+<span class="text-[11px]">مدارک</span>
+</button>
+</div>
+</nav>
+<!-- Non-modal Floating Toast -->
+<div class="fixed bottom-24 right-4 left-4 sm:left-auto sm:right-8 sm:w-96 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform transition-all duration-300 pointer-events-none translate-y-28 opacity-0" id="generic-toast">
+<span class="material-symbols-outlined text-[24px] text-secondary-fixed" id="toast-icon">info</span>
+<span class="text-[13px] font-medium" id="toast-message">مأموریت رد شد. در انتظار درخواست بعدی دیسپچ...</span>
+</div>
+<!-- ======================================================== -->
+<!-- JAVASCRIPT CONTROLLERS (ALL LIVE ZERO-MODAL LOGIC) -->
+<!-- ======================================================== -->
+<script>
+    // 1. Toast Notification Helper
+    function showToast(msg, icon) {
+      if (!icon) icon = 'check_circle';
+      var toast = document.getElementById('generic-toast');
+      var toastMsg = document.getElementById('toast-message');
+      var toastIcon = document.getElementById('toast-icon');
+      if (!toast) return;
+      toastMsg.textContent = msg;
+      toastIcon.textContent = icon;
+      toast.classList.remove('translate-y-28', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(function () {
+        toast.classList.add('translate-y-28', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3500);
+    }
+
+    // 2. View Switcher (Works simultaneously for Mobile & Desktop Navigation)
+    function switchView(target) {
+      var viewIds = ['workspace', 'schedule', 'earnings', 'credentials'];
+
+      viewIds.forEach(function (v) {
+        var el = document.getElementById('view-' + v);
+        if (el) {
+          if (v === target) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+
+      // Update Mobile Nav styling
+      document.querySelectorAll('#mobile-nav .nav-tab-btn').forEach(function (btn) {
+        var t = btn.getAttribute('data-target');
+        if (t === target) {
+          btn.classList.add('neu-tab-active');
+          btn.classList.remove('text-on-surface-variant');
+        } else {
+          btn.classList.remove('neu-tab-active');
+          btn.classList.add('text-on-surface-variant');
+        }
+      });
+
+      // Update Desktop Nav styling
+      document.querySelectorAll('#desktop-nav .nav-tab-btn').forEach(function (btn) {
+        var t = btn.getAttribute('data-target');
+        if (t === target) {
+          btn.classList.add('text-primary', 'font-bold', 'bg-surface', 'shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.95)]');
+          btn.classList.remove('text-on-surface-variant');
+        } else {
+          btn.classList.remove('text-primary', 'font-bold', 'bg-surface', 'shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.95)]');
+          btn.classList.add('text-on-surface-variant');
+        }
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 3. Shift State Manager
+    var isShiftActive = true;
+    function setShiftState(active, silent) {
+      isShiftActive = active;
+      if (window.HZ) { var __st = HZ.load(); __st.shift = !!active; HZ.save(__st); }
+      if (!silent && window.hzSetOnline) window.hzSetOnline(!!active);
+      var knob = document.getElementById('shift-knob');
+      var knobIcon = document.getElementById('shift-knob-icon');
+      var beacon = document.getElementById('shift-beacon');
+      var title = document.getElementById('shift-status-title');
+      var desc = document.getElementById('shift-status-desc');
+      var headerText = document.getElementById('header-shift-text');
+      var headerPulse = document.getElementById('header-shift-pulse');
+      var shiftNotice = document.getElementById('shift-paused-notice');
+      var offerCard = document.getElementById('dispatch-offer-card');
+
+      if (isShiftActive) {
+        if (knob) {
+          knob.classList.remove('translate-x-0');
+          knob.classList.add('-translate-x-7');
+          knob.classList.remove('from-outline', 'to-outline-variant');
+          knob.classList.add('from-secondary', 'to-secondary-fixed');
+        }
+        if (knobIcon) knobIcon.textContent = 'check';
+        if (beacon) {
+          beacon.classList.remove('bg-outline', 'animate-none');
+          beacon.classList.add('bg-secondary', 'animate-pulse');
+        }
+        if (title) title.textContent = 'آماده به خدمت فوری';
+        if (desc) desc.textContent = 'سامانه دیسپچ ماتریس اعزام ITP-541 فعال است';
+        if (headerText) {
+          headerText.textContent = 'شیفت فعال';
+          headerText.classList.remove('text-outline');
+          headerText.classList.add('text-secondary');
+        }
+        if (headerPulse) {
+          headerPulse.classList.remove('bg-outline', 'animate-none');
+          headerPulse.classList.add('bg-secondary', 'animate-pulse');
+        }
+        if (shiftNotice) shiftNotice.classList.add('hidden');
+        if (offerCard) offerCard.classList.remove('opacity-40', 'pointer-events-none');
+        if (!silent) showToast('شیفت شما فعال گردید. اعزام‌های فوری را دریافت می‌کنید.', 'sensors');
+      } else {
+        if (knob) {
+          knob.classList.remove('-translate-x-7');
+          knob.classList.add('translate-x-0');
+          knob.classList.remove('from-secondary', 'to-secondary-fixed');
+          knob.classList.add('from-outline', 'to-outline-variant');
+        }
+        if (knobIcon) knobIcon.textContent = 'close';
+        if (beacon) {
+          beacon.classList.remove('bg-secondary', 'animate-pulse');
+          beacon.classList.add('bg-outline');
+        }
+        if (title) title.textContent = 'شیفت غیرفعال (در حال استراحت)';
+        if (desc) desc.textContent = 'درخواست‌های اعزام فوری موقتاً متوقف گردید';
+        if (headerText) {
+          headerText.textContent = 'در حال استراحت';
+          headerText.classList.remove('text-secondary');
+          headerText.classList.add('text-outline');
+        }
+        if (headerPulse) {
+          headerPulse.classList.remove('bg-secondary', 'animate-pulse');
+          headerPulse.classList.add('bg-outline');
+        }
+        if (shiftNotice) shiftNotice.classList.remove('hidden');
+        if (offerCard) offerCard.classList.add('opacity-40', 'pointer-events-none');
+        if (!silent) showToast('شیفت به حالت استراحت تغییر یافت.', 'pause_circle');
+      }
+    }
+
+    function toggleShift() {
+      setShiftState(!isShiftActive);
+    }
+
+    // 4. Mission Dispatch Flow (Accept / Reject / Active / Revert)
+    var countdownValue = 13;
+    var countdownTimerRunning = true;
+    var liveTimerSeconds = 0;
+    var liveTimerInterval = null;
+
+    var countdownInterval = setInterval(function () {
+      if (!countdownTimerRunning) return;
+      var num = document.getElementById('countdown-number');
+      var prog = document.getElementById('countdown-progress');
+      if (countdownValue > 0) {
+        countdownValue--;
+        if (num) num.textContent = countdownValue;
+        if (prog) prog.style.width = Math.max(0, (countdownValue / 20) * 100) + '%';
+      } else {
+        countdownTimerRunning = false;
+        clearInterval(countdownInterval);
+        handleRejectMission();
+      }
+    }, 1000);
+
+    function handleAcceptMission() {
+      countdownTimerRunning = false;
+      var offerCard = document.getElementById('dispatch-offer-card');
+      var activeCard = document.getElementById('inline-active-dispatch-card');
+      var emptyCard = document.getElementById('dispatch-empty-card');
+
+      if (offerCard) offerCard.classList.add('hidden');
+      if (emptyCard) emptyCard.classList.add('hidden');
+      if (activeCard) {
+        activeCard.classList.remove('hidden');
+        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      showToast('مأموریت فوری قبول شد! نمای ناوبری و اعزام فعال گردید.', 'navigation');
+    }
+
+    function handleRejectMission() {
+      countdownTimerRunning = false;
+      var offerCard = document.getElementById('dispatch-offer-card');
+      var activeCard = document.getElementById('inline-active-dispatch-card');
+      var emptyCard = document.getElementById('dispatch-empty-card');
+
+      if (offerCard) offerCard.classList.add('hidden');
+      if (activeCard) activeCard.classList.add('hidden');
+      if (emptyCard) emptyCard.classList.remove('hidden');
+      showToast('مأموریت رد شد. در انتظار درخواست بعدی دیسپچ...', 'info');
+    }
+
+    function revertToDispatchOffer() {
+      var offerCard = document.getElementById('dispatch-offer-card');
+      var activeCard = document.getElementById('inline-active-dispatch-card');
+      var emptyCard = document.getElementById('dispatch-empty-card');
+
+      if (activeCard) activeCard.classList.add('hidden');
+      if (emptyCard) emptyCard.classList.add('hidden');
+      if (offerCard) {
+        offerCard.classList.remove('hidden');
+        countdownValue = 15;
+        countdownTimerRunning = true;
+      }
+      showToast('بازگشت به نمای پیشنهاد مأموریت.', 'undo');
+    }
+
+    function resetDispatchDemo() {
+      var offerCard = document.getElementById('dispatch-offer-card');
+      var emptyCard = document.getElementById('dispatch-empty-card');
+      if (emptyCard) emptyCard.classList.add('hidden');
+      if (offerCard) {
+        offerCard.classList.remove('hidden');
+        countdownValue = 20;
+        countdownTimerRunning = true;
+      }
+      showToast('پیشنهاد جدید اعزام بارگذاری شد.', 'refresh');
+    }
+
+    function callPassengerSecurely() {
+      showToast('برقراری تماس مستقیم و امن با آقای عبدالرحمن السالم...', 'call');
+    }
+
+    function openNavigatorApp() {
+      showToast('مسیریابی بیمارستان دی در نشان و بلد فعال گردید.', 'directions');
+    }
+
+    function confirmArrivalAtDestination() {
+      var btn = document.getElementById('inline-confirm-arrival-btn');
+      var box = document.getElementById('arrival-feedback-box');
+      var status = document.getElementById('active-tracking-status-text');
+      if (btn) btn.classList.add('hidden');
+      if (box) box.classList.remove('hidden');
+      if (status) status.textContent = 'وضعیت: رسیده به محل (لابی بین‌الملل بیمارستان دی)';
+
+      if (!liveTimerInterval) {
+        liveTimerInterval = setInterval(function () {
+          liveTimerSeconds++;
+          var m = String(Math.floor(liveTimerSeconds / 60)).padStart(2, '0');
+          var s = String(liveTimerSeconds % 60).padStart(2, '0');
+          var timerEl = document.getElementById('mission-live-timer');
+          if (timerEl) timerEl.textContent = m + ':' + s;
+        }, 1000);
+      }
+      showToast('رسیدن به محل تایید گردید. زمان‌سنج تشریفات فعال شد.', 'where_to_vote');
+    }
+
+    // 5. Payout Inline Drawer
+    function togglePayoutInline() {
+      var panel = document.getElementById('inline-payout-panel');
+      var chev = document.getElementById('payout-card-chevron');
+      if (!panel) return;
+      var isClosed = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden');
+      if (chev) chev.style.transform = isClosed ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    function handleInstantPayoutRequest() {
+      var container = document.getElementById('inline-payout-action-container');
+      if (!container) return;
+      container.innerHTML = '<button class="w-full py-3 rounded-xl bg-[#006a61] text-on-primary text-[13px] font-bold flex items-center justify-center gap-2" disabled><span class="material-symbols-outlined animate-spin text-[18px]">sync</span><span>در حال پردازش تسویه پایا...</span></button>';
+      
+      setTimeout(function () {
+        container.innerHTML = `
+          <div class="p-3 rounded-xl bg-secondary-fixed/50 text-secondary font-bold text-center text-[12px] border border-secondary/30">
+            <span class="material-symbols-outlined text-[16px] align-middle ml-1">check_circle</span>
+            تسویه آنی ۴,۹۲۰,۰۰۰ تومان با رهگیری PAYA-88192 به شبا IR8201... واریز گردید.
+          </div>
+        `;
+        showToast('تسویه حساب آنی پایا با موفقیت انجام شد.', 'payments');
+      }, 700);
+    }
+
+    function handleInstantPayoutRequestEarnings() {
+      var box = document.getElementById('earnings-payout-box');
+      if (!box) return;
+      box.innerHTML = '<button class="w-full py-4 rounded-xl bg-[#006a61] text-on-primary text-[14px] font-bold flex items-center justify-center gap-2" disabled><span class="material-symbols-outlined animate-spin text-[20px]">sync</span><span>در حال هماهنگی با شبکه شاپرک...</span></button>';
+      setTimeout(function () {
+        box.innerHTML = `
+          <div class="p-4 rounded-2xl bg-secondary-fixed/50 text-secondary font-bold text-center text-[13px] border border-secondary/30">
+            <span class="material-symbols-outlined text-[18px] align-middle ml-1">check_circle</span>
+            واریز پایا به مبلغ ۴,۹۲۰,۰۰۰ تومان ثبت شد. کد پیگیری: PAYA-7701
+          </div>
+        `;
+        showToast('تسویه کیف پول به حساب شبا با موفقیت انجام شد.', 'account_balance');
+      }, 800);
+    }
+
+    // 6. SOS Drawer
+    function toggleSosInline() {
+      var panel = document.getElementById('inline-sos-panel');
+      var chev = document.getElementById('sos-chevron');
+      if (!panel) return;
+      var isClosed = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden');
+      if (chev) chev.style.transform = isClosed ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (isClosed) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function handleEmergencySupportEscort() {
+      showToast('درخواست تیم اسکورت اضطراری ثبت گردید. گشت تشریفات اعزام شد.', 'shield_person');
+    }
+
+    function handleEmergencyCallOperator() {
+      showToast('تماس مستقیم با واحد حراست و بحران (۰۲۱-۹۱۰۱۰۰۰۰) برقرار شد.', 'call');
+    }
+
+    function handleEmergencyPolice() {
+      showToast('در حال شماره‌گیری مستقیم فوریت‌های پلیسی ۱۱۰...', 'local_police');
+    }
+
+    // 7. Booking Details & Actions
+    function toggleBookingDetail(bookingId) {
+      var detail = document.getElementById('inline-details-' + bookingId);
+      if (detail) {
+        detail.classList.toggle('hidden');
+      }
+    }
+
+    function handleBookingCall(contact) {
+      showToast('برقراری تماس مستقیم با ' + contact, 'call');
+    }
+
+    function handleBookingConfirm(bkgId) {
+      showToast('آمادگی شما برای رزرو ' + bkgId + ' در سامانه ثبت گردید.', 'event_available');
+    }
+
+    // 8. Header Inline Panels (Profile & Notifications)
+    function toggleInlinePanel(type) {
+      var profilePanel = document.getElementById('inline-profile-panel');
+      var notifPanel = document.getElementById('inline-notifications-panel');
+
+      if (type === 'profile') {
+        if (notifPanel) notifPanel.classList.add('hidden');
+        if (profilePanel) {
+          profilePanel.classList.toggle('hidden');
+          if (!profilePanel.classList.contains('hidden')) {
+            profilePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      } else if (type === 'notifications') {
+        if (profilePanel) profilePanel.classList.add('hidden');
+        if (notifPanel) {
+          notifPanel.classList.toggle('hidden');
+          if (!notifPanel.classList.contains('hidden')) {
+            notifPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+    }
+
+    function markAllNotificationsRead() {
+      var dot = document.getElementById('notif-badge-dot');
+      if (dot) dot.classList.add('hidden');
+      showToast('تمام اعلان‌ها به عنوان خوانده شده ثبت شدند.', 'done_all');
+    }
+
+    // 9. Badges
+    var badgeData = {
+      'cap100': {
+        title: 'گواهی صلاحیت هویت CAP-100',
+        desc: 'احراز هویت جامع بیومتریک، عدم سوءپیشینه و تاییدیه امنیتی تشریفات بین‌المللی با اعتبار فعال تا پایان ۱۴۰۴.',
+        code: 'CAP-100-IR-9921',
+        icon: 'verified_user'
+      },
+      'lang': {
+        title: 'گواهی مهارت زبانی تخصصی C1',
+        desc: 'تسلط کامل به عربی گویش عراقی و خلیجی با نمره ۴.۸ به انضمام مدرک بین‌المللی C1 انگلیسی تخصصی مذاکرات بازرگانی.',
+        code: 'LNG-AR-EN-C1-801',
+        icon: 'translate'
+      },
+      'medical': {
+        title: 'صلاحیت ترجمه همراه پزشکی (IPD)',
+        desc: 'گواهینامه اصطلاحات پزشکی بالینی، تریاژ و هماهنگی پرونده‌های بیماران بین‌الملل بیمارستان‌های دی و نور.',
+        code: 'MED-IPD-IR-402',
+        icon: 'medical_services'
+      },
+      'car': {
+        title: 'خودرو تشریفات استاندارد VIP',
+        desc: 'پژو ۲۰۷i مدل ۱۴۰۲، دارای بیمه‌نامه بدنه کامل، معاینه فنی ویژه و مجوز تردد در جایگاه‌های تشریفات.',
+        code: 'VIP-CAR-207-66A',
+        icon: 'directions_car'
+      },
+      'insurance': {
+        title: 'پوشش بیمه مأموریت فعال',
+        desc: 'بیمه مسئولیت مدنی جامع مترجمان همراه تشریفات با سقف پوشش کامل حوادث و خسارات سرنشین.',
+        code: 'INS-RESP-88902',
+        icon: 'security'
+      }
+    };
+
+    function showBadgeDetail(type) {
+      var info = badgeData[type];
+      if (!info) return;
+      var card = document.getElementById('inline-badge-detail-card');
+      var title = document.getElementById('inline-badge-title');
+      var desc = document.getElementById('inline-badge-desc');
+      var code = document.getElementById('inline-badge-code');
+      var icon = document.getElementById('inline-badge-icon');
+
+      if (title) title.textContent = info.title;
+      if (desc) desc.textContent = info.desc;
+      if (code) code.textContent = info.code;
+      if (icon) icon.textContent = info.icon;
+
+      if (card) {
+        card.classList.remove('hidden');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function closeBadgeDetail() {
+      var card = document.getElementById('inline-badge-detail-card');
+      if (card) card.classList.add('hidden');
+    }
+
+    // Default initialization
+    window.addEventListener('DOMContentLoaded', function () {
+      setShiftState(!!(window.HZ && HZ.load().shift), true);
+    });
+  </script>
+
+
+
+<script src="ui.js"></script>
+<script>
+/* میز کار مترجم: اتصال نمونه‌ی code1.html به نشست و نام واقعی؛ حذف تسویه‌ی آنی طبق تصمیم‌ها */
+(function () {
+  var H = window.HZ;
+  var state = H.load();
+  if (!H.requireSession(state) || !(state.status === 'active_general' || state.status === 'active_specialized')) {
+    location.replace('index.html');
+    return;
+  }
+  /* ماموریت‌های من: فقط ماموریت‌های پذیرفته‌شده و آینده، با مبلغ کل و سهم خالص */
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  var selectedDay = 0;
+  function dayStart(i) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + i); return d; }
+  function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  var weekdayFmt = (function () { try { return new Intl.DateTimeFormat('fa-IR', { weekday: 'long' }); } catch (e) { return null; } })();
+  function dayName(d) { return weekdayFmt ? weekdayFmt.format(d) : ''; }
+  function missionsOn(list, d) { return list.filter(function (m) { return sameDay(new Date(m.startAt), d); }); }
+  function renderDayBar(list) {
+    var bar = document.getElementById('day-bar');
+    if (!bar) return;
+    bar.innerHTML = '';
+    for (var i = 0; i < 7; i++) {
+      (function (i) {
+        var d = dayStart(i), n = missionsOn(list, d).length;
+        var label = i === 0 ? 'امروز' : i === 1 ? 'فردا' : i === 2 ? 'پس‌فردا' : HZ.toFa(i) + ' روز دیگر';
+        var on = i === selectedDay;
+        var btn = el('button', 'flex-1 min-w-[70px] py-2 px-3 rounded-xl text-center transition-colors ' + (on ? 'bg-surface-container-high neu-pressed' : 'bg-surface hover:bg-surface-container-low'));
+        btn.type = 'button';
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.appendChild(el('span', 'text-[11px] text-on-surface-variant block', label));
+        btn.appendChild(el('span', 'text-[15px] font-bold block ' + (on ? 'text-primary' : 'text-on-surface'), dayName(d)));
+        btn.appendChild(el('span', n ? 'text-[11px] text-secondary font-bold' : 'text-[11px] text-outline', n ? HZ.toFa(n) + ' ماموریت' : 'استراحت'));
+        btn.addEventListener('click', function () { selectedDay = i; renderMissions(); });
+        bar.appendChild(btn);
+      })(i);
+    }
+  }
+  // ماموریت‌ها از سرور خوانده می‌شوند؛ سرور فقط ماموریت‌های پذیرفته‌شده و آینده را برمی‌گرداند.
+  var MISSIONS = [];
+  var missionsState = 'loading'; // loading | ok | error | nosession
+  function loadMissions() {
+    var st = HZ.load();
+    if (!st.token) { missionsState = 'nosession'; renderMissions(); return; }
+    missionsState = 'loading'; renderMissions();
+    fetch('/api/translator/missions', { headers: { Authorization: 'Bearer ' + st.token } })
+      .then(function (r) {
+        if (r.status === 401) { missionsState = 'nosession'; return null; }
+        if (!r.ok) { missionsState = 'error'; return null; }
+        return r.json();
+      })
+      .then(function (d) {
+        if (d) { MISSIONS = (d.missions || []).slice().sort(function (a, b) { return Date.parse(a.startAt) - Date.parse(b.startAt); }); missionsState = 'ok'; }
+        renderMissions();
+      })
+      .catch(function () { missionsState = 'error'; renderMissions(); });
+  }
+  function renderMissions() {
+    var box = document.getElementById('missions-list');
+    if (!box) return;
+    var sc = document.getElementById('schedule-list');
+    var list = MISSIONS;
+    var emptyTxt = missionsState === 'loading' ? 'در حال دریافت ماموریت‌ها…'
+      : missionsState === 'error' ? 'دریافت ماموریت‌ها انجام نشد. اتصال اینترنت را بررسی کنید.'
+      : missionsState === 'nosession' ? 'نشست شما منقضی شده است. دوباره وارد شوید.'
+      : 'فعلاً ماموریت پذیرفته‌شده‌ای ندارید. درخواست‌های جدید بعد از تأیید پذیرفته می‌شوند.';
+    var dayList = missionsOn(list, dayStart(selectedDay));
+    renderDayBar(list);
+    box.innerHTML = '';
+    if (sc) sc.innerHTML = '';
+    if (!list.length) {
+      box.appendChild(el('div', 'rounded-2xl bg-surface p-5 neu-raised text-center text-[13px] text-on-surface-variant', emptyTxt));
+      if (sc) sc.appendChild(el('div', 'rounded-2xl bg-surface p-5 neu-raised text-center text-[13px] text-on-surface-variant md:col-span-3', emptyTxt));
+      return;
+    }
+    list.forEach(function (m) { box.appendChild(missionCard(m)); });
+    if (sc) {
+      if (!dayList.length) sc.appendChild(el('div', 'rounded-2xl bg-surface p-5 neu-raised text-center text-[13px] text-on-surface-variant md:col-span-3', 'در این روز ماموریتی ندارید.'));
+      dayList.forEach(function (m) { sc.appendChild(missionCard(m)); });
+    }
+  }
+  function missionCard(m) {
+    var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3');
+    var head = el('div', 'flex items-start justify-between gap-2');
+    // سرور کد زمینه (general/medical/…) می‌فرستد؛ عنوان فارسی نمایش داده می‌شود
+    var FIELD_FA = { general: 'عمومی', medical: 'پزشکی', legal: 'حقوقی', business: 'تجاری' };
+    head.appendChild(el('span', 'text-[14px] text-on-surface font-bold', FIELD_FA[m.purpose] || m.purpose || 'ماموریت'));
+    head.appendChild(el('span', 'text-[11px] font-bold text-primary', HZ.toFa(m.code || '')));
+    card.appendChild(head);
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (m.travelerName || '—')));
+    var when = new Date(m.startAt);
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant', (m.place || '') + ' • ' + HZ.jDate(when) + ' ' + HZ.clock(when)));
+    var money = el('div', 'flex items-center justify-between pt-2 border-t border-surface-variant/40 text-[12px]');
+    money.appendChild(el('span', 'text-on-surface-variant', 'مبلغ کل: ' + HZ.money(m.total || 0)));
+    money.appendChild(el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(m.net || 0)));
+    card.appendChild(money);
+    if (m.reservation_id && Date.parse(m.startAt) <= Date.now()) {
+      var finBtn = el('button', 'self-start px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'پایان خدمت');
+      finBtn.type = 'button';
+      finBtn.onclick = function () {
+        srv('POST', '/translator/missions/' + m.reservation_id + '/finish').then(function (res) {
+          HZ.toast(res.status === 200 ? 'خدمت پایان یافت. منتظر انتخاب پرداخت مسافر.' : 'پایان خدمت ثبت نشد.');
+          loadMissions(); loadPayments();
+        });
+      };
+      card.appendChild(finBtn);
+    }
+    if (m.reservation_id) {
+      var cancelBtn = el('button', 'self-start px-3 py-1.5 rounded-xl neu-raised text-[11px] font-bold text-error cursor-pointer', 'لغو ماموریت');
+      cancelBtn.type = 'button';
+      cancelBtn.onclick = function () {
+        srv('POST', '/translator/missions/' + m.reservation_id + '/cancel').then(function (res) {
+          HZ.toast(res.status === 200 ? 'ماموریت لغو شد و دوباره تطبیق می‌شود.' : 'لغو انجام نشد.');
+          loadMissions();
+        });
+      };
+      card.appendChild(cancelBtn);
+    }
+    return card;
+  }
+
+  // ---------- پرداخت‌های منتظر تأیید (سند ۷.۳) ----------
+  var PAYMENTS_LIST = [];
+  function loadPayments() {
+    var t = tok(); if (!t) return;
+    fetch('/api/translator/payments', { headers: { Authorization: 'Bearer ' + t } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d) { PAYMENTS_LIST = d.payments || []; renderPayments(); } })
+      .catch(function () {});
+  }
+  function paymentsBox() {
+    var box = document.getElementById('payments-box');
+    if (!box) {
+      var list = document.getElementById('missions-list');
+      if (!list || !list.parentNode) return null;
+      box = el('div', 'flex flex-col gap-3 w-full'); box.id = 'payments-box';
+      list.parentNode.insertBefore(box, list);
+    }
+    return box;
+  }
+  function renderPayments() {
+    var box = paymentsBox(); if (!box) return;
+    box.innerHTML = '';
+    if (!PAYMENTS_LIST.length) return;
+    box.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'پرداخت‌های منتظر تأیید'));
+    PAYMENTS_LIST.forEach(function (p) { box.appendChild(paymentCard(p)); });
+  }
+  function paymentCard(p) {
+    var card = el('div', 'rounded-2xl bg-surface p-4 neu-raised flex flex-col gap-2');
+    card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', p.place || 'ماموریت'));
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (p.travelerName || '—')));
+    var money = el('div', 'flex items-center justify-between pt-2 border-t border-surface-variant/40 text-[12px]');
+    money.appendChild(el('span', 'text-on-surface-variant', 'مبلغ کل: ' + HZ.money(p.total || 0)));
+    money.appendChild(el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(p.net || 0)));
+    card.appendChild(money);
+    var state;
+    if (p.pay_state === 'disputed') state = 'اختلاف ثبت شده؛ در بررسی پشتیبانی است.';
+    else if (!p.pay_state) state = 'منتظر انتخاب روش پرداخت توسط مسافر.';
+    else if (p.confirmed) state = 'دریافت شما ثبت شد؛ منتظر تأیید مسافر.';
+    else state = 'مسافر پرداخت نقدی را ثبت کرده. دریافت وجه را تأیید کنید.';
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant', state));
+    if (p.pay_method === 'cash' && p.pay_state === 'awaiting_cash' && !p.confirmed) {
+      var row = el('div', 'flex flex-wrap gap-2');
+      var ok = el('button', 'px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'دریافت وجه را تأیید می‌کنم');
+      ok.type = 'button';
+      ok.onclick = function () {
+        srv('POST', '/translator/missions/' + p.reservation_id + '/cash-confirm').then(function (res) {
+          HZ.toast(res.status === 200 ? (res.data.settled ? 'پرداخت تسویه شد.' : 'تأیید ثبت شد.') : 'تأیید انجام نشد.');
+          loadPayments(); loadMissions();
+        });
+      };
+      var no = el('button', 'px-3 py-1.5 rounded-xl neu-raised text-error text-[11px] font-bold cursor-pointer', 'اختلاف دارم');
+      no.type = 'button';
+      no.onclick = function () {
+        srv('POST', '/translator/missions/' + p.reservation_id + '/cash-dispute').then(function (res) {
+          HZ.toast(res.status === 200 ? 'اختلاف به پشتیبانی ارجاع شد.' : 'ثبت اختلاف انجام نشد.');
+          loadPayments();
+        });
+      };
+      row.appendChild(ok); row.appendChild(no);
+      card.appendChild(row);
+    }
+    return card;
+  }
+  // ---------- درخواست‌های زنده از سرور ----------
+  function tok() { return HZ.load().token || null; }
+  function srv(method, path) {
+    var t = tok(); if (!t) return Promise.resolve({ status: 401, data: {} });
+    return fetch('/api' + path, { method: method, headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: arguments[2] !== undefined ? JSON.stringify(arguments[2]) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, data: d }; }); })
+      .catch(function () { return { status: 0, data: {} }; });
+  }
+
+  // ---------- وضعیت زنده‌ی مدارک (فقط وضعیت؛ محتوا به مترجم نشان داده نمی‌شود) ----------
+  var DOC_LABELS = { nid_card: 'کارت ملی', selfie: 'احراز چهره', portrait: 'عکس رسمی', address_proof: 'تأیید نشانی سکونت',
+    criminal_record: 'گواهی عدم سوءپیشینه', drug_free: 'گواهی عدم اعتیاد', ipd_permit: 'مجوز ورود IPD',
+    cip_permit: 'مجوز CIP', specialty_cert: 'مدرک تخصصی', car_docs: 'مدارک خودرو', licence: 'گواهینامه‌ی رانندگی' };
+  function docStatusText(d) {
+    if (d.expired) return { text: 'منقضی شده؛ مدرک جدید ارسال کنید', tone: 'text-error' };
+    if (d.status === 'rejected') return { text: 'رد شده: ' + (d.reject_reason || 'بدون دلیل'), tone: 'text-error' };
+    if (d.status === 'approved') return { text: d.expiring_soon ? 'تأیید شده؛ انقضا نزدیک است' : 'تأیید شده', tone: d.expiring_soon ? 'text-secondary' : 'text-primary' };
+    return { text: 'در انتظار بررسی', tone: 'text-on-surface-variant' };
+  }
+  function renderLiveDocs() {
+    var box = document.getElementById('live-docs-box'); if (!box) return;
+    srv('GET', '/translator/documents').then(function (res) {
+      if (res.status !== 200) return;
+      box.textContent = '';
+      var docs = res.data.documents || [];
+      if (!docs.length) {
+        var none = document.createElement('p'); none.className = 'text-[12px] text-on-surface-variant';
+        none.textContent = 'هنوز مدرکی ارسال نشده است.'; box.appendChild(none); return;
+      }
+      docs.forEach(function (d) {
+        var st = docStatusText(d);
+        var row = document.createElement('div'); row.className = 'p-3 rounded-xl bg-surface-container-low flex justify-between gap-3 text-[12px]';
+        var name = document.createElement('span'); name.className = 'font-bold text-on-surface'; name.textContent = DOC_LABELS[d.kind] || d.kind;
+        var state = document.createElement('span'); state.className = 'font-bold ' + st.tone; state.textContent = st.text;
+        row.appendChild(name); row.appendChild(state); box.appendChild(row);
+      });
+    });
+  }
+  // چهار بُعد صلاحیت از سرور (نه متن ثابت)
+  function renderCapability() {
+    var box = document.getElementById('cap-box'); if (!box) return;
+    srv('GET', '/translator/capability').then(function (res) {
+      if (res.status !== 200 || !res.data.dimensions) return;
+      var dm = res.data.dimensions;
+      var rows = [
+        ['احراز هویت و صلاحیت امنیتی', dm.identity.ok, dm.identity.ok ? 'کامل و تأیید شده' : 'کمبود: ' + dm.identity.missing.map(function (k) { return DOC_LABELS[k] || k; }).join('، ')],
+        ['آزمون زبان', dm.language.ok, dm.language.ok ? 'جفت‌زبان ثبت شده: ' + dm.language.langs.join('، ') : 'هنوز تکمیل نشده'],
+        ['خودرو و بیمه‌نامه', dm.car.active, dm.car.active ? 'فعال' : (dm.car.registered ? 'غیرفعال (مدارک تأییدشده یا معتبر نیست)' : 'ثبت نشده (اختیاری)')],
+        ['صلاحیت پزشکی بین‌الملل (IPD)', dm.medical.ok, dm.medical.ok ? 'مجوز تأیید شده' : 'مجوز تأیید نشده (حوزه‌ی درمانی قفل است)']
+      ];
+      box.textContent = '';
+      rows.forEach(function (r) {
+        var row = document.createElement('div'); row.className = 'p-3 rounded-xl bg-surface-container-low flex justify-between gap-3 text-[12px]';
+        var name = document.createElement('span'); name.className = 'font-bold text-on-surface'; name.textContent = r[0];
+        var state = document.createElement('span'); state.className = 'font-bold ' + (r[1] ? 'text-primary' : 'text-on-surface-variant'); state.textContent = r[2];
+        row.appendChild(name); row.appendChild(state); box.appendChild(row);
+      });
+    });
+  }
+  // یادآوری‌های انقضا (سند ۷: ۳۰ روز قبل و پس از انقضا)
+  function renderNotifications() {
+    var box = document.getElementById('notif-box'); if (!box) return;
+    srv('GET', '/translator/notifications').then(function (res) {
+      if (res.status !== 200) return;
+      box.textContent = '';
+      (res.data.notifications || []).slice(0, 5).forEach(function (n) {
+        var row = document.createElement('div');
+        row.className = 'p-3 rounded-xl bg-secondary-fixed/40 text-[12px] text-secondary font-bold';
+        row.textContent = (n.doc_name ? n.doc_name + ': ' : '') + n.text;
+        box.appendChild(row);
+      });
+    });
+  }
+  // نوبت مصاحبه‌ی زنده (سند ۵): فقط زمان‌های آزاد واقعی؛ یادداشت هماهنگی از سوی مدیر
+  function ivFmt(iso) {
+    var txt = new Date(iso).toLocaleString('en-GB', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', hour12: false, day: 'numeric', month: 'short' });
+    return txt.replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
+  }
+  function renderInterview() {
+    var box = document.getElementById('iv-box'); if (!box) return;
+    srv('GET', '/translator/interview-slots').then(function (res) {
+      if (res.status !== 200) return;
+      box.textContent = '';
+      var card = document.createElement('div');
+      card.className = 'p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/40 flex flex-col gap-2';
+      var title = document.createElement('div');
+      title.className = 'font-bold text-on-surface'; title.textContent = 'مصاحبه‌ی زبان (۱۰ دقیقه‌ی زنده)';
+      card.appendChild(title);
+      var msg = document.createElement('div');
+      msg.className = 'text-[12px] text-on-surface-variant';
+      card.appendChild(msg);
+      var action = document.createElement('div');
+      action.className = 'flex flex-wrap gap-2';
+      card.appendChild(action);
+      if (res.data.booking) {
+        // هماهنگی مصاحبه (حضوری یا ابزار بیرونی) از سوی مدیر اعلام می‌شود؛ اتاق ویدئویی نداریم
+        var note = res.data.booking.note ? ' — ' + res.data.booking.note : '';
+        msg.textContent = 'نوبت شما: ' + ivFmt(res.data.booking.starts_at) + note;
+      } else {
+        var slots = res.data.slots || [];
+        msg.textContent = slots.length ? 'یک نوبت آزاد انتخاب کنید.' : 'فعلاً نوبت آزادی نیست.';
+        slots.slice(0, 3).forEach(function (sl) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'px-3 py-2 rounded-xl border border-primary text-primary text-[12px] font-bold';
+          b.textContent = ivFmt(sl.starts_at);
+          b.onclick = function () {
+            srv('POST', '/translator/interview-slots/' + sl.id + '/book').then(function (r) {
+              if (r.status === 200) renderInterview();
+              else msg.textContent = 'رزرو انجام نشد: ' + (r.data.error === 'slot_taken' ? 'این نوبت پر شده است' : (r.data.error === 'languages_required' ? 'ابتدا زبان انتخاب کنید' : 'خطا'));
+            });
+          };
+          action.appendChild(b);
+        });
+      }
+      box.appendChild(card);
+    });
+  }
+  renderLiveDocs(); renderCapability(); renderNotifications(); renderInterview();
+  setInterval(function () { renderLiveDocs(); renderCapability(); renderNotifications(); renderInterview(); }, 30000);
+
+  window.hzSetOnline = function (on) {
+    var stg = HZ.load();
+    fetch('/api/translator/online', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok(), 'Content-Type': 'application/json' }, body: JSON.stringify({ online: on, gender: stg.gender || null }) }).catch(function () {});
+  };
+  var offersBox = document.getElementById('offers-box');
+  var lastOffers = [];
+  var lastChanges = [];
+  var CHANGE_LABEL = { scheduled_at: 'زمان', place: 'محل ملاقات', origin_lang: 'زبان مبدأ', dest_lang: 'زبان مقصد', field: 'حوزه', hours: 'مدت', car: 'خودرو', party: 'تعداد همراه', gender_pref: 'ترجیح جنسیت' };
+  function renderChange(c) {
+    var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-secondary/40');
+    card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تغییر ماموریت'));
+    var parts = Object.keys(c.changes).filter(function (k) { return CHANGE_LABEL[k]; }).map(function (k) {
+      var v = c.changes[k];
+      if (k === 'scheduled_at') v = HZ.jDate(new Date(v)) + ' ' + HZ.clock(new Date(v));
+      return CHANGE_LABEL[k] + ': ' + v;
+    });
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant', parts.join(' • ') || 'تغییر جزئی'));
+    var row = el('div', 'flex items-center justify-between gap-2 pt-2 border-t border-surface-variant/40 text-[12px]');
+    var tm = el('span', 'font-bold text-secondary', HZ.toFa(Math.max(0, Math.ceil((Date.parse(c.expires_at) - Date.now()) / 1000))) + ' ثانیه');
+    tm.setAttribute('data-exp', c.expires_at); tm.setAttribute('data-pure', '1');
+    row.appendChild(tm);
+    var btns = el('div', 'flex gap-2');
+    var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
+    no.type = 'button';
+    no.onclick = function () { srv('POST', '/translator/changes/' + c.id + '/reject').then(function () { refreshOffers(); }); };
+    var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
+    yes.type = 'button';
+    yes.onclick = function () {
+      srv('POST', '/translator/changes/' + c.id + '/accept').then(function (res) {
+        HZ.toast(res.status === 200 ? 'تغییر پذیرفته شد.' : 'مهلت پاسخ تمام شده است.');
+        loadMissions(); refreshOffers();
+      });
+    };
+    btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
+    card.appendChild(row);
+    return card;
+  }
+  function renderOffers() {
+    if (!offersBox) return;
+    offersBox.innerHTML = '';
+    if (!lastOffers.length && !lastChanges.length) return;
+    lastChanges.forEach(function (c) { offersBox.appendChild(renderChange(c)); });
+    offersBox.appendChild(el('span', 'text-[12px] font-bold text-on-surface-variant px-1', 'درخواست‌های جدید'));
+    lastOffers.forEach(function (o) {
+      var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-primary/30');
+      card.appendChild(el('span', 'text-[14px] font-bold text-on-surface', (o.place || 'محل ملاقات نامشخص')));
+      var meta = o.kind === 'scheduled' && o.scheduled_at ? HZ.jDate(new Date(o.scheduled_at)) + ' ' + HZ.clock(new Date(o.scheduled_at)) : 'فوری';
+      card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (o.traveler_name || '—') + ' • ' + meta));
+      if (o.notes) card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'یادداشت: ' + o.notes));
+      var row = el('div', 'flex items-center justify-between gap-2 pt-2 border-t border-surface-variant/40 text-[12px]');
+      var left = Math.max(0, Math.ceil((Date.parse(o.expires_at) - Date.now()) / 1000));
+      var timer = el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(o.net || 0) + ' • ' + HZ.toFa(left) + ' ثانیه');
+      timer.setAttribute('data-exp', o.expires_at);
+      row.appendChild(timer);
+      var btns = el('div', 'flex gap-2');
+      var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
+      no.type = 'button';
+      no.onclick = function () { srv('POST', '/translator/offers/' + o.id + '/decline').then(function () { refreshOffers(); }); };
+      var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
+      yes.type = 'button';
+      yes.onclick = function () {
+        srv('POST', '/translator/offers/' + o.id + '/accept').then(function (res) {
+          if (res.status === 200) { HZ.toast('ماموریت پذیرفته شد.'); loadMissions(); }
+          else HZ.toast(res.status === 410 ? 'مهلت پذیرش تمام شده است.' : 'این درخواست دیگر در دسترس نیست.');
+          refreshOffers();
+        });
+      };
+      btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
+      card.appendChild(row);
+      offersBox.appendChild(card);
+    });
+  }
+  var offersSig = '';
+  function refreshOffers() {
+    if (!tok()) return;
+    srv('GET', '/translator/offers').then(function (res) {
+      if (res.status !== 200) return;
+      lastOffers = res.data.offers || [];
+      lastChanges = res.data.changes || [];
+      var sig = lastOffers.map(function (o) { return o.id; }).join(',') + '|' + lastChanges.map(function (c) { return c.id; }).join(',');
+      if (sig !== offersSig) { offersSig = sig; renderOffers(); } // فقط وقتی فهرست عوض شود بازسازی کن (کلیک‌ها گم نشوند)
+    });
+  }
+  setInterval(refreshOffers, 3000);
+  loadPayments(); setInterval(loadPayments, 5000);
+  // شمارش معکوس هر ثانیه، بدون بازسازی کارت‌ها
+  setInterval(function () {
+    document.querySelectorAll('[data-exp]').forEach(function (t) {
+      var left = Math.max(0, Math.ceil((Date.parse(t.getAttribute('data-exp')) - Date.now()) / 1000));
+      if (t.getAttribute('data-pure')) t.textContent = HZ.toFa(left) + ' ثانیه';
+      else t.textContent = t.textContent.replace(/• .*ثانیه$/, '• ' + HZ.toFa(left) + ' ثانیه');
+    });
+  }, 1000);
+  refreshOffers();
+
+  loadMissions();
+
+  var p = state.profile || {};
+  var fullName = [p.nameFa, p.lastFa].filter(Boolean).join(' ') || 'مترجم';
+
+  var TEXT_MAP = [
+    ['علیرضا راد', fullName],
+    ['خرید و گردشگری VIP', 'خرید و گردشگری'],
+    ['معتبر تا اسفند ۱۴۰۴', 'معتبر تا اسفند ۱۴۰۵'],
+    ['اعتبار: پایان ۱۴۰۴', 'اعتبار: پایان ۱۴۰۵'],
+    ['تا پاییز ۱۴۰۴ معتبر گردید', 'تا پاییز ۱۴۰۵ معتبر گردید'],
+    ['بیمه‌نامه معتبر تا دی ۱۴۰۴', 'بیمه‌نامه معتبر تا دی ۱۴۰۶'],
+    ['پژو ۲۰۷i سفید مدل ۱۴۰۲ (VIP)', ''],
+    ['خودرو تشریفات استاندارد VIP', 'خودرو تشریفات'],
+    ['VIP تایید شده', 'خودرو تایید شده'],
+    ['مأموریت VIP', 'مأموریت تشریفات'],
+    ['حق‌الزحمه تعهد شده:', 'مبلغ کل مأموریت:'],
+    ['حق‌الزحمه خالص واریزی:', 'سهم خالص شما:'],
+    ['آنی پایا شاپرک (زیر ۲ ساعت)', 'دوره‌ای طبق پنل مدیریت'],
+    ['گزارش درآمد، کیف پول و تسویه حساب آنی', 'گزارش درآمد، کیف پول و تسویه دوره‌ای'],
+    ['مشاهده جزئیات حساب و تسویه آنی', 'مشاهده جزئیات حساب و تسویه'],
+    ['تسویه آنی ۴,۹۲۰,۰۰۰ تومان با رهگیری PAYA-88192', 'تسویه دوره‌ای با شناسه‌ی پیگیری'],
+    ['تسویه آنی پایا #39104', 'تسویه دوره‌ای #39104']
+  ];
+
+  function walk(node, fn) {
+    var kids = Array.prototype.slice.call(node.childNodes);
+    kids.forEach(function (n) {
+      if (n.nodeType === 3) fn(n);
+      else if (n.nodeType === 1 && n.tagName !== 'SCRIPT' && n.tagName !== 'STYLE') walk(n, fn);
+    });
+  }
+
+  function applyText() {
+    walk(document.body, function (n) {
+      var v = n.nodeValue;
+      TEXT_MAP.forEach(function (pair) {
+        if (v.indexOf(pair[0]) !== -1) v = v.split(pair[0]).join(pair[1]);
+      });
+      if (v !== n.nodeValue) n.nodeValue = v;
+    });
+  }
+
+  // حذف عناصر تسویه‌ی آنی (تصمیم: فقط تسویه‌ی دوره‌ای)؛ فقط خود عنصر حذف می‌شود، نه والدها
+  var INSTANT_IDS = ['instant-payout-card-btn', 'inline-payout-panel', 'inline-payout-action-container', 'inline-confirm-payout-btn'];
+  function removeInstantPayout() {
+    INSTANT_IDS.forEach(function (id) { var el = document.getElementById(id); if (el) el.remove(); });
+    document.querySelectorAll('button').forEach(function (b) {
+      if (/درخواست تسویه آنی|برداشت فوری/.test(b.textContent)) b.remove();
+    });
+  }
+
+  // نام در سرایند و کارت‌ها
+  applyText();
+  removeInstantPayout();
+
+  window.addEventListener('DOMContentLoaded', function () { applyText(); removeInstantPayout(); });
+  // بعضی بخش‌ها بعد از تعامل دوباره ساخته می‌شوند
+  var mo = new MutationObserver(function () { applyText(); });
+  mo.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
+<script>
+// امکانات از سرور (پنل مدیر): خاموش‌بودن هر امکان، بخش مربوط را در میز کار پنهان می‌کند
+(function () {
+  function show(el, on) { if (el) el.style.display = on ? '' : 'none'; }
+  fetch('/api/config').then(function (r) { return r.json(); }).then(function (d) {
+    var f = d.features || {};
+    if (f.translator_online === false) {
+      var t = document.querySelector('[aria-label="تغییر وضعیت آماده به خدمت"]');
+      if (t) show(t, false);
+    }
+    if (f.interview_scheduling === false) show(document.getElementById('iv-box'), false);
+  }).catch(function () {});
+})();
+</script>
+</body></html>

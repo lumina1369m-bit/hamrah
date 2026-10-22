@@ -1,0 +1,17 @@
+{
+  "name": "همراه | اعزام و رزرو مترجم",
+  "short_name": "همراه",
+  "description": "اعزام فوری و رزرو زمان‌دار مترجم حضوری",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E6ECF5",
+  "theme_color": "#E6ECF5",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

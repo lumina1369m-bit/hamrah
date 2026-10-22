@@ -1,0 +1,14 @@
+{
+  "name": "hamzaban-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "سرور توسعه برای اپ مسافر و اپ مترجم (Node + SQLite)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/api.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

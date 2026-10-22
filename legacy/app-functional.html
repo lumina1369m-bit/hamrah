@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#005182">
+<title>میز کار مترجم - همراه (هم‌زبان)</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="row">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><span class="material-symbols-outlined">translate</span></div>
+      <div><b id="hd-name">مترجم</b><small id="hd-sub">میز کار</small></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="shift-btn" role="switch" aria-checked="false" aria-label="وضعیت شیفت" class="btn btn-ghost btn-sm" style="gap:10px">
+        <span id="shift-dot" aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#717881;display:inline-block"></span>
+        <span id="shift-label">آفلاین</span>
+      </button>
+      <button class="btn btn-danger btn-sm" id="sos-top" aria-label="SOS: ایمنی و اعزام">SOS</button>
+    </div>
+  </div>
+</header>
+
+<div class="page app-shell">
+  <nav class="side-nav" aria-label="بخش‌های مترجم">
+    <button data-nav="desk" aria-current="page"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span>میز کار</button>
+    <button data-nav="missions"><span class="material-symbols-outlined" aria-hidden="true">assignment</span>ماموریت‌های من</button>
+    <button data-nav="earn"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>درآمد و کیف پول</button>
+    <button data-nav="account"><span class="material-symbols-outlined" aria-hidden="true">badge</span>حساب و مدارک</button>
+    <button data-nav="safety"><span class="material-symbols-outlined" aria-hidden="true">shield</span>ایمنی و اعزام</button>
+  </nav>
+  <main id="view" tabindex="-1"></main>
+</div>
+
+<nav class="bottom-nav" aria-label="بخش‌های مترجم (موبایل)">
+  <button data-nav="desk" aria-current="page"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span>میز کار</button>
+  <button data-nav="missions"><span class="material-symbols-outlined" aria-hidden="true">assignment</span>ماموریت‌ها</button>
+  <button data-nav="earn"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>درآمد</button>
+  <button data-nav="account"><span class="material-symbols-outlined" aria-hidden="true">badge</span>حساب</button>
+  <button data-nav="safety"><span class="material-symbols-outlined" aria-hidden="true">shield</span>ایمنی</button>
+</nav>
+<div id="hz-toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script src="ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  const H = window.HZ, C = H.CONFIG;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const LANG_NAMES = { ar: 'عربی', en: 'انگلیسی', tr: 'ترکی', fr: 'فرانسوی', ru: 'روسی', zh: 'چینی' };
+  const FIELD_NAMES = { tourism: 'گردشگری', pilgrim: 'زیارتی', medical: 'درمانی', business: 'بازرگانی', legal: 'حقوقی-اداری', airport: 'فرودگاه و CIP' };
+  const SPEC = ['medical', 'business', 'legal', 'airport'];
+  const COUNTRIES = ['عراق', 'امارات', 'ترکیه', 'فرانسه', 'روسیه', 'چین', 'عمان'];
+  const NAMES = ['Ahmed Al-Saleh', 'Sara Jansen', 'Mehmet Yilmaz', 'Li Wei', 'Nadia Karimova', 'Omar Haddad'];
+  const DAY = 86400000;
+
+  let state = H.load();
+  let view = 'desk';
+  const persist = () => H.save(state);
+  const logEvt = (t) => { state.log = [{ t: Date.now(), x: t }, ...(state.log || [])].slice(0, 40); };
+  const clearTimers = () => {};
+
+  // ---------- دروازه‌ی دسترسی ----------
+  if (!H.requireSession(state) || !(state.status === 'active_general' || state.status === 'active_specialized')) {
+    location.replace('index.html');
+    return;
+  }
+
+  // ---------- داده‌ی نمونه (فقط محیط آزمایش) ----------
+  function seedIfEmpty() {
+    if (state.seeded) return;
+    const now = Date.now();
+    const at = (d, h, m) => { const x = new Date(now + d * DAY); x.setHours(h, m, 0, 0); return x.getTime(); };
+    const base = (o) => Object.assign({ phase: 'accepted', status: 'upcoming', changes: [], pendingChange: null, notes: '', feeCompensation: 0, travelerPhone: '+964 ••• ••• 42', code: '48213' }, o);
+    state.missions = [
+      base({ id: 'M-1001', type: 'walk', start: now + 2 * 3600000, hours: 3, languages: ['ar'], field: 'tourism', party: 2, travelerName: 'Ahmed Al-Saleh', country: 'عراق', address: 'میدان امام حسین، ورودی شمالی بازار، جلوی داروخانه', distance: 3.4, eta: 18, total: 2800000, net: 2350000, notes: 'دو نفر، یکی از آن‌ها ویلچری است.' }),
+      base({ id: 'M-1002', type: 'car', start: at(1, 10, 0), hours: 5, languages: ['en'], field: 'business', party: 3, travelerName: 'Sara Jansen', country: 'امارات', address: 'هتل اسپیناس پالاس، لابی طبقه‌ی همکف', distance: 0, eta: 0, total: 4200000, net: 3520000, notes: '' }),
+      base({ id: 'M-0990', type: 'walk', start: at(-3, 9, 0), hours: 2, languages: ['ar'], field: 'pilgrim', party: 1, travelerName: 'Omar Haddad', country: 'عمان', address: 'حرم مطهر، باب الجواد', total: 1600000, net: 1344000, status: 'done', phase: 'done', startedAt: at(-3, 9, 5), endedAt: at(-3, 11, 0), changes: [] }),
+      base({ id: 'M-0985', type: 'walk', start: at(-5, 14, 0), hours: 2, languages: ['tr'], field: 'tourism', party: 2, travelerName: 'Mehmet Yilmaz', country: 'ترکیه', address: 'بازار بزرگ، درب شرقی', total: 1800000, net: 1512000, status: 'done', phase: 'done', startedAt: at(-5, 14, 0), endedAt: at(-5, 16, 0) }),
+      base({ id: 'M-0978', type: 'walk', start: at(-2, 16, 0), hours: 2, languages: ['en'], field: 'business', party: 1, travelerName: 'Li Wei', country: 'چین', address: 'برج میلاد، سالن ۲', total: 1500000, net: 1260000, status: 'cancelled', phase: 'cancelled', cancelBy: 'traveler', compensation: 200000 }),
+      base({ id: 'M-0970', type: 'walk', start: at(-7, 12, 0), hours: 3, languages: ['fr'], field: 'tourism', party: 2, travelerName: 'Nadia Karimova', country: 'روسیه', address: 'میدان نقش جهان', total: 2200000, net: 1848000, status: 'done', phase: 'done', startedAt: at(-7, 12, 10), endedAt: at(-7, 15, 0) })
+    ];
+    state.settled = [
+      { id: 'SET-88201', at: now - 2 * DAY, amount: 3360000, sheba: 'IR••••••••••••••••••••••4521', status: 'واریز شده', track: 'PY-7721903' },
+      { id: 'SET-88206', at: now - 1 * DAY, amount: 2880000, sheba: 'IR••••••••••••••••••••••4521', status: 'در انتظار', track: '—' }
+    ];
+    state.seeded = true; state.fields = state.fields && Object.keys(state.fields).length ? state.fields : { tourism: true, pilgrim: true, business: true };
+    state.languages = state.languages && state.languages.length ? state.languages : ['ar', 'en'];
+    state.rating = state.rating || { score: 4.8, count: 14 };
+    state.vehicle = state.vehicle || { on: false };
+    state.finance = state.finance || {};
+    persist();
+  }
+  seedIfEmpty();
+  if (!state.profile || !state.profile.nameFa) { state.profile = Object.assign(state.profile || {}, { nameFa: 'علیرضا', lastFa: 'راد', nameEn: 'Alireza', lastEn: 'Rad', gender: 'مرد' }); persist(); }
+  $('hd-name').textContent = (state.profile.nameFa || '') + ' ' + (state.profile.lastFa || '');
+  $('hd-sub').textContent = 'مترجم همراه تشریفات · ' + H.STATUS_LABEL[state.status];
+
+  // ---------- قواعد خودرو ----------
+  function carAllowed() {
+    const v = state.vehicle || {};
+    if (!v.on || !v.verified) return false;
+    const today = startOfDay(Date.now());
+    if (v.expiry && ((v.expiry.insurance && dateMs(v.expiry.insurance) < today) || (v.expiry.inspection && dateMs(v.expiry.inspection) < today))) return false;
+    if (v.licenceExpired) return false;
+    return true;
+  }
+  function autoOffCar() {
+    const v = state.vehicle || {};
+    if (v.on && !carAllowed() && v.verified) { v.on = false; v.autoOff = true; logEvt('حالت سواره به‌دلیل انقضای مدرک خاموش شد.'); persist(); }
+  }
+  function startOfDay(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function dateMs(s) {
+    const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(H.toEn(s).trim());
+    if (!m) return Infinity;
+    const g = H.jalToGreg(+m[1], +m[2], +m[3]);
+    return g ? g.getTime() : Infinity;
+  }
+  function daysLeft(s) { return Math.ceil((dateMs(s) - Date.now()) / DAY); }
+
+  // ---------- کمک‌های نمایش ----------
+  const when = (t) => `${H.jFull(new Date(t))} · ساعت ${H.clock(new Date(t))}`;
+  const mask = (p) => p;
+  const activeMission = () => (state.missions || []).find((m) => m.status === 'active');
+  // مأموریت جاری: یا در جریان، یا نزدیک‌ترین پذیرفته‌شده‌ی آینده (برای شروع حرکت)
+  const currentMission = () => activeMission() || upcoming()[0];
+  const upcoming = () => (state.missions || []).filter((m) => m.status === 'upcoming').sort((a, b) => a.start - b.start);
+  const sumNet = (ms) => ms.reduce((s, m) => s + (m.net || 0), 0);
+  const doneMissions = () => (state.missions || []).filter((m) => m.status === 'done');
+  const minsTo = (m) => Math.round((m.start - Date.now()) / 60000);
+
+  // ---------- صفحه‌ها ----------
+  function render() {
+    clearTimers();
+    autoOffCar();
+    document.querySelectorAll('[data-nav]').forEach((b) => b.setAttribute('aria-current', b.dataset.nav === view ? 'page' : 'false'));
+    $('shift-btn').setAttribute('aria-checked', String(!!state.shift));
+    $('shift-label').textContent = state.shift ? 'آنلاین' : 'آفلاین';
+    $('shift-dot').style.background = state.shift ? '#047857' : '#717881';
+    const map = { desk: renderDesk, missions: renderMissions, earn: renderEarn, account: renderAccount, safety: renderSafety };
+    (map[view] || renderDesk)();
+    tick();
+    $('view').focus({ preventScroll: true });
+  }
+
+  // ----- میز کار -----
+  function renderDesk() {
+    const act = currentMission();
+    const inv = state.invite;
+    const today = startOfDay(Date.now());
+    const todayNet = sumNet(doneMissions().filter((m) => startOfDay(m.endedAt || m.start) === today));
+    const weekStart = today - 6 * DAY;
+    const weekNet = sumNet(doneMissions().filter((m) => (m.endedAt || m.start) >= weekStart));
+    const unsettled = sumNet(doneMissions().filter((m) => !m.settledAt));
+    const next = upcoming()[0];
+    $('view').innerHTML = `
+      <h1 style="font-size:20px;margin:0 0 12px;color:var(--primary)">میز کار</h1>
+      <section class="panel" aria-labelledby="sh-h">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div><h2 id="sh-h">وضعیت شیفت</h2>
+            <p class="muted" style="margin:0">${state.shift ? 'شما آنلاین هستید و در صورت آزاد بودن دعوت می‌گیرید.' : 'شما آفلاین هستید و هیچ دعوتی دریافت نمی‌کنید.'}</p></div>
+          <button class="btn ${state.shift ? 'btn-ghost' : 'btn-primary'}" data-act="toggle-shift">${state.shift ? 'خروج از شیفت (آفلاین)' : 'شروع شیفت (آنلاین)'}</button>
+        </div>
+        <p class="hint" style="margin-bottom:0">شیفت فقط با همین کلید تغییر می‌کند و به‌خودی‌خود خاموش نمی‌شود.</p>
+      </section>
+
+      ${act ? missionActiveCard(act) : ''}
+      ${inv && !activeMission() ? inviteCard(inv) : ''}
+      ${!inv ? `<section class="panel" aria-live="polite"><h2>درخواست‌ها</h2><p class="muted" style="margin:0">${state.shift ? (state.missions.some((m) => m.status === 'upcoming') ? 'در انتظار درخواست تازه هستید. مأموریت‌های پذیرفته‌شده‌ی شما در «ماموریت‌های من» است.' : 'در انتظار درخواست فوری یا دعوت زمان‌دار هستید.') : 'برای دریافت درخواست، شیفت را آنلاین کنید.'}</p></section>` : ''}
+
+      <div class="grid-2" style="margin-top:4px">
+        <section class="panel" aria-labelledby="k1"><h2 id="k1">درآمد امروز و هفته</h2>
+          <div class="kv">
+            <div><small>امروز (سهم خالص)</small><b>${H.money(todayNet)}</b></div>
+            <div><small>هفته‌ی جاری</small><b>${H.money(weekNet)}</b></div>
+            <div><small>قابل تسویه</small><b>${H.money(unsettled)}</b></div>
+            <div><small>دوره‌ی تسویه</small><b>${esc(C.SETTLEMENT_PERIOD)}</b></div>
+          </div>
+          <p class="hint">تسویه فقط دوره‌ای و به شبای ثبت‌شده انجام می‌شود؛ درخواست تسویه‌ی آنی وجود ندارد.</p>
+        </section>
+        <section class="panel" aria-labelledby="k2"><h2 id="k2">مأموریت بعدی</h2>
+          ${next ? `<div class="kv"><div><small>زمان</small><b>${esc(when(next.start))}</b></div><div><small>مسافر</small><b>${esc(next.travelerName)}</b></div><div><small>زبان</small><b>${(next.languages || []).map((l) => LANG_NAMES[l]).join('، ')}</b></div><div><small>نوع</small><b>${next.type === 'car' ? 'با خودرو' : 'پیاده'}</b></div></div><button class="btn btn-ghost btn-sm" data-nav="missions">مشاهده‌ی ماموریت‌ها</button>` : '<p class="muted">مأموریتی در پیش ندارید.</p>'}
+        </section>
+      </div>
+
+      <section class="panel" aria-labelledby="ch-h">
+        <h2 id="ch-h">نمودار درآمد ۷ روز گذشته</h2>
+        ${weeklyChart()}
+      </section>
+
+      <div class="grid-2">
+        <section class="panel"><h2>امتیاز شما</h2>
+          <p style="margin:0"><b style="font-size:24px">${H.toFa((state.rating.score || 0).toFixed(1))}</b> <span class="muted">از ۵ · ${H.toFa(state.rating.count || 0)} نظر</span></p>
+          <p class="hint">امتیاز و تعداد مأموریت‌های کامل بر اولویت دریافت درخواست اثر دارد، نه بر مبلغ هر مأموریت.</p>
+        </section>
+        <section class="panel"><h2>یادآوری‌ها</h2>
+          <ul style="padding-inline-start:20px;margin:0" class="ink2">${(state.log || []).slice(0, 4).map((l) => `<li>${esc(l.x)} <span class="muted">${H.clock(new Date(l.t))}</span></li>`).join('') || '<li class="muted">یادآوری‌ای نیست.</li>'}</ul>
+        </section>
+      </div>
+      ${testBox()}`;
+  }
+
+  function weeklyChart() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const s = startOfDay(Date.now()) - i * DAY;
+      const e = s + DAY;
+      const amt = sumNet(doneMissions().filter((m) => { const t = m.endedAt || m.start; return t >= s && t < e; }));
+      days.push({ s, amt });
+    }
+    const max = Math.max(1, ...days.map((d) => d.amt));
+    const total = days.reduce((a, d) => a + d.amt, 0);
+    const W = 560, Hh = 170, bw = 56, gap = 22, base = 140;
+    const bars = days.map((d, i) => {
+      const h = Math.round((d.amt / max) * 110);
+      const x = 20 + i * (bw + gap);
+      const lbl = new Date(d.s).toLocaleDateString('fa-IR-u-ca-persian', { weekday: 'short' });
+      return `<g><rect x="${x}" y="${base - h}" width="${bw}" height="${h}" rx="10" fill="${i === 6 ? '#006a61' : '#86f2e4'}"><title>${esc(lbl)}: ${esc(H.money(d.amt))}</title></rect><text x="${x + bw / 2}" y="${base + 20}" text-anchor="middle" font-size="12" fill="#404750">${esc(lbl)}</text></g>`;
+    }).join('');
+    return `<p style="margin:0 0 6px">مجموع هفته: <b>${H.money(total)}</b></p>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="نمودار درآمد هفت روز گذشته، مجموع ${esc(H.money(total))}" style="width:100%;min-width:420px;height:auto;font-family:inherit">
+        <line x1="10" y1="${base}" x2="${W - 10}" y2="${base}" stroke="#c0c7d1"/>${bars}</svg></div>`;
+  }
+
+  function inviteCard(inv) {
+    return `<section class="panel" style="border:2px solid #006a61" aria-labelledby="inv-h" role="region">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div><h2 id="inv-h">درخواست فوری</h2><p class="muted" style="margin:0">پذیرش یا رد. رد بدون جریمه است.</p></div>
+        <div class="countdown-ring" aria-live="off" aria-label="زمان باقی‌مانده برای پذیرش"><span id="inv-count">${H.toFa(C.INVITE_SECONDS)}</span></div>
+      </div>
+      <div class="kv" style="margin-top:12px">
+        <div><small>زبان‌ها</small><b>${(inv.languages || []).map((l) => LANG_NAMES[l]).join('، ')}</b></div>
+        <div><small>حوزه</small><b>${esc(FIELD_NAMES[inv.field])}</b></div>
+        <div><small>نوع مأموریت</small><b>${inv.type === 'car' ? 'با خودرو' : 'پیاده'}</b></div>
+        <div><small>مدت</small><b>${H.toFa(inv.hours)} ساعت</b></div>
+        <div><small>تعداد مسافر</small><b>${H.toFa(inv.party)} نفر</b></div>
+        <div><small>فاصله و زمان رسیدن</small><b>${H.toFa(inv.distance)} کیلومتر · ${H.toFa(inv.eta)} دقیقه</b></div>
+        <div><small>مسافر</small><b>${esc(inv.travelerName)} · ${esc(inv.country)}</b></div>
+        <div><small>زمان ملاقات</small><b>${esc(when(inv.start))}</b></div>
+      </div>
+      <div class="kv" style="margin-top:8px"><div style="grid-column:1/-1"><small>آدرس دقیق محل ملاقات</small><b>${esc(inv.address)}</b></div>${inv.notes ? `<div style="grid-column:1/-1"><small>توضیحات مسافر</small><b>${esc(inv.notes)}</b></div>` : ''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <button class="btn btn-danger" data-act="reject-invite">رد</button>
+        <button class="btn btn-primary" data-act="accept-invite">پذیرش</button>
+      </div>
+    </section>`;
+  }
+
+  function missionActiveCard(m) {
+    const phaseLabel = { accepted: 'پذیرفته‌شده', moving: 'در حرکت', arrived: 'رسیده به محل', service: 'خدمت در جریان', done: 'پایان‌یافته' }[m.phase];
+    const steps = ['accepted', 'moving', 'arrived', 'service', 'done'];
+    const idx = steps.indexOf(m.phase);
+    const stepper = `<div class="steps" aria-label="مرحله‌ی مأموریت">${['پذیرفته‌شده', 'در حرکت', 'رسیده به محل', 'خدمت در جریان', 'پایان‌یافته'].map((t, i) => `<div class="st ${i < idx ? 'done' : ''} ${i === idx ? 'now' : ''}" ${i === idx ? 'aria-current="step"' : ''}>${t}</div>`).join('')}</div>`;
+    let action = '';
+    if (m.phase === 'accepted') action = `<button class="btn btn-primary btn-block" data-act="m-move" data-id="${m.id}">حرکت به سمت مسافر</button>`;
+    if (m.phase === 'moving') action = `<button class="btn btn-primary btn-block" data-act="m-arrive" data-id="${m.id}">اعلام رسیدن به محل</button>`;
+    if (m.phase === 'arrived') action = `
+      <label class="field"><span>کد امنیتی ۵ رقمی که مسافر می‌گوید</span><input id="code-in" class="dir-ltr" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="۰۰۰۰۰"></label>
+      <div id="code-err" class="err" role="alert"></div>
+      <button class="btn btn-primary btn-block" data-act="m-start" data-id="${m.id}">تأیید کد و شروع خدمت</button>`;
+    if (m.phase === 'service') action = `<div class="kv"><div><small>زمان خدمت</small><b class="timer" id="svc-timer">--:--:--</b></div><div><small>مدت قرارداد</small><b>${H.toFa(m.hours)} ساعت</b></div></div>
+      <button class="btn btn-primary btn-block" data-act="m-end" data-id="${m.id}">پایان خدمت</button>`;
+    if (m.phase === 'done') action = `<p class="ok-text" style="margin:0">خدمت پایان یافت. فاکتور برای تأیید دو طرف ارسال شد.</p>`;
+    return `<section class="panel" style="border:2px solid #006a61" aria-labelledby="act-h">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+        <h2 id="act-h">مأموریت در جریان · ${esc(phaseLabel)}</h2>
+        <span class="chip ok">${m.type === 'car' ? 'با خودرو' : 'پیاده'}</span>
+      </div>
+      ${stepper}
+      <div class="kv">
+        <div><small>مسافر</small><b>${esc(m.travelerName)} · ${esc(m.country)}</b></div>
+        <div><small>تلفن مسافر (ماسک‌شده)</small><b class="num">${esc(mask(m.travelerPhone))}</b></div>
+        <div style="grid-column:1/-1"><small>آدرس دقیق</small><b>${esc(m.address)}</b></div>
+        <div><small>تعداد مسافر</small><b>${H.toFa(m.party)}</b></div>
+        <div><small>زبان‌ها</small><b>${(m.languages || []).map((l) => LANG_NAMES[l]).join('، ')}</b></div>
+      </div>
+      ${m.notes ? `<p class="ink2"><b>توضیحات مسافر:</b> ${esc(m.notes)}</p>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0">
+        <button class="btn btn-ghost" data-act="m-call" data-id="${m.id}">تماس درون‌برنامه‌ای</button>
+        <a class="btn btn-ghost" href="https://www.openstreetmap.org/search?query=${encodeURIComponent(m.address)}" target="_blank" rel="noopener">مسیریابی به نقشه‌ی خارجی</a>
+      </div>
+      ${action}
+      ${m.pendingChange ? changeCard(m) : ''}
+    </section>`;
+  }
+
+  function changeCard(m) {
+    const p = m.pendingChange;
+    if (!p || m.status !== 'upcoming' || minsTo(m) < C.CHANGE_MIN_LEAD_MINUTES) return '';
+    return `<div class="panel" style="background:#fff9ec;margin-top:12px" role="region" aria-label="پیشنهاد تغییر مسافر">
+      <p style="margin:0 0 6px"><b>پیشنهاد تغییر مهم از مسافر:</b> ${esc(p.label)}</p>
+      <p class="muted" style="margin:0 0 8px">پاسخ تا <span class="num" data-chg="${m.id}">${H.toFa(C.CHANGE_RESPONSE_SECONDS / 60)}:۰۰</span> دقیقه. بدون پاسخ، تغییر اعمال نمی‌شود و مأموریت برای شما باقی می‌ماند.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button class="btn btn-danger" data-act="chg-reject" data-id="${m.id}">رد</button>
+        <button class="btn btn-primary" data-act="chg-accept" data-id="${m.id}">قبول</button>
+      </div></div>`;
+  }
+
+  // ----- ماموریت‌های من -----
+  let missionTab = 'today';
+  function renderMissions() {
+    const now = Date.now(), today = startOfDay(now), tomorrow = today + DAY;
+    const all = state.missions || [];
+    const groups = {
+      today: all.filter((m) => m.status === 'upcoming' && m.start >= today && m.start < tomorrow),
+      upcoming: all.filter((m) => m.status === 'upcoming' && m.start >= tomorrow),
+      live: all.filter((m) => m.status === 'active'),
+      done: all.filter((m) => m.status === 'done'),
+      cancelled: all.filter((m) => m.status === 'cancelled')
+    };
+    const tabs = [['today', 'امروز'], ['upcoming', 'آینده'], ['live', 'در جریان'], ['done', 'انجام‌شده'], ['cancelled', 'لغوشده']];
+    if (!tabs.some(([k]) => k === missionTab)) missionTab = 'today';
+    const list = groups[missionTab];
+    $('view').innerHTML = `
+      <h1 style="font-size:20px;margin:0 0 12px;color:var(--primary)">ماموریت‌های من</h1>
+      <p class="muted" style="margin-top:-6px">فقط مأموریت‌های پذیرفته‌شده‌ی شما اینجاست. انتخاب از فهرست وجود ندارد.</p>
+      <div class="tabs" role="tablist" aria-label="دسته‌بندی مأموریت‌ها">
+        ${tabs.map(([k, t]) => `<button role="tab" aria-selected="${k === missionTab}" data-tab="${k}" id="tab-${k}">${t} <span class="num">(${H.toFa(groups[k].length)})</span></button>`).join('')}
+      </div>
+      <div role="tabpanel" aria-labelledby="tab-${missionTab}">
+        ${list.length ? list.map((m) => missionCard(m)).join('') : '<section class="panel"><p class="muted" style="margin:0">مأموریتی در این دسته نیست.</p></section>'}
+      </div>
+      ${testBox()}`;
+  }
+
+  function missionCard(m) {
+    const done = m.status === 'done', cancelled = m.status === 'cancelled';
+    const badge = done ? '<span class="chip ok">انجام‌شده</span>' : cancelled ? '<span class="chip err">لغوشده</span>' : m.status === 'active' ? '<span class="chip info">در جریان</span>' : `<span class="chip">${H.toFa(Math.max(0, Math.round((m.start - Date.now()) / 60000)))} دقیقه تا شروع</span>`;
+    const canCancel = m.status === 'upcoming';
+    return `<section class="panel" aria-labelledby="mc-${m.id}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 id="mc-${m.id}" style="margin:0">${esc(when(m.start))}</h2>${badge}
+      </div>
+      <div class="kv" style="margin-top:10px">
+        <div><small>مدت</small><b>${H.toFa(m.hours)} ساعت</b></div>
+        <div><small>نوع</small><b>${m.type === 'car' ? 'با خودرو' : 'پیاده'}</b></div>
+        <div><small>زبان‌ها</small><b>${(m.languages || []).map((l) => LANG_NAMES[l]).join('، ')}</b></div>
+        <div><small>حوزه</small><b>${esc(FIELD_NAMES[m.field])}</b></div>
+        <div><small>مسافر</small><b>${esc(m.travelerName)} · ${esc(m.country)}</b></div>
+        <div><small>تعداد</small><b>${H.toFa(m.party)} نفر</b></div>
+        <div style="grid-column:1/-1"><small>آدرس دقیق</small><b>${esc(m.address)}</b></div>
+        <div><small>مبلغ کل مأموریت</small><b>${H.money(m.total)}</b></div>
+        <div><small>سهم خالص شما</small><b>${H.money(m.net)}</b></div>
+      </div>
+      ${m.notes ? `<p class="ink2" style="margin:8px 0 0"><b>توضیحات:</b> ${esc(m.notes)}</p>` : ''}
+      ${cancelled ? `<p class="muted" style="margin:8px 0 0">لغو توسط ${m.cancelBy === 'translator' ? 'شما' : m.cancelBy === 'traveler' ? 'مسافر' : 'سامانه'}${m.compensation ? ' · جبران لغو: ' + H.money(m.compensation) + ' (جدا از خدمت)' : ''}</p>` : ''}
+      ${m.status === 'done' ? `<p class="muted" style="margin:8px 0 0">مدت خدمت: ${H.toFa(Math.round(((m.endedAt || 0) - (m.startedAt || 0)) / 60000))} دقیقه</p>` : ''}
+      ${canCancel ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-act="m-cancel" data-id="${m.id}">لغو مأموریت توسط من</button></div>` : ''}
+      ${canCancel && m.pendingChange ? changeCard(m) : ''}
+    </section>`;
+  }
+
+  // ----- درآمد -----
+  function renderEarn() {
+    const todayS = startOfDay(Date.now());
+    const doneAll = doneMissions();
+    const month = doneAll.filter((m) => (m.endedAt || m.start) >= todayS - 30 * DAY);
+    const unsettled = sumNet(doneAll.filter((m) => !m.settledAt));
+    $('view').innerHTML = `
+      <h1 style="font-size:20px;margin:0 0 12px;color:var(--primary)">درآمد و کیف پول</h1>
+      <div class="grid-2">
+        <section class="panel"><h2>موجودی قابل تسویه</h2>
+          <p style="margin:0;font-size:24px;font-weight:800;color:var(--primary)">${H.money(unsettled)}</p>
+          <p class="hint">سهم خالص مأموریت‌های انجام‌شده‌ای که هنوز تسویه نشده‌اند.</p>
+          <p class="ink2" style="margin:8px 0 0">تسویه‌ی بعدی: <b>${esc(C.SETTLEMENT_PERIOD)} (طبق دوره‌ی پنل)</b> به شبای ثبت‌شده. تسویه‌ی آنی وجود ندارد.</p>
+        </section>
+        <section class="panel"><h2>درآمد این ماه</h2>
+          <div class="kv"><div><small>امروز</small><b>${H.money(sumNet(doneAll.filter((m) => startOfDay(m.endedAt || m.start) === todayS)))}</b></div><div><small>تعداد ماموریت (۳۰ روز)</small><b>${H.toFa(month.length)}</b></div><div style="grid-column:1/-1"><small>سهم خالص ۳۰ روز</small><b>${H.money(sumNet(month))}</b></div></div>
+        </section>
+      </div>
+      <section class="panel"><h2>نمودار درآمد ۷ روز</h2>${weeklyChart()}</section>
+      <section class="panel"><h2>تاریخچه‌ی تسویه</h2>
+        <div class="table-wrap"><table><thead><tr><th>تاریخ</th><th>مبلغ</th><th>شبای مقصد</th><th>وضعیت</th><th>شناسه‌ی پیگیری</th></tr></thead><tbody>
+        ${(state.settled || []).map((s) => `<tr><td>${esc(H.jDate(new Date(s.at)))}</td><td>${H.money(s.amount)}</td><td class="num">${esc(s.sheba)}</td><td><span class="chip ${s.status === 'واریز شده' ? 'ok' : s.status === 'ناموفق' ? 'err' : 'warn'}">${esc(s.status)}</span></td><td class="num">${esc(s.track)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">تسویه‌ای ثبت نشده است.</td></tr>'}
+        </tbody></table></div>
+        <p class="hint">اگر شبا نامعتبر باشد، تسویه ناموفق اعلام می‌شود و در صف بعدی دوباره تلاش می‌شود. شبا را با کد پیامک اصلاح کنید.</p>
+      </section>
+      <section class="panel"><h2>جزئیات هر مأموریت</h2>
+        <div class="table-wrap"><table><thead><tr><th>تاریخ</th><th>مدت</th><th>نوع</th><th>کشور مسافر</th><th>مبلغ کل</th><th>سهم خالص</th></tr></thead><tbody>
+        ${doneAll.map((m) => `<tr><td>${esc(H.jDate(new Date(m.start)))}</td><td>${H.toFa(m.hours)} ساعت</td><td>${m.type === 'car' ? 'با خودرو' : 'پیاده'}</td><td>${esc(m.country)}</td><td>${H.money(m.total)}</td><td>${H.money(m.net)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">هنوز مأموریتی انجام نشده است.</td></tr>'}
+        </tbody></table></div>
+        <p class="hint">تعرفه، مالیات و کارمزد پلتفرم جداگانه نمایش داده نمی‌شوند. جبران لغوهای مسافر با برچسب «جبران لغو» ثبت می‌شوند.</p>
+      </section>
+      <section class="panel"><h2>گزارش</h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost" data-act="export" data-kind="CSV">دریافت CSV ماهانه</button>
+          <button class="btn btn-ghost" data-act="export" data-kind="PDF">دریافت PDF ماهانه</button>
+        </div>
+        <p class="hint">اگر کد اقتصادی ثبت کرده باشید، گزارش سالانه‌ی درآمد با همان شناسه قابل دریافت است.</p>
+      </section>
+      ${testBox()}`;
+  }
+
+  // ----- حساب و مدارک -----
+  function renderAccount() {
+    const f = state.fields || {}, v = state.vehicle || {};
+    const fieldRows = Object.keys(FIELD_NAMES).map((k) => {
+      let chip;
+      if (!SPEC.includes(k)) chip = f[k] ? '<span class="chip ok">فعال</span>' : '<span class="chip">غیرفعال</span>';
+      else if (!f[k]) chip = '<span class="chip">انتخاب نشده</span>';
+      else chip = state.certs && state.certs[k] === 'approved' ? '<span class="chip ok">فعال</span>' : state.certs && state.certs[k] === 'rejected' ? '<span class="chip err">مدرک رد شد؛ بسته</span>' : '<span class="chip warn">در انتظار تأیید مدرک (قفل)</span>';
+      return `<tr><td>${FIELD_NAMES[k]}</td><td>${chip}</td></tr>`;
+    }).join('');
+    const exp = (label, s) => {
+      if (!s) return '';
+      const d = daysLeft(s);
+      const cls = d < 0 ? 'err' : d <= C.EXPIRY_REMINDER_DAYS ? 'warn' : 'ok';
+      return `<div><small>${label}</small><b class="num">${H.toFa(s)}</b> <span class="chip ${cls}">${d < 0 ? 'منقضی شده' : H.toFa(d) + ' روز مانده'}</span></div>`;
+    };
+    $('view').innerHTML = `
+      <h1 style="font-size:20px;margin:0 0 12px;color:var(--primary)">حساب و مدارک</h1>
+      <section class="panel"><h2>کارت شایستگی</h2>
+        <div class="kv">
+          <div><small>وضعیت</small><b>${H.STATUS_LABEL[state.status]}</b></div>
+          <div><small>کد رهگیری ملی</small><b class="num">${esc(state.trackingCode || '—')}</b></div>
+          <div><small>نام (فارسی)</small><b>${esc((state.profile.nameFa || '') + ' ' + (state.profile.lastFa || ''))}</b></div>
+          <div><small>نام (لاتین)</small><b class="dir-ltr">${esc((state.profile.nameEn || '') + ' ' + (state.profile.lastEn || ''))}</b></div>
+          <div><small>جنسیت (روی کارت مسافر)</small><b>${esc(state.profile.gender || '—')}</b></div>
+          <div><small>شهر</small><b>${esc(state.profile.city || '—')}</b></div>
+        </div>
+        <p class="hint">کد ملی و تصویر کارت ملی به مترجم یا مسافر نشان داده نمی‌شوند.</p>
+      </section>
+
+      <section class="panel"><h2>حوزه‌ها و زبان‌ها</h2>
+        <div class="table-wrap"><table><thead><tr><th>حوزه</th><th>وضعیت</th></tr></thead><tbody>${fieldRows}</tbody></table></div>
+        <p class="ink2" style="margin-top:10px"><b>جفت‌زبان‌ها:</b> ${(state.languages || []).map((l) => LANG_NAMES[l]).join('، ') || '—'}</p>
+      </section>
+
+      <section class="panel"><h2>خودرو (اختیاری)</h2>
+        ${v.on ? `<div class="kv">
+          <div><small>خودرو</small><b>${esc(v.model || '—')} ${esc(v.color || '')}</b></div>
+          <div><small>ظرفیت</small><b>${H.toFa(v.capacity || 4)} سرنشین</b></div>
+          <div><small>پلاک</small><b class="num">${esc(v.plate || '—')}</b></div>
+          <div><small>حالت سواره</small><b>${carAllowed() ? '<span class="chip ok">فعال</span>' : '<span class="chip warn">خاموش (مدرک در انتظار یا منقضی)</span>'}</b></div>
+          ${exp('بیمه‌ی شخص ثالث', (v.expiry || {}).insurance)}
+          ${exp('معاینه‌ی فنی', (v.expiry || {}).inspection)}
+        </div>
+        ${v.autoOff ? '<p class="err" role="alert">حالت سواره به‌دلیل انقضای بیمه یا گواهینامه خاموش شد. پس از تمدید، دوباره فعال می‌شود.</p>' : ''}
+        <p class="hint">تا تأیید مدارک خودرو فقط مأموریت پیاده می‌بینید. مأموریت سواره برای شما پنهان است، نه قفل‌شده.</p>
+        <button class="btn btn-ghost btn-sm" data-act="veh-off">حذف خودرو از حساب</button>` : '<p class="muted">خودرو ثبت نشده است. بدون خودرو فقط مأموریت پیاده دریافت می‌کنید.</p>'}
+      </section>
+
+      <section class="panel"><h2>تنظیمات پذیرش مسافر</h2>
+        <p class="muted" style="margin-top:0">مشخص کنید از مسافران با چه جنسیتی درخواست بگیرید. جنسیت مسافر هیچ‌جا به شما به‌عنوان ترجیح نشان داده نمی‌شود.</p>
+        <div class="seg" role="group" aria-label="پذیرش مسافران بر اساس جنسیت" style="grid-template-columns:repeat(3,1fr)">
+          ${[['all', 'همه'], ['زن', 'فقط زن'], ['مرد', 'فقط مرد']].map(([k, t]) => `<button type="button" data-act="accept-from" data-v="${k}" aria-pressed="${(state.profile.acceptFrom || 'all') === k}">${t}</button>`).join('')}
+        </div>
+      </section>
+
+      <section class="panel"><h2>شبا و امتیاز</h2>
+        <div class="kv"><div><small>شبا</small><b class="num">${esc(maskSheba(state.finance.sheba))}</b></div><div><small>شناسه‌ی مالیاتی</small><b class="num">${esc(H.toFa(state.finance.taxId || state.profile.nationalId || '—'))}</b></div><div><small>امتیاز</small><b>${H.toFa((state.rating.score || 0).toFixed(1))} از ۵</b></div><div><small>لغوهای من</small><b>${H.toFa(state.cancelCount || 0)}</b></div></div>
+        <p class="hint">تغییر شبا فقط با کد پیامک انجام می‌شود.</p>
+        <button class="btn btn-ghost btn-sm" data-act="sheba-change">تغییر شبا (با کد پیامک)</button>
+      </section>
+
+      <section class="panel"><h2>نسخه‌ی منشور و تعهدنامه</h2>
+        <p class="ink2" style="margin:0">پذیرفته‌شده: منشور اخلاقی و تعهدنامه‌ی عدم افشا (NDA). ${state.finance.ind && state.finance.nda ? '<span class="chip ok">ثبت شد</span>' : '<span class="chip warn">ثبت نشده</span>'}</p>
+      </section>
+
+      <section class="panel"><h2>نشست و خروج</h2>
+        <p class="muted" style="margin-top:0">نشست تا ${H.toFa(C.SESSION_DAYS)} روز در همین دستگاه معتبر است.</p>
+        <button class="btn btn-ghost" data-act="logout">خروج از این دستگاه</button>
+      </section>
+      ${testBox()}`;
+  }
+
+  function maskSheba(s) {
+    if (!s) return '—';
+    return s.slice(0, 4) + '•'.repeat(Math.max(0, s.length - 8)) + s.slice(-4);
+  }
+
+  // ----- ایمنی و اعزام -----
+  function renderSafety() {
+    const logs = (state.safetyLog || []);
+    $('view').innerHTML = `
+      <h1 style="font-size:20px;margin:0 0 12px;color:var(--primary)">ایمنی و اعزام</h1>
+      <section class="sos" aria-labelledby="sos-h">
+        <h2 id="sos-h" style="margin:0 0 6px;color:#8a1f15">SOS</h2>
+        <p class="ink2" style="margin:0 0 12px">در هر وضعیتی در دسترس است و به مرکز امنیت و پشتیبانی ۲۴/۷ وصل می‌شود.</p>
+        <div style="display:flex;justify-content:center;margin:8px 0 16px"><button class="btn-sos" data-act="sos" aria-label="ارسال SOS به مرکز امنیت">SOS</button></div>
+        <div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+          <button class="btn btn-ghost" data-act="dispatch" data-kind="field">درخواست اعزام تیم پشتیبانی میدانی</button>
+          <button class="btn btn-ghost" data-act="dispatch" data-kind="escort">درخواست اسکورت محافظتی</button>
+          <button class="btn btn-ghost" data-act="call-sec">تماس با حراست و پشتیبانی</button>
+          <button class="btn btn-danger" data-act="call-police">تماس با فوریت‌های پلیسی (۱۱۰)</button>
+        </div>
+        <p class="hint" style="margin-top:10px">زمان تقریبی رسیدن تیم، پس از ثبت درخواست نمایش داده می‌شود. هر تماس در لاگ ثبت می‌شود.</p>
+      </section>
+
+      <section class="panel" style="margin-top:14px" aria-labelledby="mx-h">
+        <h2 id="mx-h">ماتریس اعزام (ITP-541)</h2>
+        <div class="table-wrap"><table><thead><tr><th>نوع درخواست</th><th>اولویت</th><th>واحد دریافت‌کننده</th><th>مهلت پذیرش</th><th>اگر کسی نپذیرفت</th></tr></thead><tbody>
+          <tr><td>SOS</td><td>۱</td><td>نزدیک‌ترین واحد آزاد و مرکز امنیت</td><td>${H.toFa(C.SOS_ESCALATION_MINUTES)} دقیقه</td><td>به پشتیبانی ارجاع می‌شود</td></tr>
+          <tr><td>اعزام تیم میدانی</td><td>۲</td><td>نزدیک‌ترین تیم آزاد</td><td>${H.toFa(C.SOS_ESCALATION_MINUTES)} دقیقه</td><td>به پشتیبانی ارجاع می‌شود</td></tr>
+          <tr><td>اسکورت محافظتی</td><td>۳</td><td>نزدیک‌ترین واحد آزاد اسکورت</td><td>${H.toFa(C.SOS_ESCALATION_MINUTES)} دقیقه</td><td>به پشتیبانی ارجاع می‌شود</td></tr>
+        </tbody></table></div>
+        <p class="hint">درخواست‌ها بر اساس نوع اولویت گرفته می‌شوند: SOS، سپس اعزام تیم میدانی، سپس اسکورت.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="lg-h"><h2 id="lg-h">لاگ ایمنی</h2>
+        <ul style="padding-inline-start:20px;margin:0" class="ink2">${logs.slice(0, 10).map((l) => `<li>${esc(l.x)} <span class="muted">${H.clock(new Date(l.t))}</span></li>`).join('') || '<li class="muted">درخواستی ثبت نشده است.</li>'}</ul>
+      </section>`;
+  }
+
+  function testBox() {
+    return `<section class="test-box" aria-label="ابزار آزمایشی"><b>ابزار آزمایشی (فقط محیط آزمایش)</b>
+      <p class="hint" style="margin:4px 0 8px">در نسخه‌ی تولید حذف می‌شود. دعوت‌ها و مسافران واقعی از سرور می‌آیند.</p>
+      <button class="btn btn-ghost btn-sm" data-act="t-invite">ارسال دعوت آزمایشی</button>
+      <button class="btn btn-ghost btn-sm" data-act="t-change">پیشنهاد تغییر ساعت از مسافر</button>
+      <button class="btn btn-ghost btn-sm" data-act="t-code">نمایش کد امنیتی مأموریت فعال</button>
+      <button class="btn btn-ghost btn-sm" data-act="t-reset">بازنشانی داده‌ی نمونه</button>
+    </section>`;
+  }
+
+  // ---------- تایمرها: یک تیک یک‌ثانیه‌ای؛ فقط نمایش را به‌روز می‌کند ----------
+  function tick() {
+    const now = Date.now();
+    const inv = state.invite;
+    if (inv) {
+      const left = Math.max(0, Math.ceil((inv.expiresAt - now) / 1000));
+      if (left <= 0) { state.invite = null; logEvt('درخواست پذیرفته نشد و به مترجم بعدی رفت.'); persist(); render(); return; }
+      const el = $('inv-count'); if (el) el.textContent = H.toFa(left);
+    }
+    const act = activeMission();
+    if (act && act.phase === 'service') {
+      const el = $('svc-timer');
+      if (el) {
+        const s = Math.floor((now - act.startedAt) / 1000);
+        el.textContent = H.toFa(H.pad2(Math.floor(s / 3600)) + ':' + H.pad2(Math.floor((s % 3600) / 60)) + ':' + H.pad2(s % 60));
+      }
+    }
+    const expired = (state.missions || []).filter((m) => m.pendingChange && now >= m.pendingChange.until);
+    if (expired.length) {
+      expired.forEach((m) => { m.pendingChange = null; });
+      logEvt('پیشنهاد تغییر پاسخ داده نشد؛ تغییر اعمال نشد و مأموریت برای شما باقی ماند.');
+      persist(); render(); return;
+    }
+    (state.missions || []).forEach((m) => {
+      if (!m.pendingChange) return;
+      const el = document.querySelector('[data-chg="' + m.id + '"]');
+      if (el) { const l = Math.max(0, Math.ceil((m.pendingChange.until - now) / 1000)); el.textContent = H.toFa(H.pad2(Math.floor(l / 60)) + ':' + H.pad2(l % 60)); }
+    });
+  }
+  function testChange() {
+    const m = upcoming().find((x) => minsTo(x) >= C.CHANGE_MIN_LEAD_MINUTES && (x.changes || []).length < 3);
+    if (!m) { toastErr('مأموریت آینده‌ای با حداقل ۳۰ دقیقه فاصله نیست'); return; }
+    if (m.pendingChange) { toastErr('یک پیشنهاد در انتظار پاسخ است'); return; }
+    const to = m.start + 3600000;
+    m.pendingChange = { label: 'ساعت از ' + H.toFa(H.clock(new Date(m.start))) + ' به ' + H.toFa(H.clock(new Date(to))), to, until: Date.now() + C.CHANGE_RESPONSE_SECONDS * 1000 };
+    logEvt('پیشنهاد تغییر مهم از مسافر دریافت شد. ' + H.toFa(C.CHANGE_RESPONSE_SECONDS / 60) + ' دقیقه برای پاسخ.');
+    persistRender();
+  }
+
+  // ---------- کنش‌ها ----------
+  function findMission(id) { return (state.missions || []).find((m) => m.id === id); }
+  function toastErr(msg) { H.toast(msg, { error: true }); }
+
+  document.addEventListener('click', (e) => {
+    const nav = e.target.closest('[data-nav]');
+    if (nav) { view = nav.dataset.nav; render(); window.scrollTo(0, 0); return; }
+    const tabBtn = e.target.closest('[data-tab]');
+    if (tabBtn) { missionTab = tabBtn.dataset.tab; render(); return; }
+    if (e.target.closest('#sos-top')) { view = 'safety'; render(); return; }
+    if (e.target.closest('#shift-btn')) { toggleShift(); return; }
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const act = b.dataset.act, id = b.dataset.id;
+    const m = id ? findMission(id) : null;
+    const actions = {
+      'toggle-shift': toggleShift,
+      'accept-invite': acceptInvite,
+      'reject-invite': rejectInvite,
+      'm-move': () => { m.phase = 'moving'; m.status = 'active'; logEvt('حرکت به سمت مسافر ثبت شد.'); persistRender(); },
+      'm-arrive': () => { m.phase = 'arrived'; m.arrivedAt = Date.now(); logEvt('رسیدن به محل ثبت شد.'); persistRender(); },
+      'm-start': () => startService(m),
+      'm-end': () => endService(m),
+      'm-call': () => { H.toast('تماس درون‌برنامه‌ای با مسافر (شماره‌ی کامل نمایش داده نمی‌شود)'); logEvt('تماس درون‌برنامه‌ای با مسافر شروع شد.'); persist(); },
+      'm-cancel': () => cancelByTranslator(m),
+      'chg-accept': () => respondChange(m, true),
+      'chg-reject': () => respondChange(m, false),
+      'export': () => { H.toast('فایل ' + b.dataset.kind + ' آماده‌ی دانلود شد (نمونه)'); },
+      'accept-from': () => { state.profile.acceptFrom = b.dataset.v; persist(); H.toast('تنظیم پذیرش ذخیره شد'); render(); },
+      'veh-off': () => { if (confirm('خودرو از حساب حذف شود؟ تغییر فقط برای مأموریت‌های آینده اعمال می‌شود.')) { state.vehicle = { on: false }; persistRender(); } },
+      'sheba-change': () => shebaChange(),
+      'logout': () => { state.session = null; persist(); location.replace('index.html'); },
+      'sos': () => sos('SOS به مرکز امنیت ارسال شد'),
+      'dispatch': () => dispatchReq(b.dataset.kind),
+      'call-sec': () => { logSafety('تماس با حراست ثبت شد'); H.toast('تماس با حراست و پشتیبانی برقرار شد (نمونه)'); },
+      'call-police': () => { if (confirm('تماس با ۱۱۰ انجام شود؟')) { logSafety('تماس با ۱۱۰ ثبت شد'); H.toast('تماس با ۱۱۰ (نمونه)'); } },
+      't-invite': () => testInvite(),
+      't-change': () => testChange(),
+      't-code': () => { const a = activeMission() || upcoming().find((x) => x.status === 'upcoming'); H.toast(a ? 'کد امنیتی آزمایشی این مأموریت: ' + H.toFa(a.code) : 'مأموریتی نیست'); },
+      't-reset': () => { if (confirm('داده‌ی نمونه بازنشانی شود؟')) { state.seeded = false; state.missions = []; state.invite = null; state.safetyLog = []; state.log = []; seedIfEmpty(); persistRender(); } }
+    };
+    if (actions[act]) actions[act]();
+  });
+
+  function persistRender() { persist(); render(); }
+
+  function toggleShift() {
+    state.shift = !state.shift;
+    logEvt(state.shift ? 'شیفت آنلاین شد.' : 'شیفت آفلاین شد.');
+    persist();
+    if (!state.shift) state.invite = null;
+    render();
+  }
+
+  function testInvite() {
+    if (!state.shift) { toastErr('ابتدا شیفت را آنلاین کنید'); return; }
+    if (activeMission()) { toastErr('در حال انجام مأموریت هستید؛ درخواست جدید دریافت نمی‌کنید'); return; }
+    const type = carAllowed() && Math.random() > 0.5 ? 'car' : 'walk';
+    const start = Date.now() + (2 + Math.round(Math.random() * 4)) * 3600000;
+    state.invite = {
+      id: 'I-' + Date.now(), type, start, hours: 2, languages: [['ar', 'en', 'tr'][Math.floor(Math.random() * 3)]], field: ['tourism', 'pilgrim', 'business'][Math.floor(Math.random() * 3)],
+      party: 1 + Math.floor(Math.random() * 3), travelerName: NAMES[Math.floor(Math.random() * NAMES.length)], country: COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)],
+      address: 'کافه‌ی سنتی، ضلع جنوبی میدان ولیعصر', distance: +(1 + Math.random() * 5).toFixed(1), eta: 10 + Math.floor(Math.random() * 15), notes: '',
+      expiresAt: Date.now() + C.INVITE_SECONDS * 1000
+    };
+    logEvt('دعوت جدید دریافت شد. ' + C.INVITE_SECONDS + ' ثانیه برای پذیرش.');
+    persistRender();
+  }
+
+  function acceptInvite() {
+    const inv = state.invite;
+    if (!inv || inv.expiresAt < Date.now()) { toastErr('مهلت پذیرش تمام شده است'); return; }
+    const newM = Object.assign({ phase: 'accepted', status: 'upcoming', changes: [], pendingChange: null, notes: inv.notes || '', feeCompensation: 0, travelerPhone: '+964 ••• ••• 42', code: String(10000 + Math.floor(Math.random() * 89999)), end: null }, inv, { total: 2200000, net: 1848000, id: 'M-' + Date.now() });
+    delete newM.expiresAt;
+    state.missions.push(newM);
+    state.invite = null;
+    logEvt('مأموریت پذیرفته شد؛ یادآوری در لحظه‌ی موعد ارسال می‌شود.');
+    persistRender();
+    H.toast('مأموریت پذیرفته شد');
+  }
+
+  function rejectInvite() {
+    state.invite = null; state.rejectCount = (state.rejectCount || 0) + 1;
+    logEvt('دعوت رد شد. رد بدون جریمه است.');
+    persistRender();
+  }
+
+  function startService(m) {
+    const input = $('code-in');
+    const v = (input ? H.toEn(input.value) : '').trim();
+    if (!/^\d{5}$/.test(v)) { $('code-err').textContent = 'کد ۵ رقمی را وارد کنید.'; return; }
+    if (v !== m.code) { $('code-err').textContent = 'کد نادرست است. از مسافر بخواهید کد را دوباره بگوید.'; return; }
+    m.status = 'active'; m.phase = 'service'; m.startedAt = Date.now();
+    logEvt('خدمت شروع شد؛ زمان‌سنج فعال است.');
+    persistRender();
+  }
+
+  function endService(m) {
+    m.phase = 'done'; m.status = 'done'; m.endedAt = Date.now();
+    logEvt('خدمت پایان یافت. فاکتور برای تأیید دو طرف ارسال شد.');
+    persistRender();
+  }
+
+  function cancelByTranslator(m) {
+    if (!confirm('مأموریت لغو شود؟ جریمه‌ی پولی ندارد؛ امتیاز شما کم می‌شود و مأموریت به مترجم دیگری داده می‌شود.')) return;
+    m.status = 'cancelled'; m.phase = 'cancelled'; m.cancelBy = 'translator';
+    state.cancelCount = (state.cancelCount || 0) + 1;
+    state.rating.score = Math.max(1, +(state.rating.score - 0.1).toFixed(2));
+    logEvt('لغو ثبت شد؛ امتیاز شما کم شد و مأموریت به مترجم دیگری داده می‌شود.');
+    persistRender();
+  }
+
+  function respondChange(m, ok) {
+    if (!m || !m.pendingChange) return;
+    const p = m.pendingChange;
+    if (ok) {
+      if ((m.changes || []).length >= 3) { toastErr('سقف سه تغییر مهم برای این مأموریت پر شده است'); return; }
+      m.start = p.to; m.changes = [...(m.changes || []), p.label];
+      logEvt('تغییر پذیرفته شد: ' + p.label);
+    } else logEvt('تغییر رد شد؛ مأموریت بدون تغییر باقی ماند.');
+    m.pendingChange = null;
+    persistRender();
+  }
+
+  function sos(msg) {
+    logSafety(msg);
+    H.toast(msg + '؛ مرکز امنیت پیگیری می‌کند');
+  }
+  function dispatchReq(kind) {
+    const names = { field: 'اعزام تیم پشتیبانی میدانی', escort: 'اسکورت محافظتی' };
+    logSafety('درخواست ' + names[kind] + ' ثبت شد');
+    H.toast('درخواست ثبت شد. زمان تقریبی رسیدن تیم ' + H.toFa(8 + Math.floor(Math.random() * 10)) + ' دقیقه است.');
+  }
+  function logSafety(text) {
+    state.safetyLog = [{ t: Date.now(), x: text }, ...(state.safetyLog || [])].slice(0, 30);
+    persist();
+    if (view === 'safety') render();
+  }
+
+  function shebaChange() {
+    const code = C.TEST_OTP;
+    const ask = prompt('کد پیامک برای تغییر شبا (در محیط آزمایش ' + H.toFa(code) + ')');
+    if (ask == null) return;
+    if (H.toEn(ask).trim() !== code) { toastErr('کد نادرست است'); return; }
+    const sh = prompt('شبا جدید (IR و ۲۴ رقم)');
+    if (sh == null) return;
+    const clean = H.toEn(sh).replace(/\s/g, '').toUpperCase();
+    if (!H.validSheba(clean)) { toastErr('شبا معتبر نیست'); return; }
+    state.finance.sheba = clean; logEvt('شبا تغییر کرد.'); persistRender();
+    H.toast('شبا ذخیره شد');
+  }
+
+  // ---------- شروع ----------
+  setInterval(tick, 1000);
+  window.addEventListener('storage', (e) => { if (e.key === H.KEY) { state = H.load(); render(); } });
+  render();
+})();
+</script>
+</body>
+</html>
