@@ -99,12 +99,17 @@ jobs:
       - name: تست پایان خدمت، تمدید و پرداخت در Chromium
         working-directory: tests
         run: |
-          python finish_flow_ui.py
-          python extension_ui.py
-          python translator_pay_ui.py
-          python traveler_pay_ui.py
-          python traveler_settle_ui.py
-          python traveler_invoice_ui.py
+          for test in finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
+            if python "$test" > /tmp/browser-test.log 2>&1; then
+              cat /tmp/browser-test.log
+            else
+              cat /tmp/browser-test.log
+              # Also expose the traceback through the GitHub Checks API, even when
+              # downloading raw logs/artifacts is unavailable to the reviewer.
+              python -c 'from pathlib import Path; s=Path("/tmp/browser-test.log").read_text()[-6000:]; print("::error title=Browser regression::" + s.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))'
+              exit 1
+            fi
+          done
       - name: ذخیره‌ی عکس خطا و لاگ سرور
         if: failure()
         uses: actions/upload-artifact@v4
