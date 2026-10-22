@@ -66,5 +66,6 @@ run python3 extension_ui.py
 run python3 finish_flow_ui.py
 run python3 booking_options_ui.py
 run python3 service_clock_ui.py
+run python3 payment_methods_ui.py
 run python3 settlement_failure_ui.py
 exit $fail
