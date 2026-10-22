@@ -81,7 +81,9 @@ async def scenario(browser, own_finish):
         response = await result.value
         assert response.status == 201, await response.text()
         created = await response.json()
-        assert created['field'] == 'general' and not created['car'], created
+        assert created['field'] == 'general', created
+        sent = response.request.post_data_json
+        assert sent['category'] == 'general' and sent['car'] is False, sent
         bid, total = created['id'], created['total']
         assert total > 0
         offers = await api(translator_ctx.request, 'GET', '/translator/offers', ttok)
