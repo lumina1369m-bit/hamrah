@@ -26,6 +26,7 @@ done
 python3 mkpng.py >/dev/null
 fail=0
 run() { echo "== $*"; if timeout 300 "$@" > "assets/last_$(echo "$*" | tr ' /' '__').log" 2>&1; then echo "   ok"; else echo "   FAILED (see assets/)"; fail=1; fi; }
+run node "$SERVER_DIR/test/sms.test.js"
 run env BASE=http://127.0.0.1:8081 node "$SERVER_DIR/test/api.test.js"
 run env BASE=http://127.0.0.1:8081 node "$SERVER_DIR/test/features_cities_security.test.js"
 run env BASE=http://127.0.0.1:8082 node "$SERVER_DIR/test/timing.test.js"

@@ -29,6 +29,11 @@ jobs:
           node --check server/server.js
           node --check server/lib/security.js
           node --check server/lib/features.js
+          node --check server/lib/sms.js
+
+      - name: تست واحد لایه‌ی پیامک
+        working-directory: server
+        run: node test/sms.test.js
 
       - name: بالا آوردن سرورهای تست (۸۰۸۱ زمان واقعی، ۸۰۸۲ زمان فشرده)
         working-directory: server
