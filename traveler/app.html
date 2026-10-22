@@ -154,6 +154,7 @@
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="">
 <style>.leaflet-container img.leaflet-tile{max-width:none !important;max-height:none !important}.leaflet-container{font-family:inherit}</style>
 <script src="i18n.js" defer></script>
+<script src="payment-methods.js" defer></script>
 <link href="vendor/fonts.css" rel="stylesheet"/>
 <link href="vendor/tailwind.css" rel="stylesheet"/>
 <link href="vendor/theme.css" rel="stylesheet"/>
@@ -627,10 +628,12 @@
 <div class="flex items-center justify-between font-extrabold"><span class="text-on-surface text-[12px]">مبلغ کل قابل پرداخت:</span><div class="flex flex-col text-left"><span class="text-[14px] text-primary" id="inv-total">—</span></div></div>
 </div>
 <!-- Payment Method Selection -->
+<p id="payment-method-status" role="status" aria-live="polite" class="text-[11px] text-on-surface-variant">در حال دریافت روش‌های پرداخت…</p>
+<button id="btn-refresh-payment-methods" type="button" class="self-start text-[11px] font-bold text-secondary underline cursor-pointer">تازه‌سازی روش‌های پرداخت</button>
 <div class="flex flex-col gap-1.5">
 <span class="text-[10.5px] text-on-surface-variant px-1">شیوه پرداخت:</span>
 <div class="grid grid-cols-2 gap-2">
-<button class="neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer" id="pay-method-online" type="button">
+<button class="neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer" id="pay-method-online" type="button" disabled>
 <div class="flex items-center justify-between">
 <span class="material-symbols-outlined text-[18px] text-secondary">credit_card</span>
 <span class="w-2.5 h-2.5 rounded-full bg-secondary" id="dot-pay-online"></span>
@@ -638,7 +641,7 @@
 <span class="text-[11.5px] font-bold text-on-surface">پرداخت آنلاین</span>
 <span class="text-[9.5px] text-on-surface-variant">درگاه شتاب و بانکی</span>
 </button>
-<button class="neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer" id="pay-method-cash" type="button">
+<button class="neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer" id="pay-method-cash" type="button" disabled>
 <div class="flex items-center justify-between">
 <span class="material-symbols-outlined text-[18px] text-outline">payments</span>
 <span class="w-2.5 h-2.5 rounded-full bg-outline-variant" id="dot-pay-cash"></span>
@@ -649,7 +652,7 @@
 </div>
 </div>
 <div class="flex flex-col gap-2 pt-1">
-<button class="w-full py-3 px-4 rounded-2xl bg-secondary text-on-secondary font-bold text-[12.5px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer" id="btn-settle-return" type="button">
+<button class="w-full py-3 px-4 rounded-2xl bg-secondary text-on-secondary font-bold text-[12.5px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer" id="btn-settle-return" type="button" disabled>
 <span class="material-symbols-outlined text-[18px]">check_circle</span>
 <span class="">پرداخت و بازگشت به خانه</span>
 </button>
@@ -1600,6 +1603,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const payButton = document.getElementById('btn-settle-return');
       if (payButton) payButton.dataset.bookingId = booking ? String(booking.serverId) : '';
       updateInvoice();
+      if (window.HZ_PAYMENTS) window.HZ_PAYMENTS.refresh().catch(function () {});
     }
     const nmBlock = document.getElementById('nomatch-block');
     if (nmBlock) nmBlock.classList.add('hidden');
@@ -1958,6 +1962,7 @@ document.addEventListener('DOMContentLoaded', function() {
       cashNote.classList.toggle('hidden', !isCash);
     };
     payMethodOnline.addEventListener('click', () => {
+      if (payMethodOnline.disabled) return;
       state.payMethod = 'online'; window.payChoice = 'online'; setCashUi(false);
       payMethodOnline.className = 'neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer';
       payMethodCash.className = 'neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer';
@@ -1966,6 +1971,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     payMethodCash.addEventListener('click', () => {
+      if (payMethodCash.disabled) return;
       state.payMethod = 'cash'; window.payChoice = 'cash'; setCashUi(true);
       payMethodCash.className = 'neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer';
       payMethodOnline.className = 'neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer';
@@ -1973,6 +1979,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (dotPayOnline) dotPayOnline.className = 'w-2.5 h-2.5 rounded-full bg-outline-variant';
     });
   }
+
+  setInterval(() => {
+    if (state.currentStage === 6 && window.HZ_PAYMENTS) window.HZ_PAYMENTS.refresh().catch(function () {});
+  }, 15000);
 
   // Navigation is a consequence of a confirmed server response, never of a click.
   window.addEventListener('hamzaban:payment-recorded', () => {
@@ -2202,6 +2212,7 @@ document.addEventListener('DOMContentLoaded', function() {
       not_payable: 'پرداخت بعد از پایان خدمت انجام می‌شود.',
       already_paid: 'این رزرو قبلاً پرداخت شده است.',
       method_disabled: 'این روش پرداخت فعال نیست.',
+      payment_config_unavailable: 'روش‌های پرداخت دریافت نشد. دوباره تلاش کنید.',
       not_disputable: 'برای این رزرو اختلاف ثبت نمی‌شود.'
     };
     return msgs[e && e.message] || 'انجام نشد. دوباره تلاش کنید.';
@@ -2287,36 +2298,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ---- پایان خدمت و پرداخت (سند ۷.۳) ----
-  var PAY_CFG = null;
   function loadPayCfg() {
-    if (PAY_CFG) return Promise.resolve(PAY_CFG);
-    return fetch('/api/config').then(function (r) { return r.json(); }).then(function (d) { var pm = d.payments || {}; PAY_CFG = { cash: !!pm.CASH, online: !!pm.ONLINE }; return PAY_CFG; });
+    return window.HZ_PAYMENTS ? window.HZ_PAYMENTS.refresh() : Promise.reject(new Error('payment_config_unavailable'));
   }
   function srvPaySheet(b) {
     loadPayCfg().then(function (cfg) {
+      var actions = [{ label: 'انصراف', onClick: function () { return true; } }];
+      actions.push({ label: 'اختلاف دارم', danger: true, onClick: function () {
+        srvCall('POST', '/traveler/bookings/' + b.serverId + '/dispute').then(function () {
+          window.showAppToast('اختلاف به پشتیبانی ارجاع شد', 'info'); syncServer();
+        }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+        return true;
+      } });
+      function pay(method) {
+        // Recheck at submission too: the admin may have disabled a method while the modal was open.
+        loadPayCfg().then(function (latest) {
+          if (!latest[method]) throw new Error('method_disabled');
+          return srvCall('POST', '/traveler/bookings/' + b.serverId + '/payment', { method: method });
+        }).then(function () {
+          window.showAppToast(method === 'cash' ? 'پرداخت نقدی ثبت شد. منتظر تأیید مترجم.' : 'پرداخت انجام شد. با تشکر از همراهی شما', 'check_circle');
+          syncServer();
+        }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+        return true;
+      }
+      if (cfg.cash) actions.push({ label: 'نقدی پرداخت کردم', primary: true, onClick: function () { return pay('cash'); } });
+      if (cfg.online) actions.push({ label: 'پرداخت آنلاین', primary: true, onClick: function () { return pay('online'); } });
       openModal('پرداخت', function (body) {
         var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
         n.textContent = cfg.cash
           ? 'اگر نقدی پرداخت می‌کنید، مبلغ را مستقیماً به مترجم بدهید و تأیید کنید. مترجم هم دریافت را تأیید می‌کند. تسویه‌ی نقدی فقط به تومان است.'
-          : 'روش پرداخت فعالی وجود ندارد.';
+          : cfg.online ? 'روش پرداخت آنلاین فعال است.' : 'روش پرداخت فعالی وجود ندارد.';
         body.appendChild(n);
-      }, [
-        { label: 'انصراف', onClick: function () { return true; } },
-        { label: 'اختلاف دارم', danger: true, onClick: function () {
-          srvCall('POST', '/traveler/bookings/' + b.serverId + '/dispute').then(function () {
-            window.showAppToast('اختلاف به پشتیبانی ارجاع شد', 'info'); syncServer();
-          }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
-          return true;
-        } },
-        { label: 'نقدی پرداخت کردم', primary: true, onClick: function () {
-          if (!cfg.cash) { window.showAppToast('پرداخت نقدی فعال نیست', 'error'); return false; }
-          srvCall('POST', '/traveler/bookings/' + b.serverId + '/payment', { method: 'cash' }).then(function () {
-            window.showAppToast('پرداخت نقدی ثبت شد. منتظر تأیید مترجم.', 'check_circle'); syncServer();
-          }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
-          return true;
-        } }
-      ]);
-    });
+      }, actions);
+    }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
   }
   function pendingChangeText(pc) {
     var left = Math.max(0, Math.ceil((Date.parse(pc.expires_at) - Date.now()) / 60000));
@@ -2719,7 +2733,11 @@ document.addEventListener('DOMContentLoaded', function() {
     paymentInFlight = true;
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
-    srvCall('POST', '/traveler/bookings/' + ob.serverId + '/payment', { method: method }).then(function (result) {
+    loadPayCfg().then(function (cfg) {
+      // Keep the user's chosen method for this attempt; never silently charge a fallback.
+      if (!cfg[method]) throw new Error('method_disabled');
+      return srvCall('POST', '/traveler/bookings/' + ob.serverId + '/payment', { method: method });
+    }).then(function (result) {
       if (!result.ok || (method === 'cash' ? ['awaiting_cash', 'settled'].indexOf(result.pay_state) === -1 : result.pay_state !== 'settled')) {
         throw new Error('payment_not_confirmed');
       }
@@ -2731,8 +2749,8 @@ document.addEventListener('DOMContentLoaded', function() {
       window.showAppToast(srvErrText(e), 'error');
     }).finally(function () {
       paymentInFlight = false;
-      button.disabled = false;
       button.removeAttribute('aria-busy');
+      if (window.HZ_PAYMENTS) window.HZ_PAYMENTS.render();
     });
   });
 

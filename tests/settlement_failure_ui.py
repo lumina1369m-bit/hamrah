@@ -24,6 +24,7 @@ async def main():
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         release = asyncio.Event()
+        admin_token = None
         try:
             await api(ctx.request, 'POST', '/dev/offline-all')
             config = await api(ctx.request, 'GET', '/config')
@@ -66,15 +67,19 @@ async def main():
                 assert current['status'] == 'finished' and current['pay_state'] is None, current
                 assert current['total'] == created['total']
 
-            # Real backend rejection of the intentionally disabled online method.
+            # Online is hidden while disabled. Also guard stale selection when
+            # an admin turns it off between displaying the invoice and clicking.
+            await expect(page.locator('#pay-method-online')).to_be_hidden()
+            admin_token = (await api(ctx.request, 'POST', '/admin/login', data={'password': 'test-admin-pass'}))['token']
+            await api(ctx.request, 'PUT', '/admin/settings', admin_token, {'online_enabled': 1})
+            await page.locator('#btn-refresh-payment-methods').click()
+            await expect(page.locator('#pay-method-online')).to_be_enabled()
             await page.locator('#pay-method-online').click()
-            async with page.expect_response(lambda r: r.url.endswith(f'/{bid}/payment')) as result:
-                await button.click()
-            response = await result.value
-            assert response.status == 409, await response.text()
+            await api(ctx.request, 'PUT', '/admin/settings', admin_token, {'online_enabled': 0})
+            await button.click()
             await expect(page.locator('#toast-text')).to_have_text('این روش پرداخت فعال نیست.')
             await unchanged()
-            print('PASS: rejected online payment keeps the invoice open, with no false success')
+            print('PASS: newly disabled online payment keeps the invoice open, with no false success')
 
             await page.locator('#pay-method-cash').click()
             async def disconnected(route):
@@ -134,6 +139,8 @@ async def main():
             raise
         finally:
             release.set()
+            if admin_token:
+                await api(ctx.request, 'PUT', '/admin/settings', admin_token, {'online_enabled': 0})
             await ctx.close()
             await browser.close()
 

@@ -30,6 +30,7 @@ jobs:
           node --check server/lib/security.js
           node --check server/lib/features.js
           node --check server/lib/sms.js
+          node --check traveler/payment-methods.js
 
       - name: تست واحد لایه‌ی پیامک
         working-directory: server
@@ -99,7 +100,7 @@ jobs:
       - name: تست گزینه‌های رزرو، پایان خدمت و پرداخت در Chromium
         working-directory: tests
         run: |
-          for test in booking_options_ui.py service_clock_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
+          for test in booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
             if python "$test" > /tmp/browser-test.log 2>&1; then
               cat /tmp/browser-test.log
             else
@@ -120,5 +121,6 @@ jobs:
             tests/assets/last_booking_options/
             tests/assets/last_service_clock/
             tests/assets/last_settlement_failure/
+            tests/assets/last_payment_methods/
             /tmp/browser-server.log
           retention-days: 7
