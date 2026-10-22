@@ -1269,7 +1269,31 @@
     money.appendChild(el('span', 'text-on-surface-variant', 'مبلغ کل: ' + HZ.money(m.total || 0)));
     money.appendChild(el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(m.net || 0)));
     card.appendChild(money);
-    if (m.reservation_id && Date.parse(m.startAt) <= Date.now()) {
+    // شروع خدمت فقط با کد امنیتی‌ای که مسافر اعلام می‌کند؛ تا پیش از آن پایان خدمت ممکن نیست
+    if (m.reservation_id && !m.started) {
+      var codeRow = el('div', 'flex items-center gap-2');
+      var codeInp = document.createElement('input');
+      codeInp.type = 'text'; codeInp.inputMode = 'numeric'; codeInp.maxLength = 5; codeInp.placeholder = 'کد امنیتی مسافر';
+      codeInp.className = 'w-32 px-3 py-1.5 rounded-xl neu-inset-shallow bg-surface-container text-center text-[13px] font-bold tracking-widest';
+      var codeBtn = el('button', 'px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'ثبت کد و شروع خدمت');
+      codeBtn.type = 'button';
+      codeBtn.onclick = function () {
+        var code = (codeInp.value || '').trim();
+        if (!code) { HZ.toast('کد امنیتی را از مسافر بگیرید و وارد کنید.'); return; }
+        srv('POST', '/translator/missions/' + m.reservation_id + '/verify-code', { code: code }).then(function (res) {
+          if (res.status === 200) { HZ.toast('خدمت شروع شد.'); loadMissions(); }
+          else if (res.status === 423) HZ.toast('کد این رزرو قفل شده است؛ با پشتیبانی هماهنگ کنید.');
+          else if (res.status === 401) HZ.toast('کد نادرست است.' + (res.data && res.data.attempts_left != null ? ' ' + HZ.toFa(res.data.attempts_left) + ' تلاش مانده.' : ''));
+          else HZ.toast('شروع خدمت ثبت نشد.');
+        });
+      };
+      codeRow.appendChild(codeInp); codeRow.appendChild(codeBtn);
+      card.appendChild(codeRow);
+    }
+    if (m.reservation_id && m.started) {
+      card.appendChild(el('span', 'self-start px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold', 'خدمت شروع شده'));
+    }
+    if (m.reservation_id && m.started && Date.parse(m.startAt) <= Date.now()) {
       var finBtn = el('button', 'self-start px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'پایان خدمت');
       finBtn.type = 'button';
       finBtn.onclick = function () {

@@ -88,6 +88,30 @@ async function main() {
     check('پس از انقضا، درخواست تازه مجاز است (شمارش ۲ از ۳)', again.status === 202, JSON.stringify(again));
     await call('POST', `/api/traveler/bookings/${bk2.id}/cancel`, null, P2);
   }
+  console.log('== پایان خدمت پیش از زمان قرار ممنوع است');
+  {
+    // رزرو زمان‌دار: با مقیاس ۰٫۰۱، قرار ۷۵ ثانیه‌ی دیگر است و پنجره‌ی تطبیق ۳۶ ثانیه مانده به قرار باز می‌شود.
+    const sched = new Date(Date.now() + 75 * 1000).toISOString();
+    const rs = await call('POST', '/api/traveler/bookings', { kind: 'scheduled', origin_lang: 'ar', dest_lang: 'fa', place: 'پایان زودهنگام', scheduled_at: sched, traveler_name: 'T' }, P);
+    check('رزرو زمان‌دار برای آزمون پایان ساخته شد', rs.status === 201, JSON.stringify(rs));
+    // صبر تا بازشدن پنجره‌ی تطبیق و رسیدن پیشنهاد (حداکثر ~۵۰ ثانیه)
+    let offer = null, owner = null;
+    for (let i = 0; i < 250 && !offer; i++) {
+      const oa = (await call('GET', '/api/translator/offers', null, A)).data.offers || [];
+      const ob = (await call('GET', '/api/translator/offers', null, B)).data.offers || [];
+      if (oa.some((o) => o.place === 'پایان زودهنگام')) { offer = oa.find((o) => o.place === 'پایان زودهنگام'); owner = A; }
+      else if (ob.some((o) => o.place === 'پایان زودهنگام')) { offer = ob.find((o) => o.place === 'پایان زودهنگام'); owner = B; }
+      if (!offer) await sleep(200);
+    }
+    check('پیشنهاد در پنجره‌ی تطبیق رسید', !!offer);
+    if (offer) {
+      const acc = await call('POST', `/api/translator/offers/${offer.id}/accept`, null, owner);
+      check('پذیرش در پنجره ممکن است', acc.status === 200, JSON.stringify(acc));
+      const fin = await call('POST', `/api/translator/missions/${rs.data.id}/finish`, null, owner);
+      check('پایان خدمت پیش از زمان قرار: ۴۰۹', fin.status === 409 && fin.data.error === 'too_early', JSON.stringify(fin));
+    }
+    await call('POST', `/api/traveler/bookings/${rs.data.id}/cancel`, null, P);
+  }
   console.log(`\nنتیجه: ${passed} موفق، ${failed} ناموفق`);
   process.exit(failed ? 1 : 0);
 }
