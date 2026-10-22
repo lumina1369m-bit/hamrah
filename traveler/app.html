@@ -209,6 +209,10 @@
 <span class="text-[13px] font-extrabold text-on-surface mt-1 truncate" id="selected-location-title">تهران، میدان ولیعصر، ضلع شمال غربی</span><span class="text-[10px] text-outline mt-0.5">برای پیشنهاد محل ملاقات و نزدیک‌ترین مترجم، موقعیت شما لازم است. موقعیت فقط هنگام استفاده از برنامه خوانده می‌شود.</span>
 </div>
 </div>
+<div class="relative">
+<input id="addr-search" type="text" placeholder="جستجوی آدرس یا مکان…" autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl neu-inset-shallow bg-surface-container text-[12.5px] font-semibold text-on-surface placeholder:text-text-muted/50 outline-none">
+<div id="addr-results" class="hidden absolute left-0 right-0 bottom-full mb-1.5 z-50 neu-card rounded-2xl border border-white/70 shadow-xl overflow-hidden max-h-56 overflow-y-auto"></div>
+</div>
 <div class="flex items-center justify-between text-[11px] text-on-surface-variant px-1 font-medium bg-surface-container/50 py-1.5 rounded-xl border border-white/40">
 <span class="flex items-center gap-1.5 text-secondary font-bold">
 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>مترجم آنلاین در محدوده: ۴
@@ -2027,6 +2031,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     var cityId = window.HZ_NEAREST_CITY ? window.HZ_NEAREST_CITY() : null;
     if (cityId) body.city_id = cityId;
+    if (s.lat != null && s.lng != null) { body.lat = s.lat; body.lng = s.lng; }
     if (kind === 'scheduled') body.scheduled_at = new Date(s.startAt).toISOString();
     srvCall('POST', '/traveler/bookings', body).then(function (sb) {
       var m = localStateOf(sb) || {};
@@ -2499,7 +2504,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var pill = $('scheduled-summary-pill');
     var pr = (window.getBookingPricing ? window.getBookingPricing(scheduled) : {});
     return {
-      place: faText($('selected-location-title')), rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
+      place: faText($('selected-location-title')), lat: (window.meetingPoint && isFinite(window.meetingPoint.lat)) ? window.meetingPoint.lat : null, lng: (window.meetingPoint && isFinite(window.meetingPoint.lng)) ? window.meetingPoint.lng : null, rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
       title: faText($('txt-origin-lang')) + ' ← ' + faText($('txt-dest-lang')),
       field: faText($('label-price-note')),
       hours: faText($('label-hours-count')),
@@ -2718,7 +2723,17 @@ document.addEventListener('DOMContentLoaded', function() {
     window.locateMe = window.locateMe || noMap;
     return;
   }
-  var START = [35.6997, 51.3380]; // میدان ولیعصر، تهران (نقطه‌ی پیش‌فرض)
+  // نقطه‌ی شروع: آخرین محل ملاقات ذخیره‌شده‌ی خود کاربر؛ اگر نبود، میدان ولیعصر تهران
+  var START = [35.6997, 51.3380];
+  try {
+    var savedMp = JSON.parse(localStorage.getItem('hamzaban.meeting.v1') || 'null');
+    if (savedMp && isFinite(savedMp.lat) && isFinite(savedMp.lng)) START = [savedMp.lat, savedMp.lng];
+  } catch (e) {}
+  // زبان نشانی و جستجو همان زبان رابط کاربر است (fa/en/ar)
+  function uiLang() {
+    try { return (window.HZ_I18N && HZ_I18N.get && HZ_I18N.get()) || localStorage.getItem('hamzaban_lang') || 'fa'; }
+    catch (e) { return 'fa'; }
+  }
 
   var map = L.map(mapEl, { zoomControl: false, minZoom: 5, maxZoom: 19 });
   // پیش‌نمایش داخل iframe ساندباکس است و مرورگر در آن Referer نمی‌فرستد؛
@@ -2756,8 +2771,10 @@ document.addEventListener('DOMContentLoaded', function() {
     map.setView(map.unproject(centerPx), map.getZoom(), { animate: false });
   }
   function pinLatLng() { return map.containerPointToLatLng(pinPoint()); }
-  // نقطه‌ی زیر پین = محل ملاقات انتخابی؛ نشانی آن با Nominatim (OpenStreetMap) پیدا می‌شود
+  // نقطه‌ی زیر پین = محل ملاقات انتخابی؛ نشانی آن با Nominatim (OpenStreetMap) پیدا می‌شود.
+  // پاسخ‌ها ذخیره (cache) می‌شوند تا به سرویس رایگان کمتر درخواست برود.
   var geoTimer = null, geoSeq = 0, geoPending = false;
+  var geoCache = {};
   function coordsText(ll) { return ll.lat.toFixed(5) + '، ' + ll.lng.toFixed(5); }
   function shortAddress(j) {
     var a = j.address || {};
@@ -2770,15 +2787,23 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('selected-location-title');
     var seq = ++geoSeq;
     window.meetingPoint = { lat: ll.lat, lng: ll.lng, label: coordsText(ll) };
+    var cacheKey = uiLang() + ':' + ll.lat.toFixed(4) + ',' + ll.lng.toFixed(4);
+    if (geoCache[cacheKey]) {
+      window.meetingPoint.label = geoCache[cacheKey];
+      if (el) el.textContent = geoCache[cacheKey];
+      geoPending = false;
+      return;
+    }
     geoPending = true;
     if (el) el.textContent = 'در حال یافتن نشانی...';
     clearTimeout(geoTimer);
     geoTimer = setTimeout(function () {
-      fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=fa&zoom=18&lat=' + ll.lat + '&lon=' + ll.lng)
+      fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=' + encodeURIComponent(uiLang()) + '&zoom=18&lat=' + ll.lat + '&lon=' + ll.lng)
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
           if (seq !== geoSeq) return;
           var label = (j && shortAddress(j)) || coordsText(ll);
+          geoCache[cacheKey] = label;
           window.meetingPoint.label = label;
           if (el) el.textContent = label;
         })
@@ -2870,6 +2895,65 @@ document.addEventListener('DOMContentLoaded', function() {
       toast('دسترسی به موقعیت داده نشد. آدرس را تایپ کنید یا نقشه را جابه‌جا کنید.', 'location_off');
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   };
+
+  // اگر کاربر قبلاً اجازه‌ی موقعیت داده است، بدون پرسش دوباره نقشه از موقعیت خودش شروع می‌شود.
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+      if (st.state === 'granted') window.locateMe();
+    }).catch(function () {});
+  }
+
+  // جستجوی آدرس/مکان با Nominatim: با وقفه و ذخیره‌ی پاسخ، تا به سرویس رایگان کمتر درخواست برود.
+  (function () {
+    var inp = document.getElementById('addr-search');
+    var box = document.getElementById('addr-results');
+    if (!inp || !box) return;
+    var timer = null, seq = 0, cache = {};
+    function hide() { box.classList.add('hidden'); box.innerHTML = ''; }
+    function showMsg(t) {
+      box.innerHTML = '';
+      var d = document.createElement('div');
+      d.className = 'px-3.5 py-2.5 text-[12px] text-on-surface-variant';
+      d.textContent = t;
+      box.appendChild(d);
+      box.classList.remove('hidden');
+    }
+    function render(list) {
+      box.innerHTML = '';
+      if (!list.length) { showMsg('نتیجه‌ای پیدا نشد'); return; }
+      list.forEach(function (it) {
+        var name = String(it.display_name || '').split(',').slice(0, 3).join('،');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'w-full text-right px-3.5 py-2.5 text-[12px] font-semibold text-on-surface hover:bg-white/60 transition-all block truncate';
+        b.textContent = name;
+        b.addEventListener('click', function () {
+          inp.value = name;
+          hide();
+          centerUnderPin([parseFloat(it.lat), parseFloat(it.lon)]);
+        });
+        box.appendChild(b);
+      });
+      box.classList.remove('hidden');
+    }
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim();
+      clearTimeout(timer);
+      if (q.length < 3) { hide(); return; }
+      timer = setTimeout(function () {
+        var key = uiLang() + ':' + q;
+        if (cache[key]) { render(cache[key]); return; }
+        var my = ++seq;
+        showMsg('در حال جستجو…');
+        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=' + encodeURIComponent(uiLang()) + '&q=' + encodeURIComponent(q))
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (list) { if (my !== seq) return; cache[key] = list || []; render(cache[key]); })
+          .catch(function () { if (my === seq) showMsg('جستجو انجام نشد. اتصال اینترنت را بررسی کنید.'); });
+      }, 600);
+    });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
+    document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== inp) hide(); });
+  })();
 })();
 </script>
 <script>
