@@ -15,6 +15,7 @@ const crypto = require('crypto');
 const Database = require('better-sqlite3');
 const { makeLimiter, clientIp, securityHeaders, productionErrors, isWeakAdminPassword } = require('./lib/security');
 const { FEATURES, FEATURE_KEYS, resolveFeatures, validateFeaturePatch } = require('./lib/features');
+const { createSmsSender } = require('./lib/sms');
 
 const PORT = Number(process.env.PORT || 8080);
 const DEV = process.env.HZ_DEV === '1';
@@ -39,6 +40,10 @@ if (require.main === module) {
   const cfgErrors = productionErrors(process.env);
   if (cfgErrors.length) { console.error('پیکربندی ناامن؛ سرور بالا نمی‌آید:\n - ' + cfgErrors.join('\n - ')); process.exit(1); }
 }
+
+// فرستنده‌ی پیامک از متغیرهای محیطی ساخته می‌شود (lib/sms.js)؛ تا وقتی شرکت و کلید تنظیم نشده،
+// در حالت غیرتوسعه پاسخ 503 sms_provider_not_configured داده می‌شود.
+const SMS = createSmsSender(process.env);
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
@@ -314,7 +319,16 @@ route('POST', '/api/auth/request-code', async (req, res) => {
   }
   let code;
   if (DEV) code = CONFIG.DEV_CODE;
-  else return send(res, 503, { error: 'sms_provider_not_configured' });
+  else {
+    if (!SMS.configured) return send(res, 503, { error: 'sms_provider_not_configured' });
+    // کد تصادفی واقعی فقط وقتی ساخته و ارسال می‌شود که پیامک‌دهنده وصل باشد؛ اول ارسال، بعد ذخیره‌ی هش.
+    code = String(crypto.randomInt(100000, 1000000));
+    try { await SMS.send(phone, code); }
+    catch (e) {
+      console.error('[sms]', e && e.message ? e.message : e);
+      return send(res, 503, { error: e && e.code === 'unsupported_phone' ? 'sms_unsupported_phone' : 'sms_send_failed' });
+    }
+  }
   db.prepare(`INSERT INTO otp_codes (phone, role, code_hash, expires_at, created_at, attempts, locked_until)
               VALUES (?, ?, ?, ?, ?, 0, NULL)
               ON CONFLICT(phone, role) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at,
@@ -1803,6 +1817,7 @@ if (require.main === module) {
   setInterval(sweep, Math.max(100, 3000 * SCALE)).unref(); // موتور تطبیق هر ۳ ثانیه (در حالت فشرده کوتاه‌تر)
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`همراه: http://0.0.0.0:${PORT}  (حالت توسعه: ${DEV ? 'روشن' : 'خاموش'}، پایگاه داده: ${DB_PATH})`);
+    if (!DEV && !SMS.configured) console.log('هشدار: پیامک‌دهنده تنظیم نشده است (HZ_SMS_PROVIDER/HZ_SMS_API_KEY)؛ ارسال کد ورود پاسخ 503 می‌دهد.');
   });
 }
 
