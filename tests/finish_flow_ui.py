@@ -63,8 +63,15 @@ async def scenario(browser, own_finish):
             'localStorage.setItem("hamzaban.token.v1", ' + json.dumps(ptok) + ');'
             'localStorage.setItem("hamzaban.user.v1", ' + json.dumps(json.dumps(user)) + ');'
             'localStorage.setItem("hamzaban_lang", "fa");')
+        # The booking/finish test must not depend on the availability or rate limits
+        # of public map servers. Only geocoding is stubbed; all app APIs stay real.
+        await traveler_ctx.route('https://nominatim.openstreetmap.org/**',
+                                  lambda route: route.fulfill(json={'display_name': 'تهران، محل آزمون مرورگر'}))
+        await traveler_ctx.route('https://*.tile.openstreetmap.org/**', lambda route: route.abort())
         await traveler.goto(BASE + '/traveler/app.html')
+        await expect(traveler.locator('#selected-location-title')).to_have_text('تهران، محل آزمون مرورگر')
         await traveler.locator('#confirm-location-btn').click()
+        await expect(traveler.locator('#bottom-sheet')).to_be_visible()
         await traveler.locator('.cat-chip[data-cat=general]').click()
         await traveler.locator('#btn-toggle-car').click()  # Default is car; test translator is pedestrian.
         # Actual booking button and actual server synchronization, not a local FSM shortcut.
