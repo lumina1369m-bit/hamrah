@@ -21,6 +21,14 @@
         !money(e.extra_total) || !money(e.extra_net) || !timestamp(e.expires_at)) throw new Error(ERROR);
     return e;
   }
+  function cash(m) {
+    if (!['finished', 'done'].includes(m.status) || m.pay_method !== 'cash' ||
+        !['awaiting_cash', 'disputed', 'settled'].includes(m.pay_state) ||
+        typeof m.confirmed !== 'boolean' || typeof m.traveler_paid !== 'boolean' ||
+        ((m.status === 'done') !== (m.pay_state === 'settled')) ||
+        (m.pay_state === 'settled' && (!m.confirmed || !m.traveler_paid))) throw new Error(ERROR);
+    return m;
+  }
   function key(token, rid) { return token + ':' + rid; }
   function update() {
     var token = window.HZ.load().token;
@@ -69,6 +77,29 @@
     }
     async function work() {
       var before = await readMission(), e, res, after, decided;
+      if (options.action === 'cash-confirm' || options.action === 'cash-dispute') {
+        cash(before);
+        if (before.status !== 'finished' || before.pay_state !== 'awaiting_cash' || before.confirmed ||
+            before.total !== options.total || before.net !== options.net) throw new Error(ERROR);
+        res = await request('POST', 'missions/' + rid + '/' + options.action);
+        if (res.status !== 200 || !res.data || res.data.ok !== true) throw new Error(ERROR);
+        if (options.action === 'cash-confirm') {
+          if (typeof res.data.settled !== 'boolean' || typeof res.data.waiting_traveler !== 'boolean' ||
+              res.data.settled === res.data.waiting_traveler) throw new Error(ERROR);
+        } else if (res.data.pay_state !== 'disputed') throw new Error(ERROR);
+        after = cash(await readMission());
+        if (after.total !== before.total || after.net !== before.net || after.hours !== before.hours ||
+            after.service_started_at !== before.service_started_at) throw new Error(ERROR);
+        if (options.action === 'cash-dispute') {
+          if (after.status !== 'finished' || after.pay_state !== 'disputed' || after.confirmed !== before.confirmed ||
+              after.traveler_paid !== before.traveler_paid) throw new Error(ERROR);
+          return 'اختلاف پرداخت ثبت شد.';
+        }
+        if (!after.confirmed || (res.data.settled
+          ? after.status !== 'done' || after.pay_state !== 'settled' || !after.traveler_paid
+          : after.status !== 'finished' || after.pay_state !== 'awaiting_cash' || after.traveler_paid)) throw new Error(ERROR);
+        return res.data.settled ? 'پرداخت تسویه شد.' : 'دریافت شما ثبت شد؛ منتظر تأیید مسافر.';
+      }
       if (before.status !== 'matched') throw new Error(ERROR);
       if (options.action === 'start') {
         var code = String(options.code || '').trim().replace(/[۰-۹]/g, function (c) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(c); }).replace(/[٠-٩]/g, function (c) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(c); });
