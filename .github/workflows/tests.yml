@@ -96,10 +96,10 @@ jobs:
           done
           cat /tmp/browser-server.log
           exit 1
-      - name: تست پایان خدمت، تمدید و پرداخت در Chromium
+      - name: تست گزینه‌های رزرو، پایان خدمت و پرداخت در Chromium
         working-directory: tests
         run: |
-          for test in finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
+          for test in booking_options_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
             if python "$test" > /tmp/browser-test.log 2>&1; then
               cat /tmp/browser-test.log
             else
@@ -117,5 +117,6 @@ jobs:
           name: browser-failure-details
           path: |
             tests/assets/last_finish_flow/
+            tests/assets/last_booking_options/
             /tmp/browser-server.log
           retention-days: 7
