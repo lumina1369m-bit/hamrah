@@ -2113,6 +2113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return null;
   }
   function syncServer() {
+    if (deletePending) return; // Do not race deletion confirmation with background polling.
     var sessionToken = srvToken();
     if (!sessionToken) return;
     srvCall('GET', '/traveler/bookings').then(function (d) {

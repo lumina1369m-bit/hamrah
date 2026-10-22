@@ -112,6 +112,9 @@ async def scenario(browser, lang):
         await api(setup.request, 'GET', '/auth/me', session['token'])
 
         # Simulate stale local bookings, not the server: its real 409 must win.
+        async def stale_bookings(route):
+            await route.fulfill(json={'bookings': []})
+        await page.route('**/api/traveler/bookings', stale_bookings)
         booking = await api(setup.request, 'POST', '/traveler/bookings', session['token'],
                             {'kind': 'instant', 'origin_lang': 'ar', 'dest_lang': 'fa', 'place': 'Deletion regression', 'traveler_name': 'Ali'}, status=201)
         await page.evaluate("localStorage.setItem('hamzaban.bookings.v1', '[]')")
@@ -119,6 +122,7 @@ async def scenario(browser, lang):
         await expect(page.locator('#toast-text')).to_have_text(BLOCKED[lang])
         await api(setup.request, 'GET', '/auth/me', session['token'])
         await api(setup.request, 'POST', f"/traveler/bookings/{booking['id']}/cancel", session['token'])
+        await page.unroute('**/api/traveler/bookings', stale_bookings)
         # Reload after the canceled booking so normal polling remains unmodified.
         await page.reload()
         await page.wait_for_function('() => window.hzBookingsSynced === true')
