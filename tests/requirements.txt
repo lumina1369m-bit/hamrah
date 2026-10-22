@@ -1,0 +1,2 @@
+# Keep the browser binary and Python API versions aligned in CI.
+playwright==1.55.0

@@ -1,4 +1,4 @@
-# تست‌های خودکار همراه — با هر پوش و هر Pull Request، تست‌های API سرور اجرا می‌شوند.
+# تست‌های خودکار همراه — API و مسیرهای حساس مرورگر با داده‌های مستقل.
 name: tests
 
 on:
@@ -61,3 +61,56 @@ jobs:
         run: |
           echo "--- 8081 ---"; cat /tmp/server8081.log || true
           echo "--- 8082 ---"; cat /tmp/server8082.log || true
+
+  browser-tests:
+    name: Browser tests (finish and payment)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+      - name: نصب Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: نصب Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+      - name: نصب وابستگی‌ها و مرورگر
+        run: |
+          npm ci --prefix server
+          python -m pip install -r tests/requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: بالا آوردن سرور مستقل مرورگر با داده‌های آزمایشی تازه
+        working-directory: server
+        run: |
+          HZ_DEV=1 HZ_ADMIN_PASSWORD=test-admin-pass HZ_DB=/tmp/hz_browser.sqlite PORT=8081 node server.js > /tmp/browser-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8081/api/config > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/browser-server.log
+          exit 1
+      - name: تست پایان خدمت، تمدید و پرداخت در Chromium
+        working-directory: tests
+        run: |
+          python finish_flow_ui.py
+          python extension_ui.py
+          python translator_pay_ui.py
+          python traveler_pay_ui.py
+          python traveler_settle_ui.py
+          python traveler_invoice_ui.py
+      - name: ذخیره‌ی عکس خطا و لاگ سرور
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-details
+          path: |
+            tests/assets/last_finish_flow/
+            /tmp/browser-server.log
+          retention-days: 7
