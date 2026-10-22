@@ -261,7 +261,7 @@
 <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#eef4fd]"></span>
 </div>
 <h1 class="text-xl lg:text-2xl font-black text-text-main tracking-tight" data-i18n="card_title">ورود مسافر</h1>
-<p class="text-xs text-text-muted mt-1" data-i18n="card_desc">جهت رزرو و هماهنگی مترجم همزمان شماره یا ایمیل خود را وارد نمایید</p>
+<p class="text-xs text-text-muted mt-1" data-i18n="card_desc">جهت رزرو و هماهنگی مترجم همزمان شماره همراه خود را وارد نمایید</p>
 <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full neu-inset text-xs font-semibold text-secondary">
 <span class="material-symbols-outlined text-[16px]">bolt</span>
 <span data-i18n="otp_pill" class="">ورود بدون رمز عبور با کد یک‌بارمصرف (OTP)</span>
@@ -279,7 +279,7 @@
 </button>
 <button class="py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all text-text-muted hover:text-primary" id="tab-email" onclick="selectTab('email')" type="button">
 <span class="material-symbols-outlined text-[18px] sm:text-[20px]">mail</span>
-<span data-i18n="tab_email" class="">ایمیل مسافر</span>
+<span data-i18n="tab_email" class="">ایمیل (غیرفعال)</span>
 </button>
 </div>
 </div>
@@ -316,7 +316,7 @@
 </label>
 <div class="neu-inset-deep rounded-2xl px-3 py-2.5 flex items-center gap-2">
 <span class="material-symbols-outlined text-primary text-[22px]">alternate_email</span>
-<input class="w-full bg-transparent border-0 text-sm sm:text-base font-semibold text-text-main placeholder:text-text-muted/40 focus:ring-0 outline-none" dir="ltr" id="email-input" oninput="updateSendBtn()" placeholder="guest@traveler.com" type="email">
+<input class="w-full bg-transparent border-0 text-sm sm:text-base font-semibold text-text-main placeholder:text-text-muted/40 focus:ring-0 outline-none" dir="ltr" id="email-input" disabled oninput="updateSendBtn()" placeholder="guest@traveler.com" type="email">
 </div>
 </div>
 <!-- Checkboxes: Age & Terms -->
@@ -336,7 +336,7 @@
 <span data-i18n="btn_request_otp" class="">دریافت کد تأیید یک‌بارمصرف</span>
 <span class="material-symbols-outlined text-[20px] sm:text-[22px] dir-flip group-hover:-translate-x-1.5 transition-transform">arrow_right_alt</span>
 </button>
-<p class="text-[11px] sm:text-xs text-center text-text-muted" data-i18n="otp_note">کد ورود در کمتر از چند ثانیه به صورت پیامک یا ایمیل ارسال می‌گردد.</p>
+<p class="text-[11px] sm:text-xs text-center text-text-muted" data-i18n="otp_note">کد ورود از طریق پیامک ارسال می‌شود؛ ورود با ایمیل فعلاً فعال نیست.</p>
 </div>
 <!-- STEP 3: Identity (only on first login) -->
 <div class="flex-col gap-4 sm:gap-5 hidden" id="step-identity">
@@ -393,7 +393,7 @@
 <p class="hidden text-xs text-center font-semibold text-red-600" id="otp-err" role="alert" aria-live="assertive"></p>
 <!-- Test Code Helper Button -->
 <div class="text-center">
-<button class="text-xs text-secondary font-bold hover:underline inline-flex items-center gap-1 p-1 rounded-lg" onclick="fillTestCode()" type="button">
+<button class="text-xs text-secondary font-bold hover:underline inline-flex items-center gap-1 p-1 rounded-lg" id="btn-test-code" hidden style="display:none" onclick="fillTestCode()" type="button">
 <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
 <span data-i18n="demo_code" class="">درج سریع کد تستی دمو (۱۲۳۴۵۶)</span>
 </button>
@@ -478,11 +478,11 @@
         mobile_card_title: "ورود به سامانه مسافران",
         mobile_card_desc: "دسترسی سریع و امن به شبکه مترجمان متخصص و همراهان همزمان در سراسر کشور",
         card_title: "ورود مسافر",
-        card_desc: "جهت رزرو و هماهنگی مترجم همزمان شماره یا ایمیل خود را وارد نمایید",
+        card_desc: "جهت رزرو و هماهنگی مترجم همزمان شماره همراه خود را وارد نمایید",
         otp_pill: "ورود بدون رمز عبور با کد یک‌بارمصرف (OTP)",
         tab_label: "روش دریافت کد تأیید",
         tab_phone: "شماره موبایل",
-        tab_email: "ایمیل مسافر",
+        tab_email: "ایمیل (غیرفعال)",
         phone_label: "شماره همراه مسافر",
         phone_sublabel: "خطوط ایران و بین‌الملل",
         email_label: "آدرس ایمیل معتبر",
@@ -490,7 +490,7 @@
         check_age: 'تأیید می‌کنم که حداقل دارای <strong>۱۸ سال تمام قانونی</strong> هستم.',
         check_terms: '<a class="text-primary underline font-medium hover:text-primary-container" href="#" data-open-terms="1">قوانین و ضوابط همراهی تشریفاتی</a> و اصول حفظ حریم خصوصی را می‌پذیرم.',
         btn_request_otp: "دریافت کد تأیید یک‌بارمصرف",
-        otp_note: "کد ورود در کمتر از چند ثانیه به صورت پیامک یا ایمیل ارسال می‌گردد.",
+        otp_note: "کد ورود از طریق پیامک ارسال می‌شود؛ ورود با ایمیل فعلاً فعال نیست.",
         otp_header: "تأیید شماره و احراز هویت",
         otp_edit: "ویرایش",
         otp_instruction: "کد ۶ رقمی ارسال‌شده به شماره بالا را وارد فرمایید:",
@@ -545,11 +545,11 @@
         mobile_card_title: "Sign in to Traveler Portal",
         mobile_card_desc: "Instant and secure access to elite verified interpreters and VIP companions nationwide",
         card_title: "Traveler Sign In",
-        card_desc: "Enter your phone number or email to book an in-person interpreter",
+        card_desc: "Enter your mobile number to book an in-person interpreter",
         otp_pill: "Passwordless One-Time Passcode (OTP)",
         tab_label: "Verification delivery method",
         tab_phone: "Mobile Number",
-        tab_email: "Traveler Email",
+        tab_email: "Email (unavailable)",
         phone_label: "Traveler Mobile Phone",
         phone_sublabel: "Domestic & International",
         email_label: "Valid Email Address",
@@ -557,7 +557,7 @@
         check_age: 'I confirm that I am at least <strong>18 years of age</strong>.',
         check_terms: 'I agree to the <a class="text-primary underline font-medium hover:text-primary-container" href="javascript:void(0)">VIP Companion Terms of Service</a> and Privacy Policy.',
         btn_request_otp: "Get Verification Code",
-        otp_note: "Your secure passcode will arrive in seconds via SMS or Email.",
+        otp_note: "Your sign-in code is sent by SMS. Email sign-in is currently unavailable.",
         otp_header: "Identity & Code Verification",
         otp_edit: "Edit",
         otp_instruction: "Enter the 6-digit verification code sent to your contact info:",
@@ -612,11 +612,11 @@
         mobile_card_title: "تسجيل الدخول للمسافرين",
         mobile_card_desc: "وصول سريع وآمن إلى شبكة المترجمين المعتمدين والمرافقين في كافة المدن",
         card_title: "دخول المسافر",
-        card_desc: "أدخل رقم الجوال أو البريد الإلكتروني لحجز مترجمك الحضوري",
+        card_desc: "أدخل رقم الجوال لحجز مترجمك الحضوري",
         otp_pill: "دخول بدون كلمة مرور عبر رمز مؤقت (OTP)",
         tab_label: "طريقة استلام رمز التحقق",
         tab_phone: "رقم الجوال",
-        tab_email: "البريد الإلكتروني",
+        tab_email: "البريد الإلكتروني (غير متاح)",
         phone_label: "رقم جوال المسافر",
         phone_sublabel: "الخطوط المحلية والدولية",
         email_label: "عنوان البريد الإلكتروني",
@@ -624,7 +624,7 @@
         check_age: 'أؤكد أنني أتممت <strong>١٨ عاماً قانونياً</strong> على الأقل.',
         check_terms: 'أوافق على <a class="text-primary underline font-medium hover:text-primary-container" href="javascript:void(0)">شروط الخدمة والمرافقة</a> وسياسة الخصوصية.',
         btn_request_otp: "استلام رمز التحقق",
-        otp_note: "يصلك رمز الدخول خلال ثوانٍ عبر رسالة نصية قصيرة أو البريد الإلكتروني.",
+        otp_note: "يُرسل رمز الدخول برسالة نصية. الدخول بالبريد الإلكتروني غير متاح حالياً.",
         otp_header: "تأكيد الرقم والتحقق من الهوية",
         otp_edit: "تعديل",
         otp_instruction: "يرجى إدخال الرمز المكون من ٦ أرقام المرسل إليكم:",
@@ -736,9 +736,9 @@
     // ---------- ورود (سند): شماره یا ایمیل → کد ۶ رقمی → هویت (فقط نخستین ورود) ----------
     // پیام‌های خطای ورود به زبان جاری (کلید = متن فارسی اصلی)
     const ERR_MSG = {
-      fa: { net_err: 'اتصال به سرور برقرار نیست. اینترنت خود را بررسی کنید.', otp_expired: 'کد منقضی شده است. کد جدید بگیرید.', resend_wait: 'ارسال مجدد کد زودتر از موعد است. کمی صبر کنید.', sms_off: 'ارسال پیامک فعلاً فعال نیست. بعداً دوباره تلاش کنید.', photo_type: 'فقط فایل JPG یا PNG مجاز است.', photo_size: 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.', success: 'ورود موفقیت‌آمیز بود.', lock: 'ورود به‌دلیل ۵ تلاش ناموفق، تا {t} دیگر قفل است.', consent: 'لطفاً شرایط سنی و قوانین پلتفرم را تأیید فرمایید.', phone_bad: 'شماره همراه معتبر نیست.', email_bad: 'ایمیل معتبر نیست.', wrong_code: 'کد اشتباه است. {n} تلاش دیگر باقی مانده است.' },
-      en: { net_err: 'Cannot reach the server. Check your internet connection.', otp_expired: 'The code has expired. Request a new one.', resend_wait: 'Please wait before requesting another code.', sms_off: 'SMS sending is not available right now. Try again later.', photo_type: 'Only JPG or PNG files are allowed.', photo_size: 'The photo must be 5 MB or smaller.', success: 'Signed in successfully.', lock: 'Sign-in is locked after 5 failed attempts. Try again in {t}.', consent: 'Please confirm both items to continue.', phone_bad: 'The mobile number is not valid.', email_bad: 'The email address is not valid.', wrong_code: 'Wrong code. {n} attempts left.' },
-      ar: { net_err: 'تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت.', otp_expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', resend_wait: 'يرجى الانتظار قبل طلب رمز آخر.', sms_off: 'إرسال الرسائل النصية غير متاح حالياً. حاول لاحقاً.', photo_type: 'يُسمح بملفات JPG أو PNG فقط.', photo_size: 'يجب ألا يتجاوز حجم الصورة ٥ ميغابايت.', success: 'تم الدخول بنجاح.', lock: 'تم قفل الدخول بعد ٥ محاولات فاشلة. حاول مرة أخرى بعد {t}.', consent: 'يرجى تأكيد البندين للمتابعة.', phone_bad: 'رقم الجوال غير صالح.', email_bad: 'البريد الإلكتروني غير صالح.', wrong_code: 'الرمز غير صحيح. تبقّى {n} محاولات.' }
+      fa: { email_off: 'ورود با ایمیل فعلاً فعال نیست. لطفاً از شماره همراه استفاده کنید.', net_err: 'اتصال به سرور برقرار نیست. اینترنت خود را بررسی کنید.', otp_expired: 'کد منقضی شده است. کد جدید بگیرید.', resend_wait: 'ارسال مجدد کد زودتر از موعد است. کمی صبر کنید.', sms_off: 'ارسال پیامک فعلاً فعال نیست. بعداً دوباره تلاش کنید.', photo_type: 'فقط فایل JPG یا PNG مجاز است.', photo_size: 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.', success: 'ورود موفقیت‌آمیز بود.', lock: 'ورود به‌دلیل ۵ تلاش ناموفق، تا {t} دیگر قفل است.', consent: 'لطفاً شرایط سنی و قوانین پلتفرم را تأیید فرمایید.', phone_bad: 'شماره همراه معتبر نیست.', email_bad: 'ایمیل معتبر نیست.', wrong_code: 'کد اشتباه است. {n} تلاش دیگر باقی مانده است.' },
+      en: { email_off: 'Email sign-in is not available. Please use a mobile number.', net_err: 'Cannot reach the server. Check your internet connection.', otp_expired: 'The code has expired. Request a new one.', resend_wait: 'Please wait before requesting another code.', sms_off: 'SMS sending is not available right now. Try again later.', photo_type: 'Only JPG or PNG files are allowed.', photo_size: 'The photo must be 5 MB or smaller.', success: 'Signed in successfully.', lock: 'Sign-in is locked after 5 failed attempts. Try again in {t}.', consent: 'Please confirm both items to continue.', phone_bad: 'The mobile number is not valid.', email_bad: 'The email address is not valid.', wrong_code: 'Wrong code. {n} attempts left.' },
+      ar: { email_off: 'الدخول بالبريد الإلكتروني غير متاح حالياً. يرجى استخدام رقم الجوال.', net_err: 'تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت.', otp_expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', resend_wait: 'يرجى الانتظار قبل طلب رمز آخر.', sms_off: 'إرسال الرسائل النصية غير متاح حالياً. حاول لاحقاً.', photo_type: 'يُسمح بملفات JPG أو PNG فقط.', photo_size: 'يجب ألا يتجاوز حجم الصورة ٥ ميغابايت.', success: 'تم الدخول بنجاح.', lock: 'تم قفل الدخول بعد ٥ محاولات فاشلة. حاول مرة أخرى بعد {t}.', consent: 'يرجى تأكيد البندين للمتابعة.', phone_bad: 'رقم الجوال غير صالح.', email_bad: 'البريد الإلكتروني غير صالح.', wrong_code: 'الرمز غير صحيح. تبقّى {n} محاولات.' }
     };
     function msg(key, vars) {
       const lang = (typeof currentLang !== 'undefined' && ERR_MSG[currentLang]) ? currentLang : 'fa';
@@ -747,20 +747,24 @@
       return t;
     }
 
-    const DEMO_CODE = '123456'; // فقط برای ورود با ایمیل (هنوز سرویس ندارد) و دکمه‌ی آزمایشی
+    // The fixed development code is never a local authentication decision.
+    let devLogin = false, requestPending = false, verifyPending = false;
+    let otpPhone = null, verifiedUser = null, signInStarted = false;
     const KEY_TOKEN = 'hamzaban.token.v1';
     const API = (method, path, body) => {
       const headers = { 'Content-Type': 'application/json' };
       const tk = (() => { try { return localStorage.getItem(KEY_TOKEN); } catch (e) { return null; } })();
       if (tk) headers.Authorization = 'Bearer ' + tk;
-      return fetch('/api' + path, { method, headers, body: body ? JSON.stringify(body) : undefined })
-        .then(r => r.json().catch(() => ({})).then(data => ({ status: r.status, data })));
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      return fetch('/api' + path, { method, headers, cache: 'no-store', signal: controller.signal, body: body ? JSON.stringify(body) : undefined })
+        .then(r => r.json().catch(() => ({})).then(data => ({ status: r.status, data })))
+        .finally(() => clearTimeout(timeout));
     };
     // شماره‌ی کامل برای سرور: کد کشور + رقم‌ها بدون صفر ابتدایی
     const fullPhone = () => $('country-select').value + normDigits($('phone-input').value).replace(/\D/g, '').replace(/^0+/, '');
     const KEY_USER = 'hamzaban.user.v1';
-    const LOCK_MS = 10 * 60 * 1000;
-    let authFails = 0, lockUntil = 0, endAt = 0, timerId = null, idGender = '';
+    let lockUntil = 0, endAt = 0, timerId = null, idGender = '';
     const $ = (id) => document.getElementById(id);
     const boxes = () => Array.from(document.querySelectorAll('.otp-box'));
     const fmt = (s) => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
@@ -787,16 +791,17 @@
 
     function contactValid() {
       if (activeMethod === 'phone') return normDigits($('phone-input').value).replace(/\D/g, '').length >= 7;
-      return /^\S+@\S+\.\S+$/.test($('email-input').value.trim());
+      return false; // No email delivery or verification endpoint is configured.
     }
     function consentOk() { return $('check-age').checked && $('check-terms').checked; }
 
     function updateSendBtn() {
       const b = $('btn-request-otp');
-      b.disabled = !(consentOk() && contactValid());
+      b.disabled = requestPending || activeMethod !== 'phone' || !(consentOk() && contactValid());
       b.classList.toggle('cursor-not-allowed', b.disabled);
       // سند: اگر تأییدیه‌ها کامل نباشد، هشدار نمایش داده می‌شود
-      if (contactValid() && !consentOk()) showErr('ident-err', msg('consent'));
+      if (activeMethod !== 'phone') showErr('ident-err', msg('email_off'));
+      else if (contactValid() && !consentOk()) showErr('ident-err', msg('consent'));
       else if (consentOk()) showErr('ident-err', '');
     }
 
@@ -807,7 +812,7 @@
 
     function setVerifyState() {
       const b = $('btn-verify');
-      b.disabled = locked() || boxes().map(x => x.value).join('').length !== 6;
+      b.disabled = verifyPending || activeMethod !== 'phone' || !otpPhone || locked() || boxes().map(x => x.value).join('').length !== 6;
     }
 
     function tick() {
@@ -836,28 +841,31 @@
     }
 
     function handleRequestOTP() {
+      if (requestPending) return;
+      if (activeMethod !== 'phone') { showErr('ident-err', msg('email_off')); return; }
       if (!consentOk()) { showErr('ident-err', msg('consent')); return; }
-      if (!contactValid()) { showErr('ident-err', msg(activeMethod === 'phone' ? 'phone_bad' : 'email_bad')); return; }
-      showErr('ident-err', '');
-      let text;
-      if (activeMethod === 'phone') {
-        const p = normDigits($('phone-input').value).replace(/\D/g, '');
-        text = $('country-select').value + ' ' + p.slice(0, 3) + '***' + p.slice(-2);
-      } else {
-        text = $('email-input').value.trim();
-      }
-      if (activeMethod !== 'phone') { showOtpStep(text); return; }
+      if (!contactValid()) { showErr('ident-err', msg('phone_bad')); return; }
       if (locked()) { tick(); return; }
-      const btnReq = $('btn');
-      if (btnReq) btnReq.disabled = true;
-      API('POST', '/auth/request-code', { phone: fullPhone(), role: 'traveler' }).then(res => {
-        if (btnReq) btnReq.disabled = false;
-        if (res.status === 200 && res.data.ok) { showOtpStep(text); return; }
-        if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; tick(); return; }
+      showErr('ident-err', '');
+      const phone = fullPhone();
+      const p = normDigits($('phone-input').value).replace(/\D/g, '');
+      const text = $('country-select').value + ' ' + p.slice(0, 3) + '***' + p.slice(-2);
+      requestPending = true; signInStarted = true;
+      otpPhone = null; verifiedUser = null;
+      updateSendBtn();
+      API('POST', '/auth/request-code', { phone, role: 'traveler' }).then(res => {
+        // An identifier edited while delivery was pending must not open a different challenge.
+        if (activeMethod !== 'phone' || fullPhone() !== phone) return;
+        if (res.status === 200 && res.data.ok === true) { otpPhone = phone; showOtpStep(text); return; }
+        if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; showErr('ident-err', msg('lock', { t: fmt(res.data.retry_after || 600) })); return; }
         if (res.status === 429) { showErr('ident-err', msg('resend_wait')); return; }
         if (res.status === 503) { showErr('ident-err', msg('sms_off')); return; }
         showErr('ident-err', msg('phone_bad'));
-      }).catch(() => { if (btnReq) btnReq.disabled = false; showErr('ident-err', msg('net_err')); });
+      }).catch(() => showErr('ident-err', msg('net_err'))).finally(() => {
+        requestPending = false;
+        // Preserve server errors rather than clearing them in updateSendBtn().
+        $('btn-request-otp').disabled = activeMethod !== 'phone' || !(consentOk() && contactValid());
+      });
     }
 
     function showOtpStep(text) {
@@ -871,6 +879,7 @@
     }
 
     function backToIdentifier() {
+      otpPhone = null; verifiedUser = null;
       $('step-otp').classList.add('hidden');
       $('step-otp').classList.remove('flex');
       $('step-identifier').classList.remove('hidden');
@@ -880,8 +889,8 @@
 
     function handleResendCode() {
       if (locked()) return;
-      if (activeMethod !== 'phone') { boxes().forEach(b => { b.value = ''; }); boxes()[0].focus(); startTimer(120); return; }
-      API('POST', '/auth/request-code', { phone: fullPhone(), role: 'traveler' }).then(res => {
+      if (activeMethod !== 'phone' || !otpPhone) { showErr('otp-err', msg('email_off')); return; }
+      API('POST', '/auth/request-code', { phone: otpPhone, role: 'traveler' }).then(res => {
         if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; tick(); return; }
         if (res.status !== 200 || !res.data.ok) { showErr('otp-err', msg('resend_wait')); return; }
         boxes().forEach(b => { b.value = ''; });
@@ -916,57 +925,53 @@
     }
 
     function fillTestCode() {
-      boxes().forEach((b, i) => { b.value = DEMO_CODE[i]; });
+      if (!devLogin || activeMethod !== 'phone' || !otpPhone) return;
+      boxes().forEach((b, i) => { b.value = '123456'[i]; });
       setVerifyState();
-      setTimeout(handleVerifyOTP, 200);
+      handleVerifyOTP();
     }
 
     function handleVerifyOTP() {
+      if (verifyPending || verifiedUser) return;
+      if (activeMethod !== 'phone' || !otpPhone) { showErr('otp-err', msg('email_off')); return; }
       if (locked()) { tick(); return; }
       const code = boxes().map(b => b.value).join('');
       if (code.length !== 6) return;
-      if (activeMethod === 'phone') {
-        API('POST', '/auth/verify', { phone: fullPhone(), role: 'traveler', code }).then(res => {
-          if (res.status === 200 && res.data.token) {
-            try { localStorage.setItem(KEY_TOKEN, res.data.token); } catch (e) {}
-            authFails = 0; showErr('otp-err', '');
-            proceedAfterOtp();
-            return;
-          }
-          boxes().forEach(b => { b.value = ''; });
-          boxes()[0].focus();
-          if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; tick(); return; }
-          if (res.status === 410) { showErr('otp-err', msg('otp_expired')); return; }
-          if (res.status === 401) { showErr('otp-err', msg('wrong_code', { n: res.data.attempts_left })); return; }
-          showErr('otp-err', msg('net_err'));
-        }).catch(() => showErr('otp-err', msg('net_err')));
-        setVerifyState();
-        return;
-      }
-      if (code === DEMO_CODE) {
-        authFails = 0;
-        showErr('otp-err', '');
-        proceedAfterOtp();
-        return;
-      }
-      authFails++;
-      boxes().forEach(b => { b.value = ''; });
-      boxes()[0].focus();
-      if (authFails >= 5) {
-        lockUntil = Date.now() + LOCK_MS;
-        authFails = 0;
-        tick();
-      } else {
-        showErr('otp-err', msg('wrong_code', { n: 5 - authFails }));
-      }
+      const phone = otpPhone;
+      verifyPending = true;
       setVerifyState();
+      API('POST', '/auth/verify', { phone, role: 'traveler', code }).then(res => {
+        if (activeMethod !== 'phone' || otpPhone !== phone) return;
+        const user = res.data.user;
+        if (res.status === 200 && typeof res.data.token === 'string' && res.data.token && user && user.role === 'traveler' && user.id && user.phone) {
+          // A local profile or the development code alone is not proof of sign-in.
+          localStorage.setItem(KEY_TOKEN, res.data.token);
+          verifiedUser = user;
+          showErr('otp-err', '');
+          proceedAfterOtp();
+          return;
+        }
+        boxes().forEach(b => { b.value = ''; });
+        boxes()[0].focus();
+        if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; tick(); return; }
+        if (res.status === 410) { showErr('otp-err', msg('otp_expired')); return; }
+        if (res.status === 401) { showErr('otp-err', msg('wrong_code', { n: res.data.attempts_left })); return; }
+        showErr('otp-err', msg('net_err'));
+      }).catch(() => showErr('otp-err', msg('net_err'))).finally(() => {
+        verifyPending = false; setVerifyState();
+      });
+    }
+
+    function matchingProfile(u) {
+      return u && u.name && verifiedUser && u.authUserId === verifiedUser.id;
     }
 
     function proceedAfterOtp() {
-        authFails = 0;
+        if (!verifiedUser) return;
         showErr('otp-err', '');
         const u = loadUser();
-        if (u && u.name) { finishLogin(u); return; }
+        if (matchingProfile(u)) { finishLogin(u); return; }
+        $('step-identifier').classList.add('hidden');
         $('step-otp').classList.add('hidden');
         $('step-otp').classList.remove('flex');
         $('step-identity').classList.remove('hidden');
@@ -1012,14 +1017,15 @@
       reader.readAsDataURL(f);
     });
     function saveIdentity() {
-      const contact = activeMethod === 'phone'
-        ? $('country-select').value + ' ' + normDigits($('phone-input').value).replace(/\D/g, '')
-        : $('email-input').value.trim();
+      if (!verifiedUser || $('id-save').disabled) return;
+      const contact = verifiedUser.phone.startsWith('+') ? verifiedUser.phone : '+98 ' + verifiedUser.phone;
       finishLogin({ name: $('id-name').value.trim(), last: $('id-last').value.trim(), gender: idGender,
         contact: contact, method: activeMethod, passport: null, cardsRemoved: [], photo: idPhoto });
     }
     function finishLogin(u) {
-      try { localStorage.setItem(KEY_USER, JSON.stringify(u)); } catch (err) {}
+      if (!verifiedUser || !localStorage.getItem(KEY_TOKEN)) return;
+      u.authUserId = verifiedUser.id; u.phone = verifiedUser.phone; u.method = 'phone';
+      try { localStorage.setItem(KEY_USER, JSON.stringify(u)); } catch (err) { return; }
       $('id-save').disabled = true;
       $('id-save').textContent = msg('success');
       setTimeout(() => { location.href = 'app.html'; }, 1200);
@@ -1033,13 +1039,30 @@
       if (saved && names[saved] && saved !== 'fa') setLang(saved, names[saved]);
     })();
 
-    if (loadUser() && loadUser().name) {
-      location.replace('app.html');
-    } else {
-      selectTab('phone');
-      updateSendBtn();
-      setVerifyState();
+    selectTab('phone');
+    updateSendBtn();
+    setVerifyState();
+    // Only advertise the autofill helper after an explicit development config.
+    API('GET', '/config').then(res => {
+      devLogin = res.status === 200 && res.data.dev === true;
+      $('btn-test-code').hidden = !devLogin;
+      $('btn-test-code').style.display = devLogin ? '' : 'none';
+    }).catch(() => {});
+    // Old email/demo profiles must never skip server authentication.
+    if (localStorage.getItem(KEY_TOKEN)) {
+      const restoredToken = localStorage.getItem(KEY_TOKEN);
+      API('GET', '/auth/me').then(res => {
+        if (signInStarted || localStorage.getItem(KEY_TOKEN) !== restoredToken) return;
+        if (res.status === 200 && res.data.role === 'traveler' && res.data.id && res.data.phone) {
+          verifiedUser = res.data;
+          if (matchingProfile(loadUser())) location.replace('app.html');
+          else proceedAfterOtp();
+        } else if (res.status === 401 || res.status === 403 || (res.status === 200 && res.data.role !== 'traveler')) {
+          localStorage.removeItem(KEY_TOKEN);
+        }
+      }).catch(() => showErr('ident-err', msg('net_err')));
     }
+
 
   </script>
 <script>
@@ -1058,9 +1081,6 @@
   }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
   sync();
 })();
-</script>
-<script>
-// زبانه‌ی ایمیل همیشه نمایش داده می‌شود (ظاهر نسخه‌ی قبلی)
 </script>
 </body>
 </html>
