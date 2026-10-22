@@ -1266,6 +1266,7 @@ route('POST', '/api/traveler/bookings/:id/cancel', async (req, res, url, params)
   const u = requireUser(req, res, 'traveler'); if (!u) return;
   const r = ownReservation(res, u, params); if (!r) return;
   if (!CANCELLABLE.includes(r.status) && r.status !== 'matched') return send(res, 409, { error: 'not_cancellable' });
+  if (r.service_started_at) return send(res, 409, { error: 'service_already_started' });
   const afterMatch = r.status === 'matched';
   db.prepare('UPDATE reservations SET status = ?, cancel_after_match = ?, updated_at = ? WHERE id = ?')
     .run('cancelled', afterMatch ? 1 : 0, now(), r.id);
