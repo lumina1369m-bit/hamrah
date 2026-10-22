@@ -191,6 +191,18 @@ CREATE TABLE IF NOT EXISTS change_requests (
   created_at INTEGER NOT NULL,
   decided_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS extension_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  reservation_id INTEGER NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
+  extra_hours INTEGER NOT NULL,
+  extra_base INTEGER NOT NULL,
+  extra_tax INTEGER NOT NULL,
+  extra_net INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  expires_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  decided_at INTEGER
+);
 `);
 
 // ---------- شهرها، ممیزی و ستون‌های جدید (سند: شهرها از پنل مدیر فعال/غیرفعال می‌شوند) ----------
@@ -1054,6 +1066,7 @@ function sweep() {
   notifyInterviews(t);
   db.prepare("UPDATE offers SET status = 'expired', decided_at = ? WHERE status = 'pending' AND expires_at <= ?").run(t, t);
   db.prepare("UPDATE change_requests SET status = 'expired', decided_at = ? WHERE status = 'pending' AND expires_at <= ?").run(t, t);
+  db.prepare("UPDATE extension_requests SET status = 'expired', decided_at = ? WHERE status = 'pending' AND expires_at <= ?").run(t, t);
   const list = db.prepare("SELECT * FROM reservations WHERE status IN ('searching','waiting_schedule','matching','unmatched_ask')").all();
   for (const r of list) {
     if (r.kind === 'instant' && r.status === 'searching' && t - r.search_started_at >= TIMING.INSTANT_SEARCH_MS) {
@@ -1089,7 +1102,7 @@ function reservationView(r) {
   return {
     id: r.id, kind: r.kind, status: r.status,
     origin_lang: r.origin_lang, dest_lang: r.dest_lang, field: r.field,
-    place: r.place, notes: r.notes, gender_pref: r.gender_pref,
+    place: r.place, notes: r.notes, gender_pref: r.gender_pref, hours: r.hours,
     scheduled_at: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : null,
     total: r.total, base: r.base == null ? undefined : r.base, tax: r.tax == null ? undefined : r.tax,
     matched: !!r.translator_id, cancel_after_match: !!r.cancel_after_match,
@@ -1100,11 +1113,21 @@ function reservationView(r) {
     lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
     created_at: r.created_at,
     pending_change: pendingChangeOf(r.id),
+    pending_extension: pendingExtensionOf(r.id),
+    last_extension_status: lastExtensionStatusOf(r.id),
   };
 }
 function pendingChangeOf(rid) {
   const pc = db.prepare("SELECT id, changes, expires_at FROM change_requests WHERE reservation_id = ? AND status = 'pending'").get(rid);
   return pc ? { id: pc.id, changes: JSON.parse(pc.changes), expires_at: new Date(pc.expires_at).toISOString() } : null;
+}
+function pendingExtensionOf(rid) {
+  const pe = db.prepare("SELECT id, extra_hours, extra_base, extra_tax, expires_at FROM extension_requests WHERE reservation_id = ? AND status = 'pending'").get(rid);
+  return pe ? { id: pe.id, extra_hours: pe.extra_hours, extra_total: pe.extra_base + pe.extra_tax, expires_at: new Date(pe.expires_at).toISOString() } : null;
+}
+function lastExtensionStatusOf(rid) {
+  const le = db.prepare('SELECT status FROM extension_requests WHERE reservation_id = ? ORDER BY id DESC LIMIT 1').get(rid);
+  return le ? le.status : null;
 }
 
 function activeTranslator(res, u) {
@@ -1471,7 +1494,13 @@ route('GET', '/api/translator/offers', async (req, res) => {
   const changeRows = db.prepare(`SELECT c.id, c.changes, c.expires_at, r.place, r.traveler_name, r.net, r.kind, r.scheduled_at
     FROM change_requests c JOIN reservations r ON r.id = c.reservation_id
     WHERE r.translator_id = ? AND c.status = 'pending' AND c.expires_at > ?`).all(u.id, now());
-  send(res, 200, { online: !!(t && t.online), changes: changeRows.map((c) => ({ id: c.id, place: c.place, traveler_name: c.traveler_name,
+  const extRows = db.prepare(`SELECT e.id, e.reservation_id, e.extra_hours, e.extra_net, e.expires_at, r.place, r.traveler_name, r.net
+    FROM extension_requests e JOIN reservations r ON r.id = e.reservation_id
+    WHERE r.translator_id = ? AND e.status = 'pending' AND e.expires_at > ?`).all(u.id, now());
+  send(res, 200, { online: !!(t && t.online),
+    extensions: extRows.map((e) => ({ id: e.id, reservation_id: e.reservation_id, place: e.place, traveler_name: e.traveler_name,
+      extra_hours: e.extra_hours, extra_net: e.extra_net, new_net: (e.net || 0) + e.extra_net, expires_at: new Date(e.expires_at).toISOString() })),
+    changes: changeRows.map((c) => ({ id: c.id, place: c.place, traveler_name: c.traveler_name,
     kind: c.kind, scheduled_at: c.scheduled_at ? new Date(c.scheduled_at).toISOString() : null, changes: JSON.parse(c.changes), expires_at: new Date(c.expires_at).toISOString() })),
     offers: rows.map((r) => ({
     id: r.offer_id, kind: r.kind, origin_lang: r.origin_lang, dest_lang: r.dest_lang, field: r.field,
@@ -1612,6 +1641,65 @@ route('POST', '/api/traveler/bookings/:id/change', async (req, res, url, params)
   const info = db.prepare('INSERT INTO change_requests (reservation_id, changes, status, expires_at, created_at) VALUES (?, ?, ?, ?, ?)')
     .run(r.id, JSON.stringify(parsed.changes), 'pending', now() + CHANGE_WINDOW_MS, now());
   send(res, 202, { pending: true, id: info.lastInsertRowid, expires_at: new Date(now() + CHANGE_WINDOW_MS).toISOString() });
+});
+
+// ---------- تمدید زمان خدمت در جریان (سند: تمدید فقط با تأیید مترجم) ----------
+// قیمت تمدید از روی همان نرخ لحظه‌ی ثبت رزرو حساب می‌شود (base/hours) تا تغییر تعرفه‌ی مدیر روی رزرو باز اثر نگذارد.
+function extensionQuote(r, extraHours) {
+  const perHourBase = r.hours > 0 ? Math.round(r.base / r.hours) : 0;
+  const extraBase = perHourBase * extraHours;
+  const extraTax = r.base > 0 ? Math.round(extraBase * r.tax / r.base) : 0;
+  const extraNet = r.base > 0 ? Math.round(extraBase * r.net / r.base) : 0;
+  return { extraBase, extraTax, extraNet };
+}
+const EXTENSION_MAX_HOURS = 12; // سقف کل مدت خدمت، هماهنگ با سقف ثبت رزرو
+
+route('POST', '/api/traveler/bookings/:id/extend', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'traveler'); if (!u) return;
+  const r = ownReservation(res, u, params); if (!r) return;
+  const b = await readJson(req);
+  const extra = Math.trunc(Number(b.extra_hours)) || 1;
+  if (extra < 1 || extra > 4) return send(res, 400, { error: 'invalid_extension' });
+  // تمدید فقط وقتی خدمت واقعاً شروع شده و هنوز تمام نشده است
+  if (r.status !== 'matched' || !r.service_started_at || !r.translator_id) return send(res, 409, { error: 'extension_not_allowed' });
+  if ((r.hours || 1) + extra > EXTENSION_MAX_HOURS) return send(res, 409, { error: 'extension_limit' });
+  if (db.prepare("SELECT 1 FROM extension_requests WHERE reservation_id = ? AND status = 'pending'").get(r.id)) {
+    return send(res, 409, { error: 'extension_pending' });
+  }
+  const q = extensionQuote(r, extra);
+  const info = db.prepare(`INSERT INTO extension_requests (reservation_id, extra_hours, extra_base, extra_tax, extra_net, status, expires_at, created_at)
+    VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`)
+    .run(r.id, extra, q.extraBase, q.extraTax, q.extraNet, now() + CHANGE_WINDOW_MS, now());
+  send(res, 202, { pending: true, id: info.lastInsertRowid, extra_hours: extra,
+    extra_total: q.extraBase + q.extraTax, new_total: r.total + q.extraBase + q.extraTax,
+    expires_at: new Date(now() + CHANGE_WINDOW_MS).toISOString() });
+});
+
+function ownExtension(res, u, params) {
+  const id = parseId(params.id);
+  const e = id && db.prepare('SELECT e.*, r.translator_id AS tid FROM extension_requests e JOIN reservations r ON r.id = e.reservation_id WHERE e.id = ?').get(id);
+  if (!e || e.tid !== u.id) { send(res, 404, { error: 'not_found' }); return null; }
+  return e;
+}
+route('POST', '/api/translator/extensions/:id/accept', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const e = ownExtension(res, u, params); if (!e) return;
+  if (e.status !== 'pending' || e.expires_at <= now()) return send(res, 410, { error: 'extension_expired' });
+  const r = db.prepare('SELECT * FROM reservations WHERE id = ?').get(e.reservation_id);
+  if (!r || r.status !== 'matched') return send(res, 409, { error: 'extension_not_allowed' });
+  db.prepare("UPDATE extension_requests SET status = 'accepted', decided_at = ? WHERE id = ?").run(now(), e.id);
+  db.prepare(`UPDATE reservations SET hours = hours + ?, base = base + ?, tax = tax + ?, total = total + ?, net = net + ?, updated_at = ? WHERE id = ?`)
+    .run(e.extra_hours, e.extra_base, e.extra_tax, e.extra_base + e.extra_tax, e.extra_net, now(), r.id);
+  send(res, 200, { ok: true });
+});
+route('POST', '/api/translator/extensions/:id/reject', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const e = ownExtension(res, u, params); if (!e) return;
+  if (e.status !== 'pending') return send(res, 410, { error: 'extension_expired' });
+  db.prepare("UPDATE extension_requests SET status = 'rejected', decided_at = ? WHERE id = ?").run(now(), e.id);
+  send(res, 200, { ok: true });
 });
 
 function ownChange(res, u, params) {
