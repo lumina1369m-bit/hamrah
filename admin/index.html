@@ -224,6 +224,12 @@
       <h2>وضعیت کلی</h2>
       <div class="stats" id="stats"></div>
     </div>
+    <div class="card">
+      <h2>کدهای امنیتی قفل‌شده</h2>
+      <p class="hint">وقتی مترجم ۵ بار کد شروع خدمت را اشتباه بزند، کد آن رزرو قفل می‌شود. از اینجا می‌توانید قفل را باز کنید (همان کد قبلی دوباره کار می‌کند) یا کد تازه بسازید (کد تازه در اپ مسافر نمایش داده می‌شود). خود کد اینجا نشان داده نمی‌شود.</p>
+      <div id="locked-codes"></div>
+      <div class="msg" id="locked-msg"></div>
+    </div>
   </section>
 
   <section id="tab-settings" class="hidden">
@@ -401,6 +407,39 @@
       Object.keys(d.translators || {}).forEach(function (k) { add('مترجم: ' + label(k), d.translators[k]); });
       add('پرداخت منتظر تأیید', d.payments_waiting || 0);
       add('اختلاف نقدی باز', d.disputes || 0);
+      loadLockedCodes();
+    });
+  }
+
+  // ---- کدهای امنیتی قفل‌شده ----
+  function loadLockedCodes() {
+    api('GET', '/admin/locked-service-codes').then(function (res) {
+      if (res.status === 401) return expired();
+      var box = $('locked-codes'); if (!box) return;
+      box.innerHTML = '';
+      var rows = (res.data && res.data.locked) || [];
+      if (!rows.length) { box.innerHTML = '<p class="hint">کد قفل‌شده‌ای وجود ندارد.</p>'; return; }
+      rows.forEach(function (r) {
+        var row = document.createElement('div'); row.className = 'row';
+        var left = document.createElement('div');
+        var t = document.createElement('div'); t.textContent = 'رزرو ' + fa(r.id) + ' — ' + (r.traveler_name || 'مسافر');
+        var h = document.createElement('div'); h.className = 'hint'; h.textContent = (r.place || '') + ' · تلاش ناموفق: ' + fa(r.attempts);
+        left.appendChild(t); left.appendChild(h); row.appendChild(left);
+        var acts = document.createElement('div'); acts.className = 'actions';
+        var un = document.createElement('button'); un.type = 'button'; un.textContent = 'باز کردن قفل';
+        un.onclick = function () { unlockCode(r.id, false); };
+        var re = document.createElement('button'); re.type = 'button'; re.textContent = 'ساخت کد تازه';
+        re.onclick = function () { if (confirm('کد تازه ساخته شود؟ کد قبلی دیگر کار نمی‌کند و مسافر کد تازه را در اپ می‌بیند.')) unlockCode(r.id, true); };
+        acts.appendChild(un); acts.appendChild(re); row.appendChild(acts);
+        box.appendChild(row);
+      });
+    });
+  }
+  function unlockCode(id, regenerate) {
+    api('POST', '/admin/reservations/' + id + '/unlock-service-code', { regenerate: !!regenerate }).then(function (res) {
+      var m = $('locked-msg');
+      if (res.status === 200) { m.textContent = regenerate ? 'کد تازه ساخته شد و قفل باز شد.' : 'قفل کد باز شد.'; loadLockedCodes(); }
+      else m.textContent = 'انجام نشد (' + res.status + ')';
     });
   }
 

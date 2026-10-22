@@ -311,8 +311,21 @@ async function main() {
   check('مترجم تمدید را تأیید می‌کند', r.status === 200, JSON.stringify(r));
   const acceptedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('پس از تأیید، یک ساعت و مبلغ تمدید به رزرو اضافه شده است', acceptedView.hours === beforeExt.hours + 1 && acceptedView.total === beforeExt.total + ext2Total && acceptedView.last_extension_status === 'accepted', JSON.stringify(acceptedView));
+  // پایان خدمت: مترجم فقط درخواست می‌دهد و مسافر باید قبول کند
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
-  check('مترجم خدمت را پایان می‌دهد', r.status === 200);
+  check('مترجم فقط درخواست پایان می‌دهد (تمام نمی‌کند)', r.status === 202 && r.data.pending_finish === true, JSON.stringify(r));
+  const finReqView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
+  check('رزرو هنوز در جریان است و درخواست پایان منتظر مسافر است', finReqView.status === 'matched' && finReqView.finish_requested === true, JSON.stringify(finReqView));
+  r = await call('GET', '/api/translator/payments', null, T9);
+  check('پیش از قبول مسافر، پرداختی در فهرست مترجم نیست', !r.data.payments.some((p) => p.reservation_id === pid));
+  r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
+  check('پرداخت پیش از قبول پایان ممکن نیست', r.status === 409 && r.data.error === 'not_payable', JSON.stringify(r));
+  r = await call('POST', `/api/traveler/bookings/${pid}/finish-reject`, null, tokP9);
+  check('مسافر درخواست پایان را رد می‌کند و خدمت ادامه دارد', r.status === 200 && r.data.status === 'matched', JSON.stringify(r));
+  r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
+  check('مترجم دوباره درخواست پایان می‌دهد', r.status === 202 && r.data.pending_finish === true, JSON.stringify(r));
+  r = await call('POST', `/api/traveler/bookings/${pid}/finish-approve`, null, tokP9);
+  check('مسافر پایان را قبول می‌کند و خدمت با مبلغ کامل تمام می‌شود', r.status === 200 && r.data.status === 'finished' && r.data.finished_by === 'translator' && r.data.total === acceptedView.total, JSON.stringify(r));
   r = await call('GET', '/api/translator/payments', null, T9);
   check('پرداخت منتظر تأیید در فهرست مترجم است', r.data.payments.some((p) => p.reservation_id === pid && p.pay_state === null));
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'online' }, tokP9);
@@ -332,12 +345,26 @@ async function main() {
   if (did) {
     await startService(did, T9, tokP9);
     await call('POST', `/api/translator/missions/${did}/finish`, null, T9);
+    await call('POST', `/api/traveler/bookings/${did}/finish-approve`, null, tokP9);
     await call('POST', `/api/traveler/bookings/${did}/payment`, { method: 'cash' }, tokP9);
     r = await call('POST', `/api/traveler/bookings/${did}/dispute`, null, tokP9);
     check('مسافر اختلاف ثبت می‌کند', r.status === 200 && r.data.pay_state === 'disputed');
     r = await call('POST', `/api/translator/missions/${did}/cash-confirm`, null, T9);
     check('تأیید مترجم پس از اختلاف پذیرفته نمی‌شود', r.status === 409 && r.data.error === 'disputed');
   } else check('رزرو اختلاف برای مترجم تطبیق شد', false, 'offer missed');
+  console.log('== پایان زودهنگام توسط خود مسافر (بدون تأیید مترجم، مبلغ کامل)');
+  const eid = await matchOne('پایان زودهنگام مسافر');
+  if (eid) {
+    r = await call('POST', `/api/traveler/bookings/${eid}/finish`, null, tokP9);
+    check('پایان توسط مسافر پیش از شروع خدمت ممکن نیست', r.status === 409 && r.data.error === 'not_started', JSON.stringify(r));
+    await startService(eid, T9, tokP9);
+    const beforeFinish = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === eid);
+    r = await call('POST', `/api/traveler/bookings/${eid}/finish`, null, tokP9);
+    check('مسافر هر وقت خواست خودش تمام می‌کند و مبلغ کامل می‌ماند', r.status === 200 && r.data.status === 'finished' && r.data.finished_by === 'traveler' && r.data.total === beforeFinish.total, JSON.stringify(r));
+    r = await call('POST', `/api/traveler/bookings/${eid}/finish`, null, tokP9);
+    check('پایان دوباره ممکن نیست', r.status === 409 && r.data.error === 'not_in_service', JSON.stringify(r));
+  } else check('رزرو پایان زودهنگام برای مترجم تطبیق شد', false, 'offer missed');
+
   console.log('== پنل مدیریت');
   const ADM = process.env.ADMIN_PASSWORD || 'test-admin-pass';
   r = await call('POST', '/api/admin/login', { password: 'wrong' });
@@ -347,6 +374,35 @@ async function main() {
   r = await call('POST', '/api/admin/login', { password: ADM });
   const adm = r.data && r.data.token;
   check('ورود مدیر با رمز درست', r.status === 200 && !!adm);
+  // قفل کد امنیتی پس از ۵ تلاش اشتباه و بازشدن آن از پنل مدیریت
+  const lid = await matchOne('قفل کد امنیتی');
+  if (lid) {
+    const lCode = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === lid).service_code;
+    const wrong = lCode === '11111' ? '22222' : '11111';
+    for (let i = 0; i < 5; i++) r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: wrong }, T9);
+    check('پنجمین کد اشتباه آخرین فرصت را مصرف می‌کند', r.status === 401 && r.data.attempts_left === 0, JSON.stringify(r));
+    r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: wrong }, T9);
+    check('پس از ۵ کد اشتباه، کد قفل می‌شود', r.status === 423 && r.data.error === 'code_locked', JSON.stringify(r));
+    r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: lCode }, T9);
+    check('در حالت قفل، کد درست هم پذیرفته نمی‌شود', r.status === 423, JSON.stringify(r));
+    r = await call('GET', '/api/admin/locked-service-codes');
+    check('فهرست کدهای قفل‌شده بدون ورود مدیر در دسترس نیست', r.status === 401, JSON.stringify(r));
+    r = await call('GET', '/api/admin/locked-service-codes', null, adm);
+    check('مدیر رزرو قفل‌شده را می‌بیند (بدون خود کد)', r.status === 200 && r.data.locked.some((x) => x.id === lid) && !JSON.stringify(r.data).includes(lCode), JSON.stringify(r.data));
+    r = await call('POST', `/api/admin/reservations/${lid}/unlock-service-code`, {}, adm);
+    check('مدیر قفل کد را باز می‌کند', r.status === 200 && r.data.regenerated === false, JSON.stringify(r));
+    r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: wrong }, T9);
+    check('پس از بازشدن قفل، شمارنده از صفر شروع می‌شود', r.status === 401 && r.data.attempts_left === 4, JSON.stringify(r));
+    r = await call('POST', `/api/admin/reservations/${lid}/unlock-service-code`, { regenerate: true }, adm);
+    check('مدیر می‌تواند کد تازه بسازد', r.status === 200 && r.data.regenerated === true, JSON.stringify(r));
+    const freshCode = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === lid).service_code;
+    check('کد تازه در نمای مسافر نمایش داده می‌شود و با قبلی فرق دارد', /^[0-9]{5}$/.test(freshCode || '') && freshCode !== lCode, JSON.stringify(freshCode));
+    r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: lCode }, T9);
+    check('کد قبلی پس از ساخت کد تازه کار نمی‌کند', r.status === 401, JSON.stringify(r));
+    r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: freshCode }, T9);
+    check('کد تازه کار می‌کند و خدمت شروع می‌شود', r.status === 200 && r.data.started === true, JSON.stringify(r));
+    await call('POST', `/api/traveler/bookings/${lid}/cancel`, null, tokP9);
+  } else check('رزرو قفل کد برای مترجم تطبیق شد', false, 'offer missed');
   r = await call('GET', '/api/admin/settings', null, adm);
   check('تنظیمات قابل تغییر خوانده می‌شود', r.status === 200 && r.data.settings.hourly_tariffs.value.includes('medical') && r.data.settings.cancel_fee_percent.value === 20);
   check('مهلت‌های ثابت در فهرست تنظیمات نیستند', !r.data.settings.offer_ms && !r.data.settings.instant_search_ms);
