@@ -299,6 +299,12 @@ async function main() {
   // تمدید زمان خدمت: درخواست مسافر فقط با تأیید مترجم اعمال می‌شود
   const beforeExt = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('زمان واقعی شروع خدمت با قالب ISO به مسافر می‌رسد', Number.isFinite(Date.parse(beforeExt.service_started_at)) && Date.parse(beforeExt.service_started_at) <= Date.now() && beforeExt.finished_at === null);
+  const canonicalMission = await call('GET', `/api/translator/missions/${pid}`, null, T9);
+  check('نمای خصوصی مترجم، شروع و مبلغ همان رزرو را نشان می‌دهد', canonicalMission.status === 200 && canonicalMission.data.reservation_id === pid && canonicalMission.data.started === true && canonicalMission.data.service_started_at === beforeExt.service_started_at && canonicalMission.data.total === beforeExt.total && canonicalMission.data.hours === beforeExt.hours);
+  check('کد امنیتی مسافر در نمای مترجم افشا نمی‌شود', !('service_code' in canonicalMission.data));
+  check('نمای خصوصی مأموریت بدون نشست ممنوع است', (await call('GET', `/api/translator/missions/${pid}`)).status === 401);
+  check('مترجم دیگر نمای خصوصی مأموریت را نمی‌بیند', (await call('GET', `/api/translator/missions/${pid}`, null, T1)).status === 404);
+  check('مسافر به نمای خصوصی مترجم دسترسی ندارد', (await call('GET', `/api/translator/missions/${pid}`, null, tokP9)).status === 403);
   r = await startService(pid, T9, tokP9);
   const restartedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('تأیید دوباره کد، زمان شروع را صفر نمی‌کند', r.status === 200 && r.data.already_started === true && restartedView.service_started_at === beforeExt.service_started_at);
@@ -311,10 +317,16 @@ async function main() {
   check('تمدید در نمای مسافر «منتظر تأیید مترجم» است', !!pendingView.pending_extension && pendingView.pending_extension.id === extId && pendingView.hours === beforeExt.hours, JSON.stringify(pendingView.pending_extension));
   const extOffer = (await call('GET', '/api/translator/offers', null, T9)).data.extensions.find((e) => e.id === extId);
   check('درخواست تمدید به مترجم می‌رسد', !!extOffer && extOffer.extra_hours === 1 && extOffer.new_net > 0, JSON.stringify(extOffer));
+  const canonicalExtension = await call('GET', `/api/translator/extensions/${extId}`, null, T9);
+  check('نمای خصوصی تمدید به همان مأموریت و نرخ توافق‌شده اشاره می‌کند', canonicalExtension.status === 200 && canonicalExtension.data.id === extId && canonicalExtension.data.reservation_id === pid && canonicalExtension.data.status === 'pending' && canonicalExtension.data.extra_hours === 1 && canonicalExtension.data.extra_total > 0 && Number.isFinite(Date.parse(canonicalExtension.data.expires_at)));
+  check('نمای تمدید بدون نشست ممنوع است', (await call('GET', `/api/translator/extensions/${extId}`)).status === 401);
+  check('مترجم دیگر تمدید را نمی‌بیند', (await call('GET', `/api/translator/extensions/${extId}`, null, T1)).status === 404);
+  check('مسافر نمای خصوصی تمدید مترجم را نمی‌بیند', (await call('GET', `/api/translator/extensions/${extId}`, null, tokP9)).status === 403);
   r = await call('POST', `/api/translator/extensions/${extId}/accept`, null, T1);
   check('مترجم دیگر نمی‌تواند تمدید را تأیید کند', r.status === 404, JSON.stringify(r));
   r = await call('POST', `/api/translator/extensions/${extId}/reject`, null, T9);
   check('مترجم تمدید را رد می‌کند', r.status === 200, JSON.stringify(r));
+  check('تصمیم رد در نمای خصوصی تمدید پایدار است', (await call('GET', `/api/translator/extensions/${extId}`, null, T9)).data.status === 'rejected');
   const rejectedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('پس از رد، ساعت و مبلغ رزرو عوض نشده است', rejectedView.hours === beforeExt.hours && rejectedView.total === beforeExt.total && rejectedView.pending_extension === null && rejectedView.last_extension_status === 'rejected', JSON.stringify(rejectedView));
   r = await call('POST', `/api/traveler/bookings/${pid}/extend`, { extra_hours: 1 }, tokP9);
@@ -327,6 +339,7 @@ async function main() {
   // پایان خدمت: مترجم فقط درخواست می‌دهد و مسافر باید قبول کند
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
   check('مترجم فقط درخواست پایان می‌دهد (تمام نمی‌کند)', r.status === 202 && r.data.pending_finish === true, JSON.stringify(r));
+  check('درخواست پایان در نمای خصوصی مترجم همچنان خدمت در جریان است', (await call('GET', `/api/translator/missions/${pid}`, null, T9)).data.finish_requested === true && (await call('GET', `/api/translator/missions/${pid}`, null, T9)).data.status === 'matched');
   const finReqView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('رزرو هنوز در جریان است و درخواست پایان منتظر مسافر است', finReqView.status === 'matched' && finReqView.finish_requested === true, JSON.stringify(finReqView));
   r = await call('GET', '/api/translator/payments', null, T9);

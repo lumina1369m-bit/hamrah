@@ -1174,6 +1174,7 @@
 
 
 <script src="ui.js"></script>
+<script src="mission-actions.js"></script>
 <script>
 /* میز کار مترجم: اتصال نمونه‌ی code1.html به نشست و نام واقعی؛ حذف تسویه‌ی آنی طبق تصمیم‌ها */
 (function () {
@@ -1214,21 +1215,33 @@
   // ماموریت‌ها از سرور خوانده می‌شوند؛ سرور فقط ماموریت‌های پذیرفته‌شده و آینده را برمی‌گرداند.
   var MISSIONS = [];
   var missionsState = 'loading'; // loading | ok | error | nosession
+  var missionRead = 0;
   function loadMissions() {
-    var st = HZ.load();
-    if (!st.token) { missionsState = 'nosession'; renderMissions(); return; }
-    missionsState = 'loading'; renderMissions();
-    fetch('/api/translator/missions', { headers: { Authorization: 'Bearer ' + st.token } })
+    var st = HZ.load(), read = ++missionRead;
+    if (!st.token) { MISSIONS = []; missionsState = 'nosession'; renderMissions(); return; }
+    missionsState = 'loading'; MISSIONS = []; renderMissions();
+    fetch('/api/translator/missions', { headers: { Authorization: 'Bearer ' + st.token }, cache: 'no-store' })
       .then(function (r) {
-        if (r.status === 401) { missionsState = 'nosession'; return null; }
-        if (!r.ok) { missionsState = 'error'; return null; }
+        if (!r.ok) throw new Error('missions');
         return r.json();
       })
       .then(function (d) {
-        if (d) { MISSIONS = (d.missions || []).slice().sort(function (a, b) { return Date.parse(a.startAt) - Date.parse(b.startAt); }); missionsState = 'ok'; }
-        renderMissions();
+        if (read !== missionRead || tok() !== st.token) return;
+        if (!d || !Array.isArray(d.missions) || !d.missions.every(function (m) {
+          return m && Number.isFinite(Date.parse(m.startAt)) && typeof m.total === 'number' && Number.isFinite(m.total) && m.total >= 0 &&
+            (!m.reservation_id || (Number.isSafeInteger(m.reservation_id) && m.reservation_id > 0 && typeof m.started === 'boolean' && typeof m.finish_requested === 'boolean'));
+        })) throw new Error('missions');
+        MISSIONS = d.missions.slice().sort(function (a, b) { return Date.parse(a.startAt) - Date.parse(b.startAt); });
+        missionsState = 'ok'; renderMissions();
       })
-      .catch(function () { missionsState = 'error'; renderMissions(); });
+      .catch(function () {
+        if (read !== missionRead || tok() !== st.token) return;
+        MISSIONS = []; missionsState = 'error'; renderMissions();
+      });
+  }
+  function serviceAction(action, m, code, actor) {
+    return HZ_MISSION_ACTION.run({ action: action, reservation_id: m.reservation_id,
+      id: m.id, code: code, token: actor, refresh: function () { loadMissions(); refreshOffers(true); } });
   }
   function renderMissions() {
     var box = document.getElementById('missions-list');
@@ -1255,6 +1268,7 @@
     }
   }
   function missionCard(m) {
+    var actor = tok();
     var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3');
     var head = el('div', 'flex items-start justify-between gap-2');
     // سرور کد زمینه (general/medical/…) می‌فرستد؛ عنوان فارسی نمایش داده می‌شود
@@ -1285,16 +1299,8 @@
       codeInp.className = 'w-32 px-3 py-1.5 rounded-xl neu-inset-shallow bg-surface-container text-center text-[13px] font-bold tracking-widest';
       var codeBtn = el('button', 'px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'ثبت کد و شروع خدمت');
       codeBtn.type = 'button';
-      codeBtn.onclick = function () {
-        var code = (codeInp.value || '').trim();
-        if (!code) { HZ.toast('کد امنیتی را از مسافر بگیرید و وارد کنید.'); return; }
-        srv('POST', '/translator/missions/' + m.reservation_id + '/verify-code', { code: code }).then(function (res) {
-          if (res.status === 200) { HZ.toast('خدمت شروع شد.'); loadMissions(); }
-          else if (res.status === 423) HZ.toast('کد این رزرو قفل شده است؛ با پشتیبانی هماهنگ کنید.');
-          else if (res.status === 401) HZ.toast('کد نادرست است.' + (res.data && res.data.attempts_left != null ? ' ' + HZ.toFa(res.data.attempts_left) + ' تلاش مانده.' : ''));
-          else HZ.toast('شروع خدمت ثبت نشد.');
-        });
-      };
+      HZ_MISSION_ACTION.bind(codeBtn, m.reservation_id);
+      codeBtn.onclick = function () { serviceAction('start', m, codeInp.value, actor); };
       codeRow.appendChild(codeInp); codeRow.appendChild(codeBtn);
       card.appendChild(codeRow);
     }
@@ -1307,18 +1313,16 @@
     if (m.reservation_id && m.started && !m.finish_requested && Date.parse(m.startAt) <= Date.now()) {
       var finBtn = el('button', 'self-start px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'درخواست پایان خدمت');
       finBtn.type = 'button';
-      finBtn.onclick = function () {
-        srv('POST', '/translator/missions/' + m.reservation_id + '/finish').then(function (res) {
-          HZ.toast(res.status === 202 ? 'درخواست پایان برای مسافر فرستاده شد؛ تا تأیید او خدمت ادامه دارد.' : 'درخواست پایان ثبت نشد.');
-          loadMissions(); loadPayments();
-        });
-      };
+      HZ_MISSION_ACTION.bind(finBtn, m.reservation_id);
+      finBtn.onclick = function () { serviceAction('finish', m, undefined, actor); };
       card.appendChild(finBtn);
     }
     if (m.reservation_id && !m.started) {
       var cancelBtn = el('button', 'self-start px-3 py-1.5 rounded-xl neu-raised text-[11px] font-bold text-error cursor-pointer', 'لغو ماموریت');
       cancelBtn.type = 'button';
+      HZ_MISSION_ACTION.bind(cancelBtn, m.reservation_id);
       cancelBtn.onclick = function () {
+        if (cancelBtn.disabled || tok() !== actor) return;
         srv('POST', '/translator/missions/' + m.reservation_id + '/cancel').then(function (res) {
           HZ.toast(res.status === 200 ? 'ماموریت لغو شد و دوباره تطبیق می‌شود.' : 'لغو انجام نشد.');
           loadMissions();
@@ -1537,13 +1541,13 @@
     var btns = el('div', 'flex gap-2');
     var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
     no.type = 'button';
-    no.onclick = function () { srv('POST', '/translator/changes/' + c.id + '/reject').then(function () { refreshOffers(); }); };
+    no.onclick = function () { srv('POST', '/translator/changes/' + c.id + '/reject').then(function () { refreshOffers(true); }); };
     var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
     yes.type = 'button';
     yes.onclick = function () {
       srv('POST', '/translator/changes/' + c.id + '/accept').then(function (res) {
         HZ.toast(res.status === 200 ? 'تغییر پذیرفته شد.' : 'مهلت پاسخ تمام شده است.');
-        loadMissions(); refreshOffers();
+        loadMissions(); refreshOffers(true);
       });
     };
     btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
@@ -1551,6 +1555,7 @@
     return card;
   }
   function renderExtension(e) {
+    var actor = tok();
     var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-amber-500/50');
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تمدید خدمت'));
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant',
@@ -1562,15 +1567,12 @@
     var btns = el('div', 'flex gap-2');
     var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
     no.type = 'button';
-    no.onclick = function () { srv('POST', '/translator/extensions/' + e.id + '/reject').then(function () { HZ.toast('تمدید رد شد.'); refreshOffers(); }); };
+    HZ_MISSION_ACTION.bind(no, e.reservation_id);
+    no.onclick = function () { serviceAction('reject', e, undefined, actor); };
     var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
     yes.type = 'button';
-    yes.onclick = function () {
-      srv('POST', '/translator/extensions/' + e.id + '/accept').then(function (res) {
-        HZ.toast(res.status === 200 ? 'تمدید پذیرفته شد؛ زمان و مبلغ خدمت به‌روز شد.' : 'مهلت پاسخ به تمدید تمام شده است.');
-        loadMissions(); refreshOffers();
-      });
-    };
+    HZ_MISSION_ACTION.bind(yes, e.reservation_id);
+    yes.onclick = function () { serviceAction('accept', e, undefined, actor); };
     btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
     card.appendChild(row);
     return card;
@@ -1596,14 +1598,14 @@
       var btns = el('div', 'flex gap-2');
       var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
       no.type = 'button';
-      no.onclick = function () { srv('POST', '/translator/offers/' + o.id + '/decline').then(function () { refreshOffers(); }); };
+      no.onclick = function () { srv('POST', '/translator/offers/' + o.id + '/decline').then(function () { refreshOffers(true); }); };
       var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
       yes.type = 'button';
       yes.onclick = function () {
         srv('POST', '/translator/offers/' + o.id + '/accept').then(function (res) {
           if (res.status === 200) { HZ.toast('ماموریت پذیرفته شد.'); loadMissions(); }
           else HZ.toast(res.status === 410 ? 'مهلت پذیرش تمام شده است.' : 'این درخواست دیگر در دسترس نیست.');
-          refreshOffers();
+          refreshOffers(true);
         });
       };
       btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
@@ -1612,15 +1614,22 @@
     });
   }
   var offersSig = '';
-  function refreshOffers() {
-    if (!tok()) return;
+  var offerRead = 0, offerApplied = 0, offerRevision = 0;
+  function refreshOffers(invalidate) {
+    var token = tok(), read = ++offerRead, revision = invalidate ? ++offerRevision : offerRevision;
+    if (!token) return;
     srv('GET', '/translator/offers').then(function (res) {
-      if (res.status !== 200) return;
-      lastOffers = res.data.offers || [];
-      lastChanges = res.data.changes || [];
-      lastExtensions = res.data.extensions || [];
-      var sig = lastOffers.map(function (o) { return o.id; }).join(',') + '|' + lastChanges.map(function (c) { return c.id; }).join(',') + '|' + lastExtensions.map(function (e) { return e.id; }).join(',');
-      if (sig !== offersSig) { offersSig = sig; renderOffers(); } // فقط وقتی فهرست عوض شود بازسازی کن (کلیک‌ها گم نشوند)
+      if (tok() !== token || revision !== offerRevision || read < offerApplied) return;
+      if (res.status !== 200 || !res.data || !Array.isArray(res.data.offers) || !Array.isArray(res.data.changes) || !Array.isArray(res.data.extensions)) return;
+      offerApplied = read;
+      lastOffers = res.data.offers;
+      lastChanges = res.data.changes;
+      lastExtensions = res.data.extensions;
+      // Quote changes as well as IDs invalidate cards. Re-rendered controls
+      // inherit the reservation lock, never silently unlocking an action.
+      var sig = JSON.stringify([lastOffers, lastChanges, lastExtensions]);
+      if (sig !== offersSig) { offersSig = sig; renderOffers(); }
+      HZ_MISSION_ACTION.update();
     });
   }
   setInterval(refreshOffers, 3000);
@@ -1633,7 +1642,7 @@
       else t.textContent = t.textContent.replace(/• .*ثانیه$/, '• ' + HZ.toFa(left) + ' ثانیه');
     });
   }, 1000);
-  refreshOffers();
+  refreshOffers(true);
 
   loadMissions();
 
