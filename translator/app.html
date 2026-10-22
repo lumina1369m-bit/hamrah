@@ -1265,6 +1265,14 @@
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (m.travelerName || '—')));
     var when = new Date(m.startAt);
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant', (m.place || '') + ' • ' + HZ.jDate(when) + ' ' + HZ.clock(when)));
+    // اگر مختصات محل همراه رزرو آمده باشد، مترجم می‌تواند نقطه را روی نقشه ببیند و مسیریابی کند
+    if (m.lat != null && m.lng != null) {
+      var navLink = el('a', 'self-start text-[11px] font-bold text-primary underline', 'مشاهده‌ی محل روی نقشه');
+      navLink.href = 'https://www.openstreetmap.org/?mlat=' + m.lat + '&mlon=' + m.lng + '#map=16/' + m.lat + '/' + m.lng;
+      navLink.target = '_blank';
+      navLink.rel = 'noopener';
+      card.appendChild(navLink);
+    }
     var money = el('div', 'flex items-center justify-between pt-2 border-t border-surface-variant/40 text-[12px]');
     money.appendChild(el('span', 'text-on-surface-variant', 'مبلغ کل: ' + HZ.money(m.total || 0)));
     money.appendChild(el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(m.net || 0)));
