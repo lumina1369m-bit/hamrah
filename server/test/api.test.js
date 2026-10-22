@@ -92,13 +92,17 @@ async function main() {
   check('ورود مسافر', r.status === 200 && r.data.user.role === 'traveler');
   r = await call('GET', '/api/translator/missions', null, tokP);
   check('مسافر به API مترجم دسترسی ندارد', r.status === 403);
-  r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'x', traveler_name: 'Ali' }, tokP);
+  r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'x', traveler_name: 'Ali', lat: 35.6997, lng: 51.338 }, tokP);
   check('مسافر رزرو فوری ثبت می‌کند', r.status === 201 && r.data.status === 'searching', JSON.stringify(r));
   check('کد امنیتی شروع خدمت را سرور صادر می‌کند (۵ رقم)', /^[0-9]{5}$/.test(r.data.service_code || ''), JSON.stringify(r.data.service_code));
-  const firstServiceCode = r.data.service_code;
+  check('مختصات محل ملاقات ذخیره و برگردانده می‌شود', r.data.lat === 35.6997 && r.data.lng === 51.338, JSON.stringify([r.data.lat, r.data.lng]));
+  r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'x', traveler_name: 'Ali', lat: 999, lng: 51.338 }, tokP);
+  check('مختصات نامعتبر رد می‌شود', r.status === 400 && r.data.error === 'invalid_coords', JSON.stringify(r));
+  const firstServiceCode = (await call('GET', '/api/traveler/bookings', null, tokP)).data.bookings[0].service_code;
   r = await call('GET', '/api/traveler/bookings', null, tokP);
   check('رزرو در لیست مسافر است', r.status === 200 && r.data.bookings.length === 1 && r.data.bookings[0].kind === 'instant');
   check('کد امنیتی در فهرست رزروهای مسافر همان کد صادرشده است', r.data.bookings[0].service_code === firstServiceCode);
+  check('مختصات در فهرست رزروها هم هست', r.data.bookings[0].lat === 35.6997 && r.data.bookings[0].lng === 51.338);
   // این رزرو فقط برای بررسی فهرست بود؛ لغو می‌شود تا پیشنهادش به مترجمان بعدی نرسد
   await call('POST', `/api/traveler/bookings/${r.data.bookings[0].id}/cancel`, null, tokP);
 
@@ -259,7 +263,7 @@ async function main() {
   await call('POST', '/api/auth/request-code', { phone: ph9, role: 'traveler' });
   const tokP9 = (await call('POST', '/api/auth/verify', { phone: ph9, role: 'traveler', code: '123456' })).data.token;
   const matchOne = async (place) => {
-    const b = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place, traveler_name: 'A' }, tokP9);
+    const b = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place, traveler_name: 'A', lat: 35.72, lng: 51.41 }, tokP9);
     const off = (await call('GET', '/api/translator/offers', null, T9)).data.offers.find((o) => o.place === place);
     if (!off) return null;
     await call('POST', `/api/translator/offers/${off.id}/accept`, null, T9);
@@ -267,6 +271,8 @@ async function main() {
   };
   const pid = await matchOne('پرداخت نقدی');
   check('رزرو برای پایان خدمت پذیرفته شد', !!pid);
+  const missionView = (await call('GET', '/api/translator/missions', null, T9)).data.missions.find((m) => m.reservation_id === pid);
+  check('مختصات محل در نمای مأموریت مترجم هست', !!missionView && missionView.lat === 35.72 && missionView.lng === 51.41, JSON.stringify(missionView));
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
   check('پرداخت پیش از پایان خدمت ممنوع است', r.status === 409 && r.data.error === 'not_payable', JSON.stringify(r));
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);

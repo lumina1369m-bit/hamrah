@@ -176,6 +176,8 @@ for (const sql of [
   "ALTER TABLE reservations ADD COLUMN service_code TEXT",
   "ALTER TABLE reservations ADD COLUMN service_started_at INTEGER",
   "ALTER TABLE reservations ADD COLUMN service_code_attempts INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE reservations ADD COLUMN lat REAL",
+  "ALTER TABLE reservations ADD COLUMN lng REAL",
   "CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL)",
 ]) { try { db.exec(sql); } catch (e) { /* ستون از قبل وجود دارد */ } }
 
@@ -1083,6 +1085,7 @@ function reservationView(r) {
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
     service_code: r.service_code || null,
     service_started: !!r.service_started_at,
+    lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
     created_at: r.created_at,
     pending_change: pendingChangeOf(r.id),
   };
@@ -1121,6 +1124,14 @@ route('POST', '/api/traveler/bookings', async (req, res) => {
   if (!FIELDS.has(field)) return send(res, 400, { error: 'invalid_field' });
   const place = String(b.place || '').trim();
   if (!place || place.length > 200) return send(res, 400, { error: 'invalid_place' });
+  // مختصات محل ملاقات (از نقشه‌ی اپ مسافر)؛ اگر فرستاده شده باشد باید معتبر باشد تا مترجم بتواند مسیریابی کند.
+  let lat = null, lng = null;
+  if (b.lat !== undefined && b.lat !== null && b.lng !== undefined && b.lng !== null) {
+    lat = Number(b.lat); lng = Number(b.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return send(res, 400, { error: 'invalid_coords' });
+    }
+  }
   const notes = String(b.notes || '').slice(0, 500);
   const gender = GENDER_PREF.has(b.gender_pref) ? b.gender_pref : 'any';
   const travelerGender = b.traveler_gender === 'male' || b.traveler_gender === 'female' ? b.traveler_gender : null;
@@ -1144,11 +1155,11 @@ route('POST', '/api/traveler/bookings', async (req, res) => {
   // کد امنیتی شروع خدمت را سرور صادر می‌کند (۵ رقم)؛ مسافر هنگام شروع آن را به مترجم اعلام می‌کند.
   const serviceCode = String(crypto.randomInt(10000, 100000));
   const info = db.prepare(`INSERT INTO reservations (traveler_id, kind, origin_lang, dest_lang, field, place, notes, traveler_name, gender_pref,
-      scheduled_at, status, search_started_at, total, net, created_at, updated_at, traveler_gender, hours, car, party, base, tax, city_id, service_code)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      scheduled_at, status, search_started_at, total, net, created_at, updated_at, traveler_gender, hours, car, party, base, tax, city_id, service_code, lat, lng)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(u.id, kind, b.origin_lang, b.dest_lang, field, place, notes, String(b.traveler_name || '').slice(0, 80), gender,
       scheduledAt, status, t, base + tax, Math.round(base * PRICING.TRANSLATOR_SHARE), t, t,
-      travelerGender, hours, car, party, base, tax, cityRes.city.id, serviceCode);
+      travelerGender, hours, car, party, base, tax, cityRes.city.id, serviceCode, lat, lng);
   sweep();
   const row = db.prepare('SELECT * FROM reservations WHERE id = ?').get(info.lastInsertRowid);
   send(res, 201, reservationView(row));
@@ -1512,6 +1523,7 @@ route('GET', '/api/translator/missions', async (req, res) => {
   const fromReservations = db.prepare(`SELECT * FROM reservations WHERE translator_id = ? AND status = 'matched'
       AND COALESCE(scheduled_at, matched_at) > ? ORDER BY COALESCE(scheduled_at, matched_at)`).all(u.id, from)
     .map((r) => ({ id: 'R' + r.id, reservation_id: r.id, code: 'R-' + r.id, purpose: r.field, travelerName: r.traveler_name, place: r.place,
+      lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
       startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at }));
   // ماموریت‌های آزمایشی تزریقی (فقط حالت توسعه)
   const fromDev = db.prepare(`SELECT id, code, purpose, traveler_name, place, start_at, total, net, status FROM missions
