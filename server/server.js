@@ -169,6 +169,8 @@ for (const sql of [
   "ALTER TABLE reservations ADD COLUMN base INTEGER",
   "ALTER TABLE reservations ADD COLUMN tax INTEGER",
   "ALTER TABLE reservations ADD COLUMN service_code TEXT",
+  "ALTER TABLE reservations ADD COLUMN service_started_at INTEGER",
+  "ALTER TABLE reservations ADD COLUMN service_code_attempts INTEGER NOT NULL DEFAULT 0",
   "CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL)",
 ]) { try { db.exec(sql); } catch (e) { /* ستون از قبل وجود دارد */ } }
 
@@ -376,6 +378,25 @@ route('POST', '/api/auth/logout', async (req, res) => {
   const h = req.headers.authorization || '';
   const m = h.match(/^Bearer\s+(.+)$/i);
   if (m) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(m[1]));
+  send(res, 200, { ok: true });
+});
+
+// حذف حساب کاربر (مسافر یا مترجم): وقتی کارِ باز ندارد، حساب و داده‌هایش واقعاً از پایگاه داده پاک می‌شود.
+// رزروِ باز یعنی در جستجو/تطبیق/تطبیق‌یافته، یا پایان‌یافته‌ای که هنوز تسویه نشده است؛ پیشنهادِ باز مترجم هم باز محسوب می‌شود.
+// سابقه‌ی رزروهای تمام‌شده‌ی مترجمِ حذف‌شده بی‌نام نگه داشته می‌شود تا حساب‌وکتاب مالی به هم نریزد؛ نوبت مصاحبه‌ی گرفته‌شده آزاد می‌شود.
+route('DELETE', '/api/auth/account', async (req, res) => {
+  const u = requireUser(req, res); if (!u) return;
+  const ACTIVE = "('searching','waiting_schedule','matching','unmatched_ask','matched')";
+  const openAsTraveler = db.prepare(`SELECT COUNT(*) AS n FROM reservations WHERE traveler_id = ? AND (status IN ${ACTIVE} OR (status = 'finished' AND (pay_state IS NULL OR pay_state != 'settled')))`).get(u.id).n;
+  const openAsTranslator = db.prepare(`SELECT COUNT(*) AS n FROM reservations WHERE translator_id = ? AND (status IN ${ACTIVE} OR (status = 'finished' AND (pay_state IS NULL OR pay_state != 'settled')))`).get(u.id).n;
+  const openOffers = db.prepare("SELECT COUNT(*) AS n FROM offers WHERE translator_id = ? AND status = 'pending'").get(u.id).n;
+  if (openAsTraveler + openAsTranslator + openOffers > 0) return send(res, 409, { error: 'active_items' });
+  db.transaction(() => {
+    db.prepare('UPDATE reservations SET translator_id = NULL WHERE translator_id = ?').run(u.id);
+    db.prepare("UPDATE interview_slots SET booked_user_id = NULL, status = 'open' WHERE booked_user_id = ? AND status = 'booked'").run(u.id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(u.id);
+  })();
+  audit('account.delete', { role: u.role });
   send(res, 200, { ok: true });
 });
 
@@ -1047,6 +1068,7 @@ function reservationView(r) {
     matched: !!r.translator_id, cancel_after_match: !!r.cancel_after_match,
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
     service_code: r.service_code || null,
+    service_started: !!r.service_started_at,
     created_at: r.created_at,
     pending_change: pendingChangeOf(r.id),
   };
@@ -1174,12 +1196,40 @@ function settleIfBoth(r) {
   return false;
 }
 
+// مترجم کد امنیتی شروع خدمت را از مسافر می‌گیرد و ثبت می‌کند؛ شروع خدمت فقط با کد درست ممکن است.
+// پس از ۵ کد اشتباه، بررسی کد برای این رزرو قفل می‌شود و پرونده باید از پشتیبانی پیگیری شود.
+route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const id = parseId(params.id);
+  const r = id && db.prepare("SELECT * FROM reservations WHERE id = ? AND translator_id = ? AND status = 'matched'").get(id, u.id);
+  if (!r) return send(res, 404, { error: 'not_found' });
+  if (!r.service_code) return send(res, 409, { error: 'no_service_code' });
+  if (r.service_started_at) return send(res, 200, { ok: true, already_started: true });
+  if ((r.service_code_attempts || 0) >= 5) return send(res, 423, { error: 'code_locked' });
+  const b = await readJson(req);
+  const code = String(b.code || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
+  const given = Buffer.from(code);
+  const want = Buffer.from(r.service_code);
+  if (given.length !== want.length || !crypto.timingSafeEqual(given, want)) {
+    const attempts = (r.service_code_attempts || 0) + 1;
+    db.prepare('UPDATE reservations SET service_code_attempts = ?, updated_at = ? WHERE id = ?').run(attempts, now(), r.id);
+    return send(res, 401, { error: 'wrong_code', attempts_left: Math.max(0, 5 - attempts) });
+  }
+  db.prepare('UPDATE reservations SET service_started_at = ?, service_code_attempts = 0, updated_at = ? WHERE id = ?').run(now(), now(), r.id);
+  send(res, 200, { ok: true, started: true });
+});
+
 route('POST', '/api/translator/missions/:id/finish', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const id = parseId(params.id);
   const r = id && db.prepare("SELECT * FROM reservations WHERE id = ? AND translator_id = ? AND status = 'matched'").get(id, u.id);
   if (!r) return send(res, 404, { error: 'not_found' });
+  // پایان خدمت پیش از زمان قرار (رزرو زمان‌دار) ممکن نیست
+  if (r.scheduled_at && now() < r.scheduled_at) return send(res, 409, { error: 'too_early' });
+  // پایان خدمت فقط پس از شروع خدمت با کد امنیتی مسافر
+  if (r.service_code && !r.service_started_at) return send(res, 409, { error: 'not_started' });
   const t = now();
   db.prepare("UPDATE reservations SET status = 'finished', finished_at = ?, updated_at = ? WHERE id = ?").run(t, t, r.id);
   send(res, 200, { ok: true, status: 'finished' });
@@ -1448,7 +1498,7 @@ route('GET', '/api/translator/missions', async (req, res) => {
   const fromReservations = db.prepare(`SELECT * FROM reservations WHERE translator_id = ? AND status = 'matched'
       AND COALESCE(scheduled_at, matched_at) > ? ORDER BY COALESCE(scheduled_at, matched_at)`).all(u.id, from)
     .map((r) => ({ id: 'R' + r.id, reservation_id: r.id, code: 'R-' + r.id, purpose: r.field, travelerName: r.traveler_name, place: r.place,
-      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted' }));
+      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at }));
   // ماموریت‌های آزمایشی تزریقی (فقط حالت توسعه)
   const fromDev = db.prepare(`SELECT id, code, purpose, traveler_name, place, start_at, total, net, status FROM missions
       WHERE translator_id = ? AND status = 'accepted' AND start_at > ?`).all(u.id, from)

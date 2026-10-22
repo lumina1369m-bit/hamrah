@@ -28,6 +28,12 @@ async function makeTranslator(n) {
   return token;
 }
 
+// شروع خدمت با کد امنیتی‌ای که سرور برای همان رزرو صادر کرده است
+async function startService(bid, ttok, ptok) {
+  const bk = (await call('GET', '/api/traveler/bookings', null, ptok)).data.bookings.find((b) => b.id === bid);
+  return call('POST', `/api/translator/missions/${bid}/verify-code`, { code: bk && bk.service_code }, ttok);
+}
+
 async function main() {
   const base = Math.floor(Math.random() * 500) * 10;
   console.log('== احراز هویت');
@@ -264,6 +270,13 @@ async function main() {
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
   check('پرداخت پیش از پایان خدمت ممنوع است', r.status === 409 && r.data.error === 'not_payable', JSON.stringify(r));
   r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
+  check('پایان خدمت پیش از شروع با کد امنیتی ممنوع است', r.status === 409 && r.data.error === 'not_started', JSON.stringify(r));
+  const realCode = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid).service_code;
+  r = await call('POST', `/api/translator/missions/${pid}/verify-code`, { code: realCode === '99999' ? '11111' : '99999' }, T9);
+  check('کد امنیتی اشتباه پذیرفته نمی‌شود', r.status === 401 && r.data.error === 'wrong_code' && r.data.attempts_left === 4, JSON.stringify(r));
+  r = await startService(pid, T9, tokP9);
+  check('شروع خدمت با کد صادرشده‌ی سرور ثبت می‌شود', r.status === 200 && r.data.started === true, JSON.stringify(r));
+  r = await call('POST', `/api/translator/missions/${pid}/finish`, null, T9);
   check('مترجم خدمت را پایان می‌دهد', r.status === 200);
   r = await call('GET', '/api/translator/payments', null, T9);
   check('پرداخت منتظر تأیید در فهرست مترجم است', r.data.payments.some((p) => p.reservation_id === pid && p.pay_state === null));
@@ -282,6 +295,7 @@ async function main() {
   console.log('== اختلاف نقدی به پشتیبانی');
   const did = await matchOne('اختلاف پرداخت');
   if (did) {
+    await startService(did, T9, tokP9);
     await call('POST', `/api/translator/missions/${did}/finish`, null, T9);
     await call('POST', `/api/traveler/bookings/${did}/payment`, { method: 'cash' }, tokP9);
     r = await call('POST', `/api/traveler/bookings/${did}/dispute`, null, tokP9);
@@ -641,6 +655,27 @@ async function main() {
   check('تغییر تعرفه در پنل فوراً در قیمت سرور اعمال می‌شود', r.data.base === 1000000);
   await call('PUT', '/api/admin/settings', { hourly_tariffs: { general: 1450000, medical: 1685000, business: 1950000, tourism: 1350000 }, car_fee_per_hour: 350000 }, adm2);
   await call('PUT', '/api/admin/settings', { language_pairs: JSON.parse(origPairs) }, adm2);
+  console.log('== حذف حساب');
+  const pDel = phoneFor(base + 77);
+  await call('POST', '/api/auth/request-code', { phone: pDel, role: 'traveler' });
+  const tokDel = (await call('POST', '/api/auth/verify', { phone: pDel, role: 'traveler', code: '123456' })).data.token;
+  const bkDel = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'حذف حساب', traveler_name: 'Del' }, tokDel);
+  r = await call('DELETE', '/api/auth/account', null, tokDel);
+  check('حذف حساب با رزرو باز ممکن نیست', r.status === 409 && r.data.error === 'active_items', JSON.stringify(r));
+  await call('POST', `/api/traveler/bookings/${bkDel.data.id}/cancel`, null, tokDel);
+  r = await call('DELETE', '/api/auth/account', null, tokDel);
+  check('حذف حساب بدون کار باز انجام می‌شود', r.status === 200 && r.data.ok === true, JSON.stringify(r));
+  r = await call('GET', '/api/auth/me', null, tokDel);
+  check('پس از حذف حساب، نشست قبلی بی‌اعتبار است', r.status === 401);
+  await call('POST', '/api/auth/request-code', { phone: pDel, role: 'traveler' });
+  const tokDel2 = (await call('POST', '/api/auth/verify', { phone: pDel, role: 'traveler', code: '123456' })).data.token;
+  check('با همان شماره می‌توان حساب تازه ساخت', !!tokDel2);
+  r = await call('DELETE', '/api/auth/account', null, tokDel2);
+  check('حذف حساب تازه‌ی بدون سابقه هم ممکن است', r.status === 200);
+  const tokTrDel = await makeTranslator(base + 78);
+  r = await call('DELETE', '/api/auth/account', null, tokTrDel);
+  check('حذف حساب مترجم بدون مأموریت باز ممکن است', r.status === 200, JSON.stringify(r));
+
   console.log('== خروج و فایل‌ها');
   r = await call('POST', '/api/auth/logout', null, tokT);
   r = await call('GET', '/api/auth/me', null, tokT);
