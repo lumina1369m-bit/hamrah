@@ -156,6 +156,9 @@ async def scenario(browser, own_finish):
 
 
 async def main():
+    # App synchronization runs every 5s and the FSM every 1s. Playwright's
+    # default assertion timeout is only 5s (independent of page timeouts).
+    expect.set_options(timeout=20000)
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=['--no-sandbox'])
         try:
