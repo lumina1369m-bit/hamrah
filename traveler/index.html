@@ -331,6 +331,7 @@
 </label>
 </div>
 <p class="hidden text-xs text-center font-semibold text-red-600" id="ident-err" role="alert" aria-live="assertive"></p>
+<p id="ident-notice" role="status" class="hidden text-[12px] text-secondary"></p>
 <!-- Action Button -->
 <button class="w-full mt-2 py-3.5 sm:py-4 px-5 rounded-2xl neu-btn-teal text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 group transition-all" id="btn-request-otp" onclick="handleRequestOTP()" type="button">
 <span data-i18n="btn_request_otp" class="">دریافت کد تأیید یک‌بارمصرف</span>
@@ -736,9 +737,9 @@
     // ---------- ورود (سند): شماره یا ایمیل → کد ۶ رقمی → هویت (فقط نخستین ورود) ----------
     // پیام‌های خطای ورود به زبان جاری (کلید = متن فارسی اصلی)
     const ERR_MSG = {
-      fa: { session_expired: "نشست شما پایان یافته است. لطفاً دوباره وارد شوید.", email_off: 'ورود با ایمیل فعلاً فعال نیست. لطفاً از شماره همراه استفاده کنید.', net_err: 'اتصال به سرور برقرار نیست. اینترنت خود را بررسی کنید.', otp_expired: 'کد منقضی شده است. کد جدید بگیرید.', resend_wait: 'ارسال مجدد کد زودتر از موعد است. کمی صبر کنید.', sms_off: 'ارسال پیامک فعلاً فعال نیست. بعداً دوباره تلاش کنید.', photo_type: 'فقط فایل JPG یا PNG مجاز است.', photo_size: 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.', success: 'ورود موفقیت‌آمیز بود.', lock: 'ورود به‌دلیل ۵ تلاش ناموفق، تا {t} دیگر قفل است.', consent: 'لطفاً شرایط سنی و قوانین پلتفرم را تأیید فرمایید.', phone_bad: 'شماره همراه معتبر نیست.', email_bad: 'ایمیل معتبر نیست.', wrong_code: 'کد اشتباه است. {n} تلاش دیگر باقی مانده است.' },
-      en: { session_expired: "Your session has ended. Please sign in again.", email_off: 'Email sign-in is not available. Please use a mobile number.', net_err: 'Cannot reach the server. Check your internet connection.', otp_expired: 'The code has expired. Request a new one.', resend_wait: 'Please wait before requesting another code.', sms_off: 'SMS sending is not available right now. Try again later.', photo_type: 'Only JPG or PNG files are allowed.', photo_size: 'The photo must be 5 MB or smaller.', success: 'Signed in successfully.', lock: 'Sign-in is locked after 5 failed attempts. Try again in {t}.', consent: 'Please confirm both items to continue.', phone_bad: 'The mobile number is not valid.', email_bad: 'The email address is not valid.', wrong_code: 'Wrong code. {n} attempts left.' },
-      ar: { session_expired: "انتهت جلستك. يرجى تسجيل الدخول مجدداً.", email_off: 'الدخول بالبريد الإلكتروني غير متاح حالياً. يرجى استخدام رقم الجوال.', net_err: 'تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت.', otp_expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', resend_wait: 'يرجى الانتظار قبل طلب رمز آخر.', sms_off: 'إرسال الرسائل النصية غير متاح حالياً. حاول لاحقاً.', photo_type: 'يُسمح بملفات JPG أو PNG فقط.', photo_size: 'يجب ألا يتجاوز حجم الصورة ٥ ميغابايت.', success: 'تم الدخول بنجاح.', lock: 'تم قفل الدخول بعد ٥ محاولات فاشلة. حاول مرة أخرى بعد {t}.', consent: 'يرجى تأكيد البندين للمتابعة.', phone_bad: 'رقم الجوال غير صالح.', email_bad: 'البريد الإلكتروني غير صالح.', wrong_code: 'الرمز غير صحيح. تبقّى {n} محاولات.' }
+      fa: { account_deleted: "حذف حساب توسط سرور تأیید شد.", session_expired: "نشست شما پایان یافته است. لطفاً دوباره وارد شوید.", email_off: 'ورود با ایمیل فعلاً فعال نیست. لطفاً از شماره همراه استفاده کنید.', net_err: 'اتصال به سرور برقرار نیست. اینترنت خود را بررسی کنید.', otp_expired: 'کد منقضی شده است. کد جدید بگیرید.', resend_wait: 'ارسال مجدد کد زودتر از موعد است. کمی صبر کنید.', sms_off: 'ارسال پیامک فعلاً فعال نیست. بعداً دوباره تلاش کنید.', photo_type: 'فقط فایل JPG یا PNG مجاز است.', photo_size: 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.', success: 'ورود موفقیت‌آمیز بود.', lock: 'ورود به‌دلیل ۵ تلاش ناموفق، تا {t} دیگر قفل است.', consent: 'لطفاً شرایط سنی و قوانین پلتفرم را تأیید فرمایید.', phone_bad: 'شماره همراه معتبر نیست.', email_bad: 'ایمیل معتبر نیست.', wrong_code: 'کد اشتباه است. {n} تلاش دیگر باقی مانده است.' },
+      en: { account_deleted: "Account deletion was confirmed by the server.", session_expired: "Your session has ended. Please sign in again.", email_off: 'Email sign-in is not available. Please use a mobile number.', net_err: 'Cannot reach the server. Check your internet connection.', otp_expired: 'The code has expired. Request a new one.', resend_wait: 'Please wait before requesting another code.', sms_off: 'SMS sending is not available right now. Try again later.', photo_type: 'Only JPG or PNG files are allowed.', photo_size: 'The photo must be 5 MB or smaller.', success: 'Signed in successfully.', lock: 'Sign-in is locked after 5 failed attempts. Try again in {t}.', consent: 'Please confirm both items to continue.', phone_bad: 'The mobile number is not valid.', email_bad: 'The email address is not valid.', wrong_code: 'Wrong code. {n} attempts left.' },
+      ar: { account_deleted: "تم تأكيد حذف الحساب من الخادم.", session_expired: "انتهت جلستك. يرجى تسجيل الدخول مجدداً.", email_off: 'الدخول بالبريد الإلكتروني غير متاح حالياً. يرجى استخدام رقم الجوال.', net_err: 'تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت.', otp_expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', resend_wait: 'يرجى الانتظار قبل طلب رمز آخر.', sms_off: 'إرسال الرسائل النصية غير متاح حالياً. حاول لاحقاً.', photo_type: 'يُسمح بملفات JPG أو PNG فقط.', photo_size: 'يجب ألا يتجاوز حجم الصورة ٥ ميغابايت.', success: 'تم الدخول بنجاح.', lock: 'تم قفل الدخول بعد ٥ محاولات فاشلة. حاول مرة أخرى بعد {t}.', consent: 'يرجى تأكيد البندين للمتابعة.', phone_bad: 'رقم الجوال غير صالح.', email_bad: 'البريد الإلكتروني غير صالح.', wrong_code: 'الرمز غير صحيح. تبقّى {n} محاولات.' }
     };
     function msg(key, vars) {
       const lang = (typeof currentLang !== 'undefined' && ERR_MSG[currentLang]) ? currentLang : 'fa';
@@ -1044,9 +1045,13 @@
     updateSendBtn();
     setVerifyState();
     try {
-      if (sessionStorage.getItem('hamzaban.auth.notice.v1') === 'expired') {
+      var notice = sessionStorage.getItem('hamzaban.auth.notice.v1');
+      if (notice === 'expired' || notice === 'deleted') {
         sessionStorage.removeItem('hamzaban.auth.notice.v1');
-        showErr('ident-err', msg('session_expired'));
+        if (notice === 'deleted') {
+          $('ident-notice').textContent = msg('account_deleted');
+          $('ident-notice').classList.remove('hidden');
+        } else showErr('ident-err', msg('session_expired'));
       }
     } catch (e) {}
     // Only advertise the autofill helper after an explicit development config.

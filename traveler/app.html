@@ -884,8 +884,8 @@
 <button type="button" id="ac-delete" class="w-full min-h-[46px] rounded-2xl neu-flat text-error font-bold text-[13px] cursor-pointer">حذف حساب</button>
 <p id="ac-delete-note" class="text-[10px] text-outline hidden">حذف حساب وقتی رزرو فعال دارید ممکن نیست.</p>
 <div id="ac-delete-box" class="hidden flex-col gap-2 neu-card rounded-2xl p-3">
-<p class="text-[11px] text-on-surface-variant leading-relaxed">اطلاعات شخصی شما ظرف ۳۰ روز حذف می‌شود. تاریخچه‌ی مأموریت‌ها بدون نام و شماره نگه داشته می‌شود و فاکتورها طبق قوانین مالی نگه‌داری می‌شوند.</p>
-<span class="text-[11px] text-on-surface-variant font-medium">برای تأیید عبارت «حذف حساب» را بنویسید</span>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">حذف حساب پس از تأیید سرور انجام می‌شود و قابل بازگشت نیست. رزرو یا پرداخت باز مانع حذف حساب است.</p>
+<label for="ac-delete-input" class="text-[11px] text-on-surface-variant font-medium">برای تأیید عبارت «حذف حساب» را بنویسید</label>
 <input id="ac-delete-input" class="w-full min-h-[48px] px-4 py-2.5 rounded-2xl neu-pressed bg-transparent outline-none text-[14px] text-on-surface !min-h-[40px] text-[13px]">
 <button type="button" id="ac-delete-confirm" class="w-full min-h-[46px] rounded-2xl neu-flat text-on-surface font-bold text-[13px] cursor-pointer text-error" disabled>حذف نهایی حساب</button>
 </div>
@@ -2785,7 +2785,7 @@ document.addEventListener('DOMContentLoaded', function() {
       row.appendChild(t); row.appendChild(btn); inv.appendChild(row);
     });
     $('ac-delete-note').classList.toggle('hidden', !lastOpen());
-    $('ac-delete').disabled = !!lastOpen();
+    $('ac-delete').disabled = deletePending || logoutPending || !!lastOpen();
   }
   $('ac-photo').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = ''; if (!f) return;
@@ -2822,13 +2822,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Never derive a verification badge or a saved payment method from local profile flags.
 
   var logoutPending = false;
+  var deletePending = false;
   function clearTravelerSession(expired) {
     [KEY_TOKEN_T, KEY_USER, KEY_BK].forEach(function (key) { localStorage.removeItem(key); });
     if (expired) { try { sessionStorage.setItem('hamzaban.auth.notice.v1', 'expired'); } catch (e) {} }
     location.replace('index.html');
   }
   function logoutTraveler(allDevices) {
-    if (logoutPending) return;
+    if (logoutPending || deletePending) return;
     if (!srvToken()) {
       if (!allDevices) clearTravelerSession(false);
       else toast('برای خروج از همهٔ دستگاه‌ها، ابتدا وارد حساب شوید.', 'error');
@@ -2865,20 +2866,44 @@ document.addEventListener('DOMContentLoaded', function() {
     var l = (window.HZ_I18N && window.HZ_I18N.get && window.HZ_I18N.get()) || 'fa';
     return { fa: 'حذف حساب', en: 'Delete account', ar: 'حذف الحساب' }[l] || 'حذف حساب';
   }
-  $('ac-delete-input').addEventListener('input', function () { $('ac-delete-confirm').disabled = this.value.trim() !== deleteWord(); });
+  function updateDeleteButton() {
+    $('ac-delete-confirm').disabled = deletePending || $('ac-delete-input').value.trim() !== deleteWord();
+  }
+  $('ac-delete-input').addEventListener('input', updateDeleteButton);
   $('ac-delete-confirm').onclick = function () {
+    // Recheck the phrase in the handler too: disabled alone does not guard synthetic clicks.
+    if (deletePending || logoutPending || $('ac-delete-input').value.trim() !== deleteWord()) return;
     if (lastOpen()) { toast('حذف حساب وقتی رزرو فعال دارید ممکن نیست'); return; }
-    var done = function () {
-      try { localStorage.removeItem(KEY_TOKEN_T); } catch (e) {}
-      localStorage.removeItem(KEY_USER); localStorage.removeItem(KEY_BK);
-      toast('حساب و داده‌های شما حذف شد.');
-      setTimeout(function () { location.replace('index.html'); }, 1200);
-    };
-    if (!srvToken()) { done(); return; }
-    // حذف واقعی روی سرور: حساب، نشست‌ها و داده‌های کاربر پاک می‌شوند
-    srvCall('DELETE', '/auth/account').then(done).catch(function (e) {
-      if (e && e.status === 409) { toast('حذف حساب وقتی رزرو یا کارِ باز دارید ممکن نیست'); return; }
-      toast('حذف حساب انجام نشد. اتصال اینترنت را بررسی کنید.');
+    var deleteToken = srvToken();
+    if (!deleteToken) { toast('برای حذف حساب، ابتدا وارد حساب شوید.', 'error'); return; }
+    deletePending = true;
+    var button = $('ac-delete-confirm');
+    var input = $('ac-delete-input');
+    var sessionButtons = [$('ac-logout'), $('ac-logout-all'), $('ac-delete')];
+    updateDeleteButton();
+    input.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    sessionButtons.forEach(function (b) { b.disabled = true; });
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 10000);
+    srvCall('DELETE', '/auth/account', null, { signal: controller.signal }).then(function (result) {
+      if (!result || result.ok !== true) throw new Error('delete_not_confirmed');
+      // A delayed response for an old account must never clear a newer session.
+      if (srvToken() !== deleteToken) return;
+      try { sessionStorage.setItem('hamzaban.auth.notice.v1', 'deleted'); } catch (e) {}
+      clearTravelerSession(false);
+    }).catch(function (e) {
+      if (srvToken() !== deleteToken) return;
+      if (e && e.status === 409) { toast('حذف حساب وقتی رزرو یا کارِ باز دارید ممکن نیست', 'error'); return; }
+      toast('حذف حساب تأیید نشد. اتصال را بررسی کنید و دوباره تلاش کنید.', 'error');
+    }).finally(function () {
+      clearTimeout(timeout);
+      deletePending = false;
+      input.disabled = false;
+      button.removeAttribute('aria-busy');
+      sessionButtons.forEach(function (b) { b.disabled = false; });
+      $('ac-delete').disabled = !!lastOpen();
+      updateDeleteButton();
     });
   };
 
