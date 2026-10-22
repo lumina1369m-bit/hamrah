@@ -1595,7 +1595,12 @@ document.addEventListener('DOMContentLoaded', function() {
       if (b) syncServiceClock(b);
       else if (!sessionStart) sessionStart = Date.now(); // local-only demo
     }
-    if (num === 6) updateInvoice();
+    if (num === 6) {
+      const booking = serviceBooking();
+      const payButton = document.getElementById('btn-settle-return');
+      if (payButton) payButton.dataset.bookingId = booking ? String(booking.serverId) : '';
+      updateInvoice();
+    }
     const nmBlock = document.getElementById('nomatch-block');
     if (nmBlock) nmBlock.classList.add('hidden');
     for (let i = 1; i <= 6; i++) {
@@ -1969,15 +1974,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  const btnSettleReturn = document.getElementById('btn-settle-return');
-  if (btnSettleReturn) {
-    btnSettleReturn.addEventListener('click', () => {
-      window.payChoice = state.payMethod;
-      goToStage(1);
-      window.backToLocationPicker();
-      window.showAppToast('پرداخت انجام شد. با تشکر از همراهی شما', 'check_circle');
-    });
-  }
+  // Navigation is a consequence of a confirmed server response, never of a click.
+  window.addEventListener('hamzaban:payment-recorded', () => {
+    goToStage(1);
+    window.backToLocationPicker();
+  });
 
   const btnBackToTimer = document.getElementById('btn-back-to-timer');
   if (btnBackToTimer) {
@@ -2698,25 +2699,41 @@ document.addEventListener('DOMContentLoaded', function() {
   ['btn-cancel-search', 'btn-cancel-nomatch'].forEach(function (id) {
     $(id).addEventListener('click', cancelOpen);
   });
-  function markCashPending() {
-    var f = findBk((lastOpen() || {}).id); if (!f.b) return;
+  function markCashPending(booking) {
+    var f = findBk(booking.id); if (!f.b) return;
     f.b.cashTraveler = true; f.b.statusLabel = 'منتظر تأیید مترجم'; setBk(f.list); renderBookings();
     window.showAppToast('تأیید شما ثبت شد. با تأیید مترجم، رزرو انجام‌شده می‌شود.', 'check_circle');
   }
-  // تسویه‌ی پایان سفر: پرداخت روی سرور ثبت می‌شود (نقدی: منتظر تأیید مترجم؛ آنلاین: انجام‌شده).
-  // اگر رزرو روی سرور نیست، فقط وضعیت محلی تغییر می‌کند.
+  // Keep the invoice open on rejection/network failure. A click is not a payment.
+  var paymentInFlight = false;
   $('btn-settle-return').addEventListener('click', function () {
-    var ob = lastOpen();
+    if (paymentInFlight) return;
+    var button = $('btn-settle-return');
+    var bookingId = Number(button.dataset.bookingId);
+    var ob = bookingId ? getBk().find(function (b) { return b.serverId === bookingId; }) : lastOpen();
     var method = window.payChoice === 'cash' ? 'cash' : 'online';
-    if (!ob || !ob.serverId) {
-      if (method === 'cash') markCashPending(); else patchLast('done');
+    if (!ob || !ob.serverId || !srvToken()) {
+      window.showAppToast('برای ثبت پرداخت، ورود و رزرو معتبر لازم است.', 'error');
       return;
     }
-    srvCall('POST', '/traveler/bookings/' + ob.serverId + '/payment', { method: method }).then(function () {
-      if (method === 'cash') markCashPending();
+    paymentInFlight = true;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    srvCall('POST', '/traveler/bookings/' + ob.serverId + '/payment', { method: method }).then(function (result) {
+      if (!result.ok || (method === 'cash' ? ['awaiting_cash', 'settled'].indexOf(result.pay_state) === -1 : result.pay_state !== 'settled')) {
+        throw new Error('payment_not_confirmed');
+      }
+      if (method === 'cash' && result.pay_state === 'awaiting_cash') markCashPending(ob);
       else window.showAppToast('پرداخت انجام شد. با تشکر از همراهی شما', 'check_circle');
       syncServer();
-    }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+      window.dispatchEvent(new CustomEvent('hamzaban:payment-recorded'));
+    }).catch(function (e) {
+      window.showAppToast(srvErrText(e), 'error');
+    }).finally(function () {
+      paymentInFlight = false;
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+    });
   });
 
   // ---------- حساب من ----------

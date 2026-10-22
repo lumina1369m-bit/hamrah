@@ -1,6 +1,6 @@
 // همراه | Service Worker: پوسته‌ی برنامه را برای نصب و اجرای آفلاین ذخیره می‌کند.
 // داده‌ی رزرو و پرداخت هرگز کش نمی‌شود.
-const VERSION = 'hamzaban-traveler-v21';
+const VERSION = 'hamzaban-traveler-v22';
 const SHELL = ['./', 'index.html', 'app.html', 'manifest.webmanifest', 'icon.svg', 'vendor/tailwind.css', 'vendor/theme.css', 'vendor/fonts.css', 'vendor/leaflet/leaflet.css', 'vendor/leaflet/leaflet.js', 'vendor/fonts/f1-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yyygA.woff2', 'vendor/fonts/f2-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yyygA.woff2', 'vendor/fonts/f3-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yyygA.woff2', 'vendor/fonts/f4-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2', 'vendor/fonts/f5-Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2', 'vendor/fonts/f6-Dxxo8j6PP2D_kU2muijlE8WWMmk.woff2', 'vendor/fonts/f7-Dxxo8j6PP2D_kU2muijlHcWW.woff2', 'vendor/fonts/f8-kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2'];
 
 self.addEventListener('install', (e) => {
