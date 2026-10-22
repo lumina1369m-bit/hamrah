@@ -1,0 +1,58 @@
+# تست‌های خودکار همراه — با هر پوش و هر Pull Request، تست‌های API سرور اجرا می‌شوند.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  api-tests:
+    name: API tests (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: نصب وابستگی‌های سرور
+        working-directory: server
+        run: npm ci
+
+      - name: بررسی سینتکس
+        run: |
+          node --check server/server.js
+          node --check server/lib/security.js
+          node --check server/lib/features.js
+
+      - name: بالا آوردن سرورهای تست (۸۰۸۱ زمان واقعی، ۸۰۸۲ زمان فشرده)
+        working-directory: server
+        run: |
+          HZ_DEV=1 HZ_ADMIN_PASSWORD=test-admin-pass HZ_DB=/tmp/hz_ci.sqlite PORT=8081 node server.js > /tmp/server8081.log 2>&1 &
+          HZ_DEV=1 HZ_TIME_SCALE=0.01 HZ_DB=/tmp/hz_ci_fast.sqlite PORT=8082 node server.js > /tmp/server8082.log 2>&1 &
+          for p in 8081 8082; do
+            ok=0
+            for i in $(seq 1 30); do
+              if curl -sf "http://127.0.0.1:$p/api/config" > /dev/null; then ok=1; break; fi
+              sleep 1
+            done
+            if [ "$ok" != "1" ]; then echo "سرور پورت $p بالا نیامد"; cat /tmp/server$p.log; exit 1; fi
+          done
+
+      - name: اجرای تست‌های API
+        working-directory: server
+        run: |
+          BASE=http://127.0.0.1:8081 node test/api.test.js
+          BASE=http://127.0.0.1:8081 node test/features_cities_security.test.js
+          BASE=http://127.0.0.1:8082 node test/timing.test.js
+
+      - name: لاگ سرورها (فقط هنگام شکست)
+        if: failure()
+        run: |
+          echo "--- 8081 ---"; cat /tmp/server8081.log || true
+          echo "--- 8082 ---"; cat /tmp/server8082.log || true
