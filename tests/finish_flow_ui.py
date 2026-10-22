@@ -144,6 +144,15 @@ async def scenario(browser, own_finish):
         assert not errors, errors
         print(f'PASS: {label}; full agreed total preserved ({total})')
     except Exception:
+        print('JavaScript errors:', errors)
+        for name, page in pages:
+            try:
+                print(name, 'URL:', page.url)
+                print(name, 'UI:', (await page.locator('body').inner_text())[-600:])
+            except Exception:
+                pass
+        if 'ttok' in locals():
+            print('Server missions:', await api(translator_ctx.request, 'GET', '/translator/missions', ttok))
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
         for name, page in pages:
             try:
