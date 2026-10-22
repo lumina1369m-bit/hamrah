@@ -1021,7 +1021,7 @@
       if (!verifiedUser || $('id-save').disabled) return;
       const contact = verifiedUser.phone.startsWith('+') ? verifiedUser.phone : '+98 ' + verifiedUser.phone;
       finishLogin({ name: $('id-name').value.trim(), last: $('id-last').value.trim(), gender: idGender,
-        contact: contact, method: activeMethod, passport: null, cardsRemoved: [], photo: idPhoto });
+        contact: contact, method: activeMethod, photo: idPhoto });
     }
     function finishLogin(u) {
       if (!verifiedUser || !localStorage.getItem(KEY_TOKEN)) return;

@@ -34,10 +34,9 @@ async def main():
         res.append(('save empty name', await toast())); await hide_toast()
         await pg.fill('#ac-name', 'علی'); await pg.click('#ac-save', timeout=2000); await pg.wait_for_timeout(300)
         res.append(('save ok', await toast())); await hide_toast()
-        await pg.click('#ac-gender-btn', timeout=2000); await pg.wait_for_timeout(300)
-        res.append(('gender change', await toast())); await hide_toast(); await scan('after-gender')
-        await pg.click('#ac-contact-btn', timeout=2000); await pg.wait_for_timeout(300)
-        res.append(('contact change', await toast())); await hide_toast()
+        res.append(('gender change unavailable', await pg.is_disabled('#ac-gender-btn')))
+        await scan('gender-unavailable')
+        res.append(('contact change unavailable', await pg.is_disabled('#ac-contact-btn')))
         # delete flow
         await pg.click('#ac-delete', timeout=2000); await pg.wait_for_timeout(300)
         await scan('delete-box')
