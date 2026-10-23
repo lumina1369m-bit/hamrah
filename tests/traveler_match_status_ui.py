@@ -102,6 +102,9 @@ async def scenario(browser, width):
         created = await response.json()
         assert created['kind'] == 'instant' and created['status'] == 'searching', created
         await expect(page.locator('#stage-2')).to_be_visible()
+        await page.reload()
+        await page.wait_for_function('() => window.hzBookingsSynced === true')
+        await expect(page.locator('#stage-2')).to_be_visible()
         current_language = 'fa'
         for language, copy in SEARCH_COPY.items():
             if language != current_language:
