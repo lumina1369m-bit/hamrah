@@ -35,7 +35,7 @@ async def main():
         check('وضعیت «در انتظار بررسی» نشان داده می‌شود', 'در انتظار بررسی' in txt)
         check('محتوای مدرک نشان داده نمی‌شود', 'iVBOR' not in txt)
         cap = await P.evaluate("()=>document.getElementById('cap-box') ? document.getElementById('cap-box').textContent : ''")
-        check('چهار بُعد صلاحیت از سرور نشان داده می‌شود', 'احراز هویت' in cap and 'صلاحیت پزشکی' in cap)
+        check('وضعیت صلاحیت و مدرک پزشکی از سرور نشان داده می‌شود', 'احراز هویت' in cap and 'مدرک پزشکی' in cap)
         static_hidden = await P.evaluate("()=>{const g=document.getElementById('static-cap-grid'); return !g || getComputedStyle(g).display === 'none';}")
         check('متن نمایشی ثابت CAP دیده نمی‌شود', static_hidden)
         check('خطای صفحه', not perr)
