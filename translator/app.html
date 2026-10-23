@@ -447,51 +447,34 @@
 </div>
 </div>
 </div>
-<!-- Tactical SOS Emergency Button & Inline Drawer -->
+<!-- Safety guidance: opening this panel never sends an alert or location. -->
 <div class="w-full flex flex-col">
-<button class="p-5 rounded-2xl bg-surface flex flex-col justify-between text-right neu-raised active:shadow-[inset_3px_3px_6px_rgba(186,26,26,0.3),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] hover:scale-[1.01] transition-all cursor-pointer w-full" id="sos-btn" onclick="toggleSosInline()" type="button">
+<button aria-controls="inline-sos-panel" aria-expanded="false" class="p-5 rounded-2xl bg-surface flex flex-col justify-between text-right neu-raised hover:scale-[1.01] transition-all cursor-pointer w-full" id="sos-btn" onclick="toggleSosInline()" type="button">
 <div class="flex items-center justify-between w-full">
-<div class="w-10 h-10 rounded-xl bg-error-container flex items-center justify-center shadow-[inset_1px_1px_3px_rgba(186,26,26,0.2)]">
-<span class="material-symbols-outlined text-error text-[22px]">sos</span>
-</div>
-<span class="text-[11px] text-error font-bold px-2 py-0.5 rounded-full bg-error-container/60">پشتیبانی ۲۴/۷</span>
+<span class="material-symbols-outlined text-error text-[22px]">health_and_safety</span>
+<span class="text-[11px] text-error font-bold">راهنمای تماس</span>
 </div>
 <div class="mt-4 text-right w-full">
-<span class="font-bold text-[18px] text-on-surface">حفاظت اضطراری</span>
-<span class="text-[11px] text-on-surface-variant block mt-1">مرکز امنیت و اعزام اسکورت محافظتی</span>
+<span class="font-bold text-[18px] text-on-surface">پشتیبانی و راهنمای ایمنی</span>
+<span class="text-[11px] text-on-surface-variant block mt-1">این بخش هشدار اضطراری یا موقعیت شما را ارسال نمی‌کند.</span>
 </div>
 <div class="mt-2 flex items-center justify-between text-error text-[12px] font-bold">
-<span class="">مشاهده گزینه‌های امداد فوری</span>
+<span>مشاهده راهنما و شمارهٔ پشتیبانی</span>
 <span class="material-symbols-outlined text-[18px] transition-transform duration-200" id="sos-chevron">expand_more</span>
 </div>
 </button>
-<!-- INLINE EXPANDED SOS EMERGENCY CONTROL PANEL -->
 <div class="hidden mt-3 rounded-2xl bg-error-container/20 p-4 border border-error/30 shadow-inner space-y-3" id="inline-sos-panel">
 <div class="flex items-center justify-between pb-2 border-b border-error/20">
-<div class="flex items-center gap-1.5 text-error font-bold text-[13px]">
-<span class="material-symbols-outlined text-[18px]">shield</span>
-<span class="">واحد بحران و حفاظت اضطراری (SOS)</span>
+<h3 class="text-error font-bold text-[13px]">پشتیبانی و راهنمای ایمنی</h3>
+<button class="text-on-surface-variant text-[12px] font-semibold cursor-pointer" id="translator-support-close" onclick="toggleSosInline()" type="button">بستن</button>
 </div>
-<button class="text-on-surface-variant hover:text-error text-[11px] font-semibold cursor-pointer" onclick="toggleSosInline()" type="button">بستن</button>
-</div>
-<div class="p-2.5 rounded-xl bg-surface/90 border border-error/20 text-right">
-<span class="text-[12px] text-error font-bold block">موقعیت زنده شما به مرکز دیسپچ مخابره شد</span>
-<span class="text-[11px] text-on-surface-variant block mt-0.5">زمان تقریبی رسیدن گشت تشریفات: ۵ دقیقه</span>
-</div>
-<div class="space-y-2">
-<button class="w-full py-2.5 px-3 rounded-xl bg-error text-on-error text-[12px] font-bold flex items-center justify-center gap-2 hover:bg-error/90 transition-all cursor-pointer" onclick="handleEmergencySupportEscort()" type="button">
-<span class="material-symbols-outlined text-[18px]">shield_person</span>
-<span class="">درخواست اعزام تیم پشتیبانی میدانی</span>
-</button>
-<button class="w-full py-2.5 px-3 rounded-xl bg-surface text-on-surface text-[12px] font-bold flex items-center justify-center gap-2 border border-surface-variant shadow-sm hover:text-primary transition-all cursor-pointer" onclick="handleEmergencyCallOperator()" type="button">
-<span class="material-symbols-outlined text-[18px] text-primary">call</span>
-<span class="">تماس با حراست و پشتیبانی (۰۲۱-۹۱۰۱۰۰۰۰)</span>
-</button>
-<button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center justify-center gap-2 hover:text-error transition-all cursor-pointer" onclick="handleEmergencyPolice()" type="button">
-<span class="material-symbols-outlined text-[18px] text-error">local_police</span>
-<span class="">تماس با فوریت‌های پلیسی ۱۱۰</span>
-</button>
-</div>
+<p class="text-[12px] text-error font-bold" id="translator-support-safety-note">این بخش هشدار اضطراری ارسال نمی‌کند و موقعیت شما را به کسی نمی‌فرستد. در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
+<p class="text-[12px] text-on-surface-variant" id="translator-support-unavailable">اعزام نیرو، تماس خودکار و ردیابی زنده در این برنامه فعال نیستند.</p>
+<button aria-describedby="translator-support-unavailable" class="w-full py-2.5 px-3 rounded-xl text-[12px] opacity-60 cursor-not-allowed" disabled id="translator-support-escort" type="button">اعزام تیم پشتیبانی میدانی — فعال نیست</button>
+<p aria-live="polite" class="text-[12px] text-on-surface-variant" id="translator-support-status" role="status"></p>
+<a class="hidden block py-2.5 px-3 rounded-xl bg-surface text-primary text-[12px] font-bold" id="translator-support-call">باز کردن شماره‌گیر پشتیبانی: <bdi id="translator-support-phone"></bdi></a>
+<p class="text-[11px] text-on-surface-variant">انتخاب این پیوند فقط شماره‌گیر دستگاه را باز می‌کند؛ اتصال تماس یا پاسخ‌گویی تضمین نمی‌شود.</p>
+<button class="py-2 px-3 rounded-xl bg-surface text-primary text-[12px] font-bold cursor-pointer" id="translator-support-retry" type="button">دریافت دوبارهٔ شمارهٔ پشتیبانی</button>
 </div>
 </div>
 </section>
@@ -1034,30 +1017,8 @@
       }, 800);
     }
 
-    // 6. SOS Drawer
-    function toggleSosInline() {
-      var panel = document.getElementById('inline-sos-panel');
-      var chev = document.getElementById('sos-chevron');
-      if (!panel) return;
-      var isClosed = panel.classList.contains('hidden');
-      panel.classList.toggle('hidden');
-      if (chev) chev.style.transform = isClosed ? 'rotate(180deg)' : 'rotate(0deg)';
-      if (isClosed) {
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
-
-    function handleEmergencySupportEscort() {
-      showToast('درخواست تیم اسکورت اضطراری ثبت گردید. گشت تشریفات اعزام شد.', 'shield_person');
-    }
-
-    function handleEmergencyCallOperator() {
-      showToast('تماس مستقیم با واحد حراست و بحران (۰۲۱-۹۱۰۱۰۰۰۰) برقرار شد.', 'call');
-    }
-
-    function handleEmergencyPolice() {
-      showToast('در حال شماره‌گیری مستقیم فوریت‌های پلیسی ۱۱۰...', 'local_police');
-    }
+    // Safety guidance only; support.js owns fresh configuration and cancellation.
+    function toggleSosInline() { window.HZ_TRANSLATOR_SUPPORT.toggle(); }
 
     // 7. Booking Details & Actions
     function toggleBookingDetail(bookingId) {
@@ -1173,6 +1134,7 @@
 <script src="ui.js"></script>
 <script src="mission-actions.js"></script>
 <script src="presence.js"></script>
+<script src="support.js"></script>
 <script>
 /* میز کار مترجم: اتصال نمونه‌ی code1.html به نشست و نام واقعی؛ حذف تسویه‌ی آنی طبق تصمیم‌ها */
 (function () {
