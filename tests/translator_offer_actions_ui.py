@@ -147,8 +147,9 @@ async def scenario(browser):
         assert posts == 1
         release.set()
         await failed()
-        await page.unroute(pattern + '/accept', held)
-        await page.unroute('**/api/translator/offers', changed_list)
+        # Drain in-flight polling mocks before removing them; unroute alone
+        # may race route.fetch()/fulfill() and hand a request twice.
+        await page.unroute_all(behavior='wait')
         await expect(button('accept')).to_be_enabled()
 
         await page.clock.install()
