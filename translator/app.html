@@ -405,10 +405,10 @@
 </div>
 </section>
 </div>
-<!-- Left / Secondary Column (Shift Switch, Performance Counters, Upcoming Bookings Preview) -->
+<!-- Left / Secondary Column (Shift Switch, Performance Summary, Upcoming Bookings Preview) -->
 <div class="w-full flex flex-col space-y-6 md:col-span-6 lg:col-span-5 xl:col-span-5">
-<!-- Shift Status Controller & Rapid Stats -->
-<section class="w-full rounded-2xl bg-surface p-5 sm:p-6 neu-card space-y-5">
+<!-- Shift status and a truthful summary; account metrics are not available here. -->
+<section aria-label="آمادگی و خلاصه عملکرد" class="w-full rounded-2xl bg-surface p-5 sm:p-6 neu-card space-y-5">
 <!-- Interactive Neumorphic Shift Toggle Switch -->
 <div class="flex items-center justify-between bg-surface-container/60 p-3 sm:p-3.5 rounded-xl shadow-[inset_3px_3px_6px_rgba(163,180,204,0.5),inset_-3px_-3px_6px_rgba(255,255,255,0.9)]">
 <div class="flex items-center gap-3 pr-1">
@@ -425,26 +425,10 @@
 </span>
 </button>
 </div>
-<!-- Triple Recessed Performance Counters -->
-<div class="grid grid-cols-3 gap-2.5 sm:gap-3">
-<div class="flex flex-col items-center justify-center py-3.5 px-1.5 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_5px_rgba(163,180,204,0.45),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] text-center">
-<span class="text-[11px] text-on-surface-variant mb-1">درآمد امروز</span>
-<span class="text-[16px] text-primary font-bold">۱,۸۵۰,۰۰۰</span>
-<span class="text-[10px] text-outline">تومان</span>
-</div>
-<div class="flex flex-col items-center justify-center py-3.5 px-1.5 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_5px_rgba(163,180,204,0.45),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] text-center">
-<span class="text-[11px] text-on-surface-variant mb-1">همراهی امروز</span>
-<span class="text-[16px] text-on-surface font-bold">۴:۰۰</span>
-<span class="text-[10px] text-outline">ساعت</span>
-</div>
-<div class="flex flex-col items-center justify-center py-3.5 px-1.5 rounded-xl bg-surface-container-low shadow-[inset_2px_2px_5px_rgba(163,180,204,0.45),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] text-center">
-<span class="text-[11px] text-on-surface-variant mb-1">امتیاز رضایت</span>
-<div class="flex items-center gap-1">
-<span class="text-[16px] text-on-surface font-bold">۴.۹۵</span>
-<span class="material-symbols-outlined text-[15px] text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">star</span>
-</div>
-<span class="text-[10px] text-outline">۱۲۸ مأموریت</span>
-</div>
+<!-- Do not invent financial, time or satisfaction metrics when the account report is unavailable. -->
+<div aria-labelledby="workspace-metrics-title" class="p-3.5 rounded-xl bg-surface-container-low text-right" id="workspace-metrics-note" role="note">
+<h3 class="font-bold text-[13px] text-on-surface" id="workspace-metrics-title">خلاصهٔ عملکرد</h3>
+<p class="mt-1 text-[12px] leading-5 text-on-surface-variant">درآمد روزانه، ساعات همراهی، امتیاز رضایت و تعداد مأموریت در این خلاصه از سرور دریافت نمی‌شوند؛ بنابراین عدد نمونه نمایش داده نمی‌شود.</p>
 </div>
 </section>
 <!-- Scheduled Future Bookings Preview -->
