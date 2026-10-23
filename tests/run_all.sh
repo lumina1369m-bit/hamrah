@@ -65,6 +65,7 @@ run python3 traveler_support_ui.py
 run python3 traveler_support_claims_ui.py
 run python3 traveler_location_claims_ui.py
 run python3 traveler_match_status_ui.py
+run python3 traveler_translators_ui.py
 run python3 account_truth_ui.py
 run python3 logout_sessions_ui.py
 run python3 traveler_auth_ui.py

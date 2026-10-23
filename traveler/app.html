@@ -123,8 +123,6 @@
       background:linear-gradient(150deg,#ffffff 0%,#e9f7f4 55%,#e6eef8 100%) !important;}
     .tr-card::after{content:"";position:absolute;left:-60px;bottom:-80px;width:240px;height:240px;border-radius:50%;
       background:radial-gradient(circle,rgba(0,106,97,.18),transparent 65%);pointer-events:none;}
-    .tr-count{display:inline-block;font-size:56px;font-weight:900;line-height:1;
-      background:linear-gradient(135deg,#005182,#006a61);-webkit-background-clip:text;background-clip:text;color:transparent;}
 
     /* account */
     .ac-profile{position:relative;overflow:hidden;
@@ -809,14 +807,13 @@
 <div id="bk-list" class="flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-3 lg:grid-cols-2 lg:gap-3 lg:min-w-0"></div>
 </div></div>
 
-<!-- ===================== مترجمان (فقط شمارش) ===================== -->
+<!-- ===================== مترجمان ===================== -->
 <div id="scr-translators" class="fixed inset-0 z-40 bg-[#dbe4ef] overflow-y-auto hidden">
 <div class="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 md:px-8 md:pl-28 lg:pl-36 pt-20 md:pt-24 pb-28 md:pb-12 flex flex-col gap-3">
 <div class="scr-hero"><span class="material-symbols-outlined scr-hero-ico">translate</span><div class="min-w-0"><h1 class="scr-title">مترجمان</h1><p class="scr-sub">شبکه‌ی مترجمان همزمان و حرفه‌ای شما</p></div></div>
-<div class="neu-card tr-card rounded-3xl p-4 md:p-7 flex flex-col gap-2 md:grid md:grid-cols-[auto_1fr] md:gap-x-10 md:items-center lg:grid-cols-[17rem_1fr] lg:gap-x-12 lg:min-h-[200px] lg:items-stretch">
-<span class="text-[12px] text-on-surface-variant md:justify-self-center lg:text-center">مترجمان آنلاین در محدوده‌ی شما</span>
-<span class="tr-count num md:justify-self-center">۴</span>
-<p class="text-[11px] md:text-[13px] text-on-surface-variant leading-relaxed md:row-span-2 lg:border-r lg:border-white/80 lg:pr-10 lg:self-stretch lg:flex lg:items-center">برای حفظ حریم خصوصی، هویت و موقعیت دقیق مترجمان پیش از تطبیق نمایش داده نمی‌شود. مترجم فقط پس از پذیرش درخواست شما معرفی می‌شود.</p>
+<div class="neu-card tr-card rounded-3xl p-4 md:p-7 flex flex-col gap-2 md:flex-row md:items-center md:gap-10 lg:min-h-[160px]">
+<span class="text-[13px] md:text-[15px] font-bold text-primary md:flex-none">حریم خصوصی مترجمان</span>
+<p id="translator-privacy-note" class="text-[11px] md:text-[13px] text-on-surface-variant leading-relaxed">برای حفظ حریم خصوصی، هویت و موقعیت دقیق مترجمان پیش از تطبیق نمایش داده نمی‌شود. مترجم فقط پس از پذیرش درخواست شما معرفی می‌شود.</p>
 </div></div></div>
 
 <!-- ===================== حساب من ===================== -->
