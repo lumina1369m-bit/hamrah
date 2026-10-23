@@ -9,7 +9,7 @@
   function mission(m, rid) {
     if (!m || m.reservation_id !== rid || !id(rid) || !['matched', 'finished', 'done'].includes(m.status) ||
         typeof m.started !== 'boolean' || typeof m.finish_requested !== 'boolean' ||
-        !money(m.total) || !money(m.net) || !Number.isInteger(m.hours) || m.hours < 1 || m.hours > 12 ||
+        !money(m.total) || !money(m.net) || typeof m.hours !== 'number' || !Number.isFinite(m.hours) || m.hours < 1 || m.hours > 24 ||
         (m.started ? !timestamp(m.service_started_at) : m.service_started_at !== null) ||
         (m.finish_requested && !m.started)) throw new Error(ERROR);
     return m;
@@ -20,6 +20,33 @@
         !Number.isInteger(e.extra_hours) || e.extra_hours < 1 || e.extra_hours > 4 ||
         !money(e.extra_total) || !money(e.extra_net) || !timestamp(e.expires_at)) throw new Error(ERROR);
     return e;
+  }
+  var detailKeys = ['scheduled_at', 'place', 'origin_lang', 'dest_lang', 'field', 'hours', 'car', 'party', 'gender_pref', 'notes'];
+  function validDetail(k, v) {
+    if (k === 'scheduled_at') return v === null || (typeof v === 'number' && Number.isFinite(v) && v > 0);
+    if (k === 'place' || k === 'notes') return typeof v === 'string' && (k === 'notes' || v.trim().length > 0) && v.length <= (k === 'notes' ? 500 : 200);
+    if (k === 'origin_lang' || k === 'dest_lang') return ['fa', 'ar', 'en', 'tr', 'fr', 'ru', 'zh'].includes(v);
+    if (k === 'field') return ['general', 'medical', 'legal', 'business'].includes(v);
+    if (k === 'hours' || k === 'party') return typeof v === 'number' && Number.isFinite(v) && v >= 1 && v <= (k === 'hours' ? 24 : 20);
+    if (k === 'car') return v === 0 || v === 1;
+    if (k === 'gender_pref') return ['any', 'female', 'male'].includes(v);
+    return false;
+  }
+  function validChanges(changes) {
+    return changes && typeof changes === 'object' && !Array.isArray(changes) && Object.keys(changes).length > 0 &&
+      Object.keys(changes).every(function (k) { return detailKeys.includes(k) && validDetail(k, changes[k]) && (k !== 'scheduled_at' || changes[k] !== null); });
+  }
+  function sameChanges(a, b) {
+    return validChanges(a) && validChanges(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(function (k) { return Object.prototype.hasOwnProperty.call(b, k) && a[k] === b[k]; });
+  }
+  function change(c, cid, rid) {
+    if (!c || !id(cid) || c.id !== cid || c.reservation_id !== rid || !id(rid) ||
+        !['pending', 'accepted', 'rejected', 'expired'].includes(c.status) || !timestamp(c.expires_at) || !validChanges(c.changes)) throw new Error(ERROR);
+    return c;
+  }
+  function details(m) {
+    if (!m.details || !detailKeys.every(function (k) { return Object.prototype.hasOwnProperty.call(m.details, k) && validDetail(k, m.details[k]); }) || m.details.hours !== m.hours) throw new Error(ERROR);
+    return m.details;
   }
   function offer(o, oid, rid) {
     if (!o || !id(oid) || o.id !== oid || o.reservation_id !== rid || !id(rid) ||
@@ -103,6 +130,26 @@
         return accepting ? 'ماموریت پذیرفته شد.' : 'رد پیشنهاد ثبت شد.';
       }
       before = await readMission();
+      if (options.action === 'change-accept' || options.action === 'change-reject') {
+        if (before.status !== 'matched') throw new Error(ERROR);
+        var priorDetails = details(before);
+        async function readChange() {
+          var view = await request('GET', 'changes/' + options.id);
+          if (view.status !== 200) throw new Error(ERROR);
+          return change(view.data, options.id, rid);
+        }
+        e = await readChange();
+        if (e.status !== 'pending' || Date.parse(e.expires_at) <= Date.now() || !sameChanges(e.changes, options.changes)) throw new Error(ERROR);
+        var acceptingChange = options.action === 'change-accept';
+        res = await request('POST', 'changes/' + options.id + (acceptingChange ? '/accept' : '/reject'));
+        if (res.status !== 200 || !res.data || res.data.ok !== true) throw new Error(ERROR);
+        decided = await readChange(); after = await readMission();
+        var currentDetails = details(after);
+        if (decided.status !== (acceptingChange ? 'accepted' : 'rejected') || !sameChanges(decided.changes, e.changes) || decided.expires_at !== e.expires_at ||
+            after.status !== 'matched' || after.total !== before.total || after.net !== before.net || after.started !== before.started || after.service_started_at !== before.service_started_at ||
+            !detailKeys.every(function (k) { return currentDetails[k] === (acceptingChange && Object.prototype.hasOwnProperty.call(e.changes, k) ? e.changes[k] : priorDetails[k]); })) throw new Error(ERROR);
+        return acceptingChange ? 'تغییر پذیرفته شد.' : 'رد تغییر ثبت شد.';
+      }
       if (options.action === 'cash-confirm' || options.action === 'cash-dispute') {
         cash(before);
         if (before.status !== 'finished' || before.pay_state !== 'awaiting_cash' || before.confirmed ||
@@ -171,5 +218,5 @@
       if (window.HZ.load().token === token && options.refresh) options.refresh();
     }
   }
-  window.HZ_MISSION_ACTION = { run: run, bind: bind, update: update };
+  window.HZ_MISSION_ACTION = { run: run, bind: bind, update: update, validChanges: validChanges };
 })();

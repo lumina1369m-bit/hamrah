@@ -1537,9 +1537,11 @@
   var lastOffers = [];
   var lastChanges = [];
   var lastExtensions = [];
-  var CHANGE_LABEL = { scheduled_at: 'زمان', place: 'محل ملاقات', origin_lang: 'زبان مبدأ', dest_lang: 'زبان مقصد', field: 'حوزه', hours: 'مدت', car: 'خودرو', party: 'تعداد همراه', gender_pref: 'ترجیح جنسیت' };
+  var CHANGE_LABEL = { notes: 'یادداشت', scheduled_at: 'زمان', place: 'محل ملاقات', origin_lang: 'زبان مبدأ', dest_lang: 'زبان مقصد', field: 'حوزه', hours: 'مدت', car: 'خودرو', party: 'تعداد همراه', gender_pref: 'ترجیح جنسیت' };
   function renderChange(c) {
+    var actor = tok();
     var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-secondary/40');
+    card.setAttribute('data-change-id', c.id);
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تغییر ماموریت'));
     var parts = Object.keys(c.changes).filter(function (k) { return CHANGE_LABEL[k]; }).map(function (k) {
       var v = c.changes[k];
@@ -1554,15 +1556,16 @@
     var btns = el('div', 'flex gap-2');
     var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
     no.type = 'button';
-    no.onclick = function () { srv('POST', '/translator/changes/' + c.id + '/reject').then(function () { refreshOffers(true); }); };
+    HZ_MISSION_ACTION.bind(no, c.reservation_id);
+    function decideChange(action) {
+      return HZ_MISSION_ACTION.run({ action: action, id: c.id, reservation_id: c.reservation_id, changes: c.changes, token: actor,
+        refresh: function () { loadMissions(); refreshOffers(true); } });
+    }
+    no.onclick = function () { decideChange('change-reject'); };
     var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
     yes.type = 'button';
-    yes.onclick = function () {
-      srv('POST', '/translator/changes/' + c.id + '/accept').then(function (res) {
-        HZ.toast(res.status === 200 ? 'تغییر پذیرفته شد.' : 'مهلت پاسخ تمام شده است.');
-        loadMissions(); refreshOffers(true);
-      });
-    };
+    HZ_MISSION_ACTION.bind(yes, c.reservation_id);
+    yes.onclick = function () { decideChange('change-accept'); };
     btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
     card.appendChild(row);
     return card;
@@ -1642,6 +1645,8 @@
     srv('GET', '/translator/offers').then(function (res) {
       if (tok() !== token || revision !== offerRevision || read < offerApplied) return;
       if (res.status !== 200 || !res.data || !Array.isArray(res.data.offers) || !Array.isArray(res.data.changes) || !Array.isArray(res.data.extensions) ||
+          !res.data.changes.every(function (c) { return c && Number.isSafeInteger(c.id) && c.id > 0 && Number.isSafeInteger(c.reservation_id) && c.reservation_id > 0 &&
+            typeof c.expires_at === 'string' && Number.isFinite(Date.parse(c.expires_at)) && HZ_MISSION_ACTION.validChanges(c.changes); }) ||
           !res.data.offers.every(function (o) { return o && Number.isSafeInteger(o.id) && o.id > 0 && Number.isSafeInteger(o.reservation_id) && o.reservation_id > 0 &&
             ['instant', 'scheduled'].includes(o.kind) && Number.isFinite(Date.parse(o.expires_at)) && typeof o.net === 'number' && Number.isFinite(o.net) && o.net >= 0; }) ||
           new Set(res.data.offers.map(function (o) { return o.id; })).size !== res.data.offers.length) {

@@ -1325,7 +1325,9 @@ route('GET', '/api/translator/missions/:id', async (req, res, url, params) => {
     service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null,
     finish_requested: !!r.finish_requested_at, hours: r.hours, total: r.total, net: r.net,
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
-    confirmed: !!r.translator_confirmed, traveler_paid: !!r.traveler_paid });
+    confirmed: !!r.translator_confirmed, traveler_paid: !!r.traveler_paid,
+    details: { scheduled_at: r.scheduled_at || null, place: r.place, origin_lang: r.origin_lang, dest_lang: r.dest_lang,
+      field: r.field, hours: r.hours, car: r.car, party: r.party, gender_pref: r.gender_pref, notes: r.notes } });
 });
 
 route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, params) => {
@@ -1610,7 +1612,7 @@ route('GET', '/api/translator/offers', async (req, res) => {
   const rows = db.prepare(`SELECT o.id AS offer_id, o.expires_at, r.* FROM offers o JOIN reservations r ON r.id = o.reservation_id
     WHERE o.translator_id = ? AND o.status = 'pending' ORDER BY o.created_at`).all(u.id);
   // قبل از پذیرش: فقط ساعت/تاریخ، مبدا-مقصد، نشانی ملاقات، نام مسافر، یادداشت و سهم خالص (بدون جنسیت)
-  const changeRows = db.prepare(`SELECT c.id, c.changes, c.expires_at, r.place, r.traveler_name, r.net, r.kind, r.scheduled_at
+  const changeRows = db.prepare(`SELECT c.id, c.reservation_id, c.changes, c.expires_at, r.place, r.traveler_name, r.net, r.kind, r.scheduled_at
     FROM change_requests c JOIN reservations r ON r.id = c.reservation_id
     WHERE r.translator_id = ? AND c.status = 'pending' AND c.expires_at > ?`).all(u.id, now());
   const extRows = db.prepare(`SELECT e.id, e.reservation_id, e.extra_hours, e.extra_net, e.expires_at, r.place, r.traveler_name, r.net
@@ -1619,7 +1621,7 @@ route('GET', '/api/translator/offers', async (req, res) => {
   send(res, 200, { online: !!(t && t.online),
     extensions: extRows.map((e) => ({ id: e.id, reservation_id: e.reservation_id, place: e.place, traveler_name: e.traveler_name,
       extra_hours: e.extra_hours, extra_net: e.extra_net, new_net: (e.net || 0) + e.extra_net, expires_at: new Date(e.expires_at).toISOString() })),
-    changes: changeRows.map((c) => ({ id: c.id, place: c.place, traveler_name: c.traveler_name,
+    changes: changeRows.map((c) => ({ id: c.id, reservation_id: c.reservation_id, place: c.place, traveler_name: c.traveler_name,
     kind: c.kind, scheduled_at: c.scheduled_at ? new Date(c.scheduled_at).toISOString() : null, changes: JSON.parse(c.changes), expires_at: new Date(c.expires_at).toISOString() })),
     offers: rows.map((r) => ({
     id: r.offer_id, reservation_id: r.id, kind: r.kind, origin_lang: r.origin_lang, dest_lang: r.dest_lang, field: r.field,
@@ -1852,21 +1854,32 @@ function ownChange(res, u, params) {
   if (!c || c.tid !== u.id) { send(res, 404, { error: 'not_found' }); return null; }
   return c;
 }
+route('GET', '/api/translator/changes/:id', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const c = ownChange(res, u, params); if (!c) return;
+  send(res, 200, { id: c.id, reservation_id: c.reservation_id,
+    status: c.status === 'pending' && c.expires_at <= now() ? 'expired' : c.status,
+    changes: JSON.parse(c.changes), expires_at: new Date(c.expires_at).toISOString() });
+});
 route('POST', '/api/translator/changes/:id/accept', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const c = ownChange(res, u, params); if (!c) return;
   if (c.status !== 'pending' || c.expires_at <= now()) return send(res, 410, { error: 'change_expired' });
   const r = db.prepare('SELECT * FROM reservations WHERE id = ?').get(c.reservation_id);
-  db.prepare("UPDATE change_requests SET status = 'accepted', decided_at = ? WHERE id = ?").run(now(), c.id);
-  applyChanges(r, JSON.parse(c.changes));
+  if (!r || r.status !== 'matched') return send(res, 409, { error: 'change_not_allowed' });
+  db.transaction(() => {
+    db.prepare("UPDATE change_requests SET status = 'accepted', decided_at = ? WHERE id = ?").run(now(), c.id);
+    applyChanges(r, JSON.parse(c.changes));
+  })();
   send(res, 200, { ok: true });
 });
 route('POST', '/api/translator/changes/:id/reject', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const c = ownChange(res, u, params); if (!c) return;
-  if (c.status !== 'pending') return send(res, 410, { error: 'change_expired' });
+  if (c.status !== 'pending' || c.expires_at <= now()) return send(res, 410, { error: 'change_expired' });
   db.prepare("UPDATE change_requests SET status = 'rejected', decided_at = ? WHERE id = ?").run(now(), c.id);
   send(res, 200, { ok: true });
 });
