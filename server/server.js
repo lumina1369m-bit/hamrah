@@ -1323,7 +1323,9 @@ route('GET', '/api/translator/missions/:id', async (req, res, url, params) => {
   if (!r) return send(res, 404, { error: 'not_found' });
   send(res, 200, { reservation_id: r.id, status: r.status, started: !!r.service_started_at,
     service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null,
-    finish_requested: !!r.finish_requested_at, hours: r.hours, total: r.total, net: r.net });
+    finish_requested: !!r.finish_requested_at, hours: r.hours, total: r.total, net: r.net,
+    pay_method: r.pay_method || null, pay_state: r.pay_state || null,
+    confirmed: !!r.translator_confirmed, traveler_paid: !!r.traveler_paid });
 });
 
 route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, params) => {

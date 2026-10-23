@@ -1334,13 +1334,28 @@
   }
 
   // ---------- پرداخت‌های منتظر تأیید (سند ۷.۳) ----------
-  var PAYMENTS_LIST = [];
-  function loadPayments() {
-    var t = tok(); if (!t) return;
-    fetch('/api/translator/payments', { headers: { Authorization: 'Bearer ' + t } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d) { PAYMENTS_LIST = d.payments || []; renderPayments(); } })
-      .catch(function () {});
+  var PAYMENTS_LIST = [], paymentsState = 'loading';
+  var paymentRead = 0, paymentApplied = 0, paymentRevision = 0;
+  function loadPayments(invalidate) {
+    var token = tok(), read = ++paymentRead, revision = invalidate ? ++paymentRevision : paymentRevision;
+    if (!token) { PAYMENTS_LIST = []; paymentsState = 'error'; renderPayments(); return; }
+    fetch('/api/translator/payments', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('payments'); return r.json(); })
+      .then(function (d) {
+        if (tok() !== token || revision !== paymentRevision || read < paymentApplied) return;
+        if (!d || !Array.isArray(d.payments) || !d.payments.every(function (p) {
+          return p && Number.isSafeInteger(p.reservation_id) && p.reservation_id > 0 &&
+            typeof p.total === 'number' && Number.isFinite(p.total) && p.total >= 0 &&
+            typeof p.net === 'number' && Number.isFinite(p.net) && p.net >= 0 && typeof p.confirmed === 'boolean' &&
+            [null, 'cash', 'online'].includes(p.pay_method) && [null, 'awaiting_cash', 'disputed'].includes(p.pay_state) &&
+            (p.pay_state === null || p.pay_method === 'cash');
+        }) || new Set(d.payments.map(function (p) { return p.reservation_id; })).size !== d.payments.length) throw new Error('payments');
+        paymentApplied = read; PAYMENTS_LIST = d.payments; paymentsState = 'ok'; renderPayments();
+      })
+      .catch(function () {
+        if (tok() !== token || revision !== paymentRevision || read < paymentApplied) return;
+        paymentApplied = read; PAYMENTS_LIST = []; paymentsState = 'error'; renderPayments();
+      });
   }
   function paymentsBox() {
     var box = document.getElementById('payments-box');
@@ -1355,12 +1370,20 @@
   function renderPayments() {
     var box = paymentsBox(); if (!box) return;
     box.innerHTML = '';
+    if (paymentsState === 'error') {
+      box.appendChild(el('span', 'text-[12px] text-error', 'وضعیت پرداخت‌ها دریافت نشد؛ اتصال را بررسی کنید و دوباره تلاش کنید.'));
+      var retry = el('button', 'text-[12px] font-bold text-primary', 'دریافت دوبارهٔ پرداخت‌ها');
+      retry.type = 'button'; retry.onclick = function () { loadPayments(true); }; box.appendChild(retry);
+      return;
+    }
     if (!PAYMENTS_LIST.length) return;
     box.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'پرداخت‌های منتظر تأیید'));
     PAYMENTS_LIST.forEach(function (p) { box.appendChild(paymentCard(p)); });
   }
   function paymentCard(p) {
+    var actor = tok();
     var card = el('div', 'rounded-2xl bg-surface p-4 neu-raised flex flex-col gap-2');
+    card.setAttribute('data-payment-reservation', p.reservation_id);
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', p.place || 'ماموریت'));
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (p.travelerName || '—')));
     var money = el('div', 'flex items-center justify-between pt-2 border-t border-surface-variant/40 text-[12px]');
@@ -1368,7 +1391,7 @@
     money.appendChild(el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(p.net || 0)));
     card.appendChild(money);
     var state;
-    if (p.pay_state === 'disputed') state = 'اختلاف ثبت شده؛ در بررسی پشتیبانی است.';
+    if (p.pay_state === 'disputed') state = 'اختلاف پرداخت ثبت شده است؛ هنوز تسویه نشده.';
     else if (!p.pay_state) state = 'منتظر انتخاب روش پرداخت توسط مسافر.';
     else if (p.confirmed) state = 'دریافت شما ثبت شد؛ منتظر تأیید مسافر.';
     else state = 'مسافر پرداخت نقدی را ثبت کرده. دریافت وجه را تأیید کنید.';
@@ -1377,20 +1400,16 @@
       var row = el('div', 'flex flex-wrap gap-2');
       var ok = el('button', 'px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'دریافت وجه را تأیید می‌کنم');
       ok.type = 'button';
-      ok.onclick = function () {
-        srv('POST', '/translator/missions/' + p.reservation_id + '/cash-confirm').then(function (res) {
-          HZ.toast(res.status === 200 ? (res.data.settled ? 'پرداخت تسویه شد.' : 'تأیید ثبت شد.') : 'تأیید انجام نشد.');
-          loadPayments(); loadMissions();
-        });
-      };
+      HZ_MISSION_ACTION.bind(ok, p.reservation_id);
+      function payAction(action) {
+        return HZ_MISSION_ACTION.run({ action: action, reservation_id: p.reservation_id, token: actor,
+          total: p.total, net: p.net, refresh: function () { loadPayments(true); loadMissions(); } });
+      }
+      ok.onclick = function () { payAction('cash-confirm'); };
       var no = el('button', 'px-3 py-1.5 rounded-xl neu-raised text-error text-[11px] font-bold cursor-pointer', 'اختلاف دارم');
       no.type = 'button';
-      no.onclick = function () {
-        srv('POST', '/translator/missions/' + p.reservation_id + '/cash-dispute').then(function (res) {
-          HZ.toast(res.status === 200 ? 'اختلاف به پشتیبانی ارجاع شد.' : 'ثبت اختلاف انجام نشد.');
-          loadPayments();
-        });
-      };
+      HZ_MISSION_ACTION.bind(no, p.reservation_id);
+      no.onclick = function () { payAction('cash-dispute'); };
       row.appendChild(ok); row.appendChild(no);
       card.appendChild(row);
     }

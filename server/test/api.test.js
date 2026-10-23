@@ -360,8 +360,18 @@ async function main() {
   check('روش ناشناخته رد می‌شود', r.status === 400);
   r = await call('POST', `/api/traveler/bookings/${pid}/payment`, { method: 'cash' }, tokP9);
   check('مسافر نقدی را انتخاب و تأیید می‌کند', r.status === 200 && r.data.pay_state === 'awaiting_cash', JSON.stringify(r));
+  const privateCash = (await call('GET', `/api/translator/missions/${pid}`, null, T9)).data;
+  check('نمای خصوصی نقدی، انتظار دریافت و تأیید مسافر را نشان می‌دهد', privateCash.reservation_id === pid && privateCash.pay_method === 'cash' && privateCash.pay_state === 'awaiting_cash' && privateCash.confirmed === false && privateCash.traveler_paid === true && privateCash.total === acceptedView.total);
+  check('نمای نقدی بدون نشست ممنوع است', (await call('GET', `/api/translator/missions/${pid}`)).status === 401);
+  check('مترجم دیگر نمای نقدی را نمی‌بیند', (await call('GET', `/api/translator/missions/${pid}`, null, T1)).status === 404);
+  check('مسافر به نمای نقدی مترجم دسترسی ندارد', (await call('GET', `/api/translator/missions/${pid}`, null, tokP9)).status === 403);
   r = await call('POST', `/api/translator/missions/${pid}/cash-confirm`, null, T9);
   check('مترجم دریافت نقدی را تأیید می‌کند و رزرو تسویه می‌شود', r.status === 200 && r.data.settled === true, JSON.stringify(r));
+  check('رسید تسویه نقدی، انتظار مسافر را نادرست نشان نمی‌دهد', r.data.ok === true && r.data.waiting_traveler === false);
+  const privateSettled = (await call('GET', `/api/translator/missions/${pid}`, null, T9)).data;
+  check('نمای خصوصی پس از تسویه همچنان قابل تطبیق است', privateSettled.status === 'done' && privateSettled.pay_state === 'settled' && privateSettled.confirmed === true && privateSettled.traveler_paid === true && privateSettled.total === privateCash.total && privateSettled.net === privateCash.net);
+  check('نمای نقدی کد امنیتی یا اطلاعات بانکی افشا نمی‌کند', !('service_code' in privateSettled) && !('bank_account' in privateSettled));
+
   const view = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('زمان پایان ثبت می‌شود و زمان شروع پس از پایان و تسویه محفوظ است', Number.isFinite(Date.parse(view.finished_at)) && Date.parse(view.finished_at) >= Date.parse(view.service_started_at) && view.service_started_at === beforeExt.service_started_at);
   check('نمای مسافر: انجام‌شده و تسویه‌شده', view.status === 'done' && view.pay_state === 'settled', JSON.stringify(view));
@@ -375,6 +385,7 @@ async function main() {
     await call('POST', `/api/traveler/bookings/${did}/finish-approve`, null, tokP9);
     await call('POST', `/api/traveler/bookings/${did}/payment`, { method: 'cash' }, tokP9);
     r = await call('POST', `/api/traveler/bookings/${did}/dispute`, null, tokP9);
+    check('اختلاف در نمای خصوصی مترجم ثبت شده و تسویه نیست', (await call('GET', `/api/translator/missions/${did}`, null, T9)).data.pay_state === 'disputed');
     check('مسافر اختلاف ثبت می‌کند', r.status === 200 && r.data.pay_state === 'disputed');
     r = await call('POST', `/api/translator/missions/${did}/cash-confirm`, null, T9);
     check('تأیید مترجم پس از اختلاف پذیرفته نمی‌شود', r.status === 409 && r.data.error === 'disputed');
