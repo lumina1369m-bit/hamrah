@@ -200,6 +200,18 @@ async function mainServerTests() {
   check('مترجم همان شهر پیشنهاد می‌گیرد', (r.data.offers || []).some((o) => o.place === place2));
   await call('POST', `/api/traveler/bookings/${sameCityBooking}/cancel`, null, tok);
   await call('PATCH', '/api/translator/online', { online: false }, tr);
+  await call('PUT', '/api/admin/features', { translator_online: false }, adm);
+  const disabledPresence = await call('GET', '/api/translator/online', null, tr);
+  check('آمادگی وقتی مدیر قابلیت را خاموش کرده، غیرفعال است', disabledPresence.status === 200 && disabledPresence.data.online === false && disabledPresence.data.enabled === false);
+  const blockedPresence = await call('PATCH', '/api/translator/online', { online: true }, tr);
+  check('کلید مدیر جلوی آنلاین‌شدن را می‌گیرد', blockedPresence.status === 409 && blockedPresence.data.error === 'feature_disabled');
+  check('مقدار رشته‌ای نمی‌تواند کلید مدیر را دور بزند', (await call('PATCH', '/api/translator/online', { online: 'true' }, tr)).status === 400);
+  check('دورزدن ناموفق، مترجم را آنلاین نمی‌کند', (await call('GET', '/api/translator/online', null, tr)).data.online === false);
+  check('آفلاین‌شدن با قابلیت خاموش مجاز می‌ماند', (await call('PATCH', '/api/translator/online', { online: false }, tr)).status === 200);
+  await call('PUT', '/api/admin/features', { translator_online: true }, adm);
+  const restoredPresence = (await call('GET', '/api/translator/online', null, tr)).data;
+  check('روشن‌شدن قابلیت، مترجم را خودکار آنلاین نمی‌کند', restoredPresence.online === false && restoredPresence.enabled === true);
+
 
   // ---- مترجم: ثبت‌نام با شهر غیرفعال و قابلیت خاموش
   const trReg = await translatorToken();
