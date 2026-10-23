@@ -140,6 +140,12 @@ CREATE TABLE IF NOT EXISTS reservations (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS mission_cancellations (
+  reservation_id INTEGER NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
+  translator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (reservation_id, translator_id)
+);
 CREATE TABLE IF NOT EXISTS offers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   reservation_id INTEGER NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
@@ -1674,6 +1680,19 @@ route('POST', '/api/translator/offers/:id/decline', async (req, res, url, params
   send(res, 200, { ok: true });
 });
 
+// The former assignee can verify their own cancellation without seeing the next assignee.
+route('GET', '/api/translator/missions/:id/cancellation', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const id = parseId(params.id);
+  const r = id && db.prepare('SELECT translator_id, status FROM reservations WHERE id = ?').get(id);
+  const c = id && db.prepare('SELECT created_at FROM mission_cancellations WHERE reservation_id = ? AND translator_id = ?').get(id, u.id);
+  if (!r || (!c && r.translator_id !== u.id)) return send(res, 404, { error: 'not_found' });
+  send(res, 200, { reservation_id: id, cancelled: !!c,
+    cancelled_at: c ? new Date(c.created_at).toISOString() : null,
+    assigned: r.translator_id === u.id && r.status === 'matched' });
+});
+
 // لغو توسط مترجم پس از پذیرش: بدون جریمه‌ی پولی، امتیاز کم می‌شود و ماموریت دوباره تطبیق می‌شود
 route('POST', '/api/translator/missions/:id/cancel', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
@@ -1686,12 +1705,13 @@ route('POST', '/api/translator/missions/:id/cancel', async (req, res, url, param
   let next = 'searching';
   if (r.kind === 'scheduled') next = t >= r.scheduled_at - TIMING.SCHEDULE_MATCH_BEFORE_MS ? 'matching' : 'waiting_schedule';
   db.transaction(() => {
+    db.prepare('INSERT INTO mission_cancellations (reservation_id, translator_id, created_at) VALUES (?, ?, ?)').run(r.id, u.id, t);
     db.prepare(`UPDATE reservations SET status = ?, translator_id = NULL, matched_at = NULL, search_started_at = ?, updated_at = ? WHERE id = ?`)
       .run(next, t, t, r.id);
     db.prepare('UPDATE translators SET score = MAX(0, score - 5), updated_at = ? WHERE user_id = ?').run(t, u.id);
   })();
   sweep();
-  send(res, 200, { ok: true, reassigned: next !== 'waiting_schedule' });
+  send(res, 200, { ok: true, reservation_id: r.id, cancelled_at: new Date(t).toISOString(), reassigned: next !== 'waiting_schedule' });
 });
 
 route('GET', '/api/translator/missions', async (req, res) => {

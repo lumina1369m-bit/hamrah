@@ -122,6 +122,13 @@ async function main() {
       check('تغییر زمان قرار هم رضایت می‌خواهد', timeChange.status === 202);
       check('مترجم تغییر زمان را می‌پذیرد', (await call('POST', `/api/translator/changes/${timeChange.data.id}/accept`, null, owner)).status === 200);
       check('زمان جدید در نمای خصوصی مأموریت اعمال می‌شود', (await call('GET', `/api/translator/missions/${rs.data.id}`, null, owner)).data.details.scheduled_at === Date.parse(newTime));
+      const cancelled = await call('POST', `/api/translator/missions/${rs.data.id}/cancel`, null, owner);
+      check('لغو زمان‌دار دور ادعای تطبیق فوری نمی‌کند', cancelled.status === 200 && cancelled.data.reassigned === false);
+      const cancellation = (await call('GET', `/api/translator/missions/${rs.data.id}/cancellation`, null, owner)).data;
+      check('تاریخچهٔ لغو زمان‌دار پس از واگذاری قابل بررسی است', cancellation.cancelled === true && cancellation.assigned === false && cancellation.cancelled_at === cancelled.data.cancelled_at);
+      const waiting = (await call('GET', '/api/traveler/bookings', null, P)).data.bookings.find(b => b.id === rs.data.id);
+      check('رزرو زمان‌دار با همان قیمت برای زمان تطبیق بعدی می‌ماند', waiting.status === 'waiting_schedule' && !waiting.matched && waiting.total === rs.data.total);
+
 
     }
     await call('POST', `/api/traveler/bookings/${rs.data.id}/cancel`, null, P);
