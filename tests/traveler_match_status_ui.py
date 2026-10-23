@@ -1,0 +1,129 @@
+"""A matched traveler booking shows server acceptance, never a fake en-route status."""
+import asyncio
+from pathlib import Path
+import secrets
+
+from playwright.async_api import async_playwright, expect
+from booking_options_ui import translator
+from finish_flow_ui import BASE, api, booking
+from logout_sessions_ui import sign_in
+
+ARTIFACTS = Path(__file__).parent / 'assets' / 'last_traveler_match_status'
+COPY = {
+    'fa': {
+        'title': 'وضعیت رزرو',
+        'description': 'مترجم درخواست شما را پذیرفت.',
+        'forbidden': ('در راه رسیدن به محل شما', 'در حرکت', 'زمان تخمینی رسیدن مترجم'),
+        'arrived': 'مترجم به محل رسید',
+    },
+    'en': {
+        'title': 'Booking status',
+        'description': 'The interpreter accepted your request.',
+        'forbidden': ('On the way to your location', 'On the way', 'Estimated translator arrival time'),
+        'arrived': 'Interpreter arrived',
+    },
+    'ar': {
+        'title': 'حالة الحجز',
+        'description': 'قبل المترجم طلبك.',
+        'forbidden': ('في الطريق إلى موقعك', 'في الطريق', 'وقت الوصول المتوقع للمترجم'),
+        'arrived': 'وصل المترجم',
+    },
+}
+
+
+async def scenario(browser, width):
+    context = await browser.new_context(viewport={'width': width, 'height': 900}, service_workers='block')
+    page = None
+    errors = []
+    session = None
+    created = None
+    try:
+        await api(context.request, 'POST', '/dev/offline-all')
+        translator_token = await translator(context.request, 'male')
+        phone = '9' + str(secrets.randbelow(900000000) + 100000000)
+        session = await sign_in(context.request, phone)
+        await context.route(
+            'https://nominatim.openstreetmap.org/**',
+            lambda route: route.fulfill(json={'display_name': 'تهران، آزمون وضعیت رزرو'}),
+        )
+        await context.route('https://*.tile.openstreetmap.org/**', lambda route: route.abort())
+        page = await context.new_page()
+        page.set_default_timeout(20000)
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        await page.goto(BASE + '/traveler/index.html')
+        profile = {
+            'name': 'Ali', 'last': 'Rezaei', 'gender': 'مرد',
+            'phone': session['user']['phone'], 'authUserId': session['user']['id'],
+        }
+        await page.evaluate('''([token, profile, lang]) => {
+            localStorage.setItem('hamzaban.token.v1', token);
+            localStorage.setItem('hamzaban.user.v1', JSON.stringify(profile));
+            localStorage.setItem('hamzaban.bookings.v1', '[]');
+            localStorage.setItem('hamzaban_lang', lang);
+        }''', [session['token'], profile, 'fa'])
+        await page.goto(BASE + '/traveler/app.html')
+        await page.wait_for_function('() => window.hzBookingsSynced === true && !!window.HZ_NEAREST_CITY()')
+        await page.locator('nav a[data-nav="map"]').click()
+        await expect(page.locator('#selected-location-title')).to_have_text('تهران، آزمون وضعیت رزرو')
+        await page.locator('#confirm-location-btn').click()
+        await expect(page.locator('#bottom-sheet')).to_be_visible()
+        await page.locator('#btn-toggle-car').click()
+        async with page.expect_response(lambda response: response.url.endswith('/api/traveler/bookings')
+                                        and response.request.method == 'POST') as response_info:
+            await page.locator('#btn-main-submit').click()
+        response = await response_info.value
+        assert response.status == 201, await response.text()
+        created = await response.json()
+        offers = await api(context.request, 'GET', '/translator/offers', translator_token)
+        assert offers['offers'], 'the real booking did not create an interpreter offer'
+        await api(context.request, 'POST', f"/translator/offers/{offers['offers'][0]['id']}/accept", translator_token)
+        matched = await booking(context.request, session['token'], created['id'])
+        assert matched['status'] == 'matched' and matched['matched'], matched
+        await expect(page.locator('#stage-3')).to_be_visible()
+
+        for language, copy in COPY.items():
+            if language != 'fa':
+                await page.locator('nav a[data-nav="account"]').click()
+                await page.locator('#hz-lang-select').select_option(language)
+                await page.locator('nav a[data-nav="map"]').click()
+            await expect(page.locator('#stage-3')).to_be_visible()
+            await expect(page.locator('#match-status-title')).to_have_text(copy['title'])
+            await expect(page.locator('#match-status-description')).to_have_text(copy['description'])
+            stage_text = await page.locator('#stage-3').inner_text()
+            for claim in copy['forbidden']:
+                assert claim not in stage_text, f'unsupported route/ETA status remains in {language}: {claim}'
+            assert await page.locator('#stage-3 .animate-ping, #stage-3 .animate-pulse, #stage-3 .bg-emerald-500').count() == 0, 'a fake live movement/presence indicator remains'
+            await expect(page.locator('#btn-arrived')).to_be_visible()
+            await expect(page.locator('#btn-arrived > span:last-child')).to_have_text(copy['arrived'])
+            print(f'PASS [{width}/{language}]: matched status is server-confirmed; arrival remains an explicit traveler confirmation')
+        assert not errors, errors
+    except Exception:
+        ARTIFACTS.mkdir(parents=True, exist_ok=True)
+        if page:
+            try:
+                await page.screenshot(path=str(ARTIFACTS / f'failure-{width}.png'), full_page=True)
+                (ARTIFACTS / f'failure-{width}.html').write_text(await page.content())
+            except Exception:
+                pass
+        raise
+    finally:
+        if created and session:
+            try:
+                await api(context.request, 'POST', f"/traveler/bookings/{created['id']}/cancel", session['token'])
+            except Exception:
+                pass
+        await context.close()
+
+
+async def main():
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(args=['--no-sandbox'])
+        try:
+            await scenario(browser, 390)
+            await scenario(browser, 1280)
+        finally:
+            await browser.close()
+    print('RESULT: PASS (2/2 viewports; 6 language/viewport combinations)')
+
+
+asyncio.run(main())
