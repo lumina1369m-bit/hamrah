@@ -112,8 +112,18 @@ async function main() {
   // تا وقتی مترجم آنلاین نیست، پیشنهادی نیست
   r = await call('GET', '/api/translator/offers', null, T1);
   check('مترجم آفلاین پیشنهادی نمی‌گیرد', r.status === 200 && r.data.offers.length === 0 && r.data.online === false);
+  const offlinePresence = await call('GET', '/api/translator/online', null, T1);
+  check('آمادگی واقعی مترجم بدون تغییر وضعیت خوانده می‌شود', offlinePresence.status === 200 && offlinePresence.data.online === false && offlinePresence.data.enabled === true);
+  check('آمادگی بدون نشست قابل خواندن نیست', (await call('GET', '/api/translator/online')).status === 401);
+  check('مسافر به آمادگی مترجم دسترسی ندارد', (await call('GET', '/api/translator/online', null, tokP)).status === 403);
+  for (const invalid of [{}, { online: 'true' }, { online: 1 }, { online: null }, []]) {
+    const result = await call('PATCH', '/api/translator/online', invalid, T1);
+    check('آمادگی غیربولی رد می‌شود: ' + JSON.stringify(invalid), result.status === 400 && result.data.error === 'invalid_online');
+  }
+  check('درخواست نامعتبر مترجم را آنلاین نمی‌کند', (await call('GET', '/api/translator/online', null, T1)).data.online === false);
   r = await call('PATCH', '/api/translator/online', { online: true }, T1);
   check('مترجم آنلاین می‌شود', r.status === 200 && r.data.online === true);
+  check('بازخوانی مستقل، آنلاین‌شدن واقعی را تأیید می‌کند', (await call('GET', '/api/translator/online', null, T1)).data.online === true);
   // T1 قبلاً ممکن است کنار رزروهای قبلی تست باشد؛ پیشنهاد را با دو مترجم آنلاین بررسی می‌کنیم
   await call('PATCH', '/api/translator/online', { online: true }, T2);
   r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', field: 'medical', place: 'بیمارستان امام', notes: 'طبقه ۲', traveler_name: 'Ali R.' }, tokP);

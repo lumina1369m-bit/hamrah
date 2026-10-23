@@ -1579,10 +1579,20 @@ route('GET', '/api/translator/documents', async (req, res) => {
 });
 
 // ---------- مترجم: پیشنهادها و آنلاین ----------
+// Read effective presence without changing matching, score or profile data.
+route('GET', '/api/translator/online', async (req, res) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const t = db.prepare('SELECT online FROM translators WHERE user_id = ?').get(u.id);
+  const enabled = featureOn('translator_online');
+  send(res, 200, { online: enabled && !!(t && t.online), enabled });
+});
+
 route('PATCH', '/api/translator/online', async (req, res) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const b = await readJson(req);
+  if (!b || typeof b.online !== 'boolean') return send(res, 400, { error: 'invalid_online' });
   if (b.online === true && !requireFeature(res, 'translator_online')) return;
   const g = b.gender === 'male' || b.gender === 'female' ? b.gender : null;
   db.prepare(`UPDATE translators SET online = ?, updated_at = ?,

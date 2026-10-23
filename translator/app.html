@@ -94,7 +94,7 @@
 <div class="flex items-center gap-2.5 sm:gap-3">
 <button aria-label="تغییر وضعیت شیفت" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.9)] cursor-pointer active:scale-95 transition-all" id="header-shift-badge" onclick="toggleShift()" type="button">
 <span class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,106,97,0.7)] animate-pulse" id="header-shift-pulse"></span>
-<span class="text-[11px] text-secondary font-bold" id="header-shift-text">شیفت فعال</span>
+<span class="text-[11px] text-secondary font-bold" id="header-shift-text">وضعیت نامشخص</span>
 </button>
 <button aria-label="اعلان‌ها" class="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_8px_rgba(163,180,204,0.5)] active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] relative cursor-pointer" id="notifications-btn" onclick="toggleInlinePanel('notifications')" type="button">
 <span class="material-symbols-outlined text-[20px]">notifications</span>
@@ -241,7 +241,7 @@
 <span class="font-bold text-[15px] text-on-surface">شیفت شما غیرفعال و در حالت استراحت است</span>
 </div>
 <p class="text-[12px] text-on-surface-variant">برای دریافت مجدد اعزام‌های فوری فرودگاهی و بیمارستانی، شیفت را فعال کنید.</p>
-<button class="mt-3 px-5 py-2.5 rounded-xl bg-secondary text-on-secondary text-[13px] font-bold shadow-md hover:bg-secondary/90 transition-all cursor-pointer inline-flex items-center gap-2" onclick="setShiftState(true)" type="button">
+<button class="mt-3 px-5 py-2.5 rounded-xl bg-secondary text-on-secondary text-[13px] font-bold shadow-md hover:bg-secondary/90 transition-all cursor-pointer inline-flex items-center gap-2" data-presence-control disabled onclick="setShiftState(true)" type="button">
 <span class="material-symbols-outlined text-[18px]">check_circle</span>
 <span class="">فعال‌سازی فوری شیفت</span>
 </button>
@@ -505,12 +505,12 @@
 <div class="flex items-center gap-3 pr-1">
 <div class="w-3.5 h-3.5 rounded-full bg-secondary shadow-[0_0_10px_rgba(0,106,97,0.7)] animate-pulse" id="shift-beacon"></div>
 <div class="flex flex-col">
-<span class="text-[14px] text-on-surface font-bold" id="shift-status-title">آماده به خدمت فوری</span>
-<span class="text-[11px] text-on-surface-variant" id="shift-status-desc">سامانه دیسپچ ماتریس اعزام ITP-541 فعال است</span>
+<span class="text-[14px] text-on-surface font-bold" id="shift-status-title">وضعیت آمادگی مشخص نیست</span>
+<span class="text-[11px] text-on-surface-variant" id="shift-status-desc">در حال دریافت وضعیت سرور…</span>
 </div>
 </div>
 <!-- Tactile Toggle Button -->
-<button aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="true" class="relative w-16 h-9 rounded-full bg-surface p-1 transition-all duration-300 shadow-[-3px_-3px_6px_rgba(255,255,255,0.9),3px_3px_6px_rgba(163,180,204,0.6)] focus:outline-none flex-shrink-0 cursor-pointer" id="shift-toggle-btn" onclick="toggleShift()" type="button">
+<button aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="mixed" class="relative w-16 h-9 rounded-full bg-surface p-1 transition-all duration-300 shadow-[-3px_-3px_6px_rgba(255,255,255,0.9),3px_3px_6px_rgba(163,180,204,0.6)] focus:outline-none flex-shrink-0 cursor-pointer" data-presence-control disabled id="shift-toggle-btn" onclick="toggleShift()" type="button">
 <span class="block w-7 h-7 rounded-full bg-gradient-to-tr from-secondary to-secondary-fixed shadow-[0_2px_5px_rgba(0,106,97,0.5)] transform -translate-x-7 transition-transform duration-300 flex items-center justify-center" id="shift-knob">
 <span class="material-symbols-outlined text-[16px] text-on-secondary" id="shift-knob-icon">check</span>
 </span>
@@ -817,11 +817,12 @@
     }
 
     // 3. Shift State Manager
-    var isShiftActive = true;
-    function setShiftState(active, silent) {
+    var isShiftActive = null;
+    function setShiftState(active) {
+      if (window.HZ_PRESENCE) return HZ_PRESENCE.set(active);
+    }
+    function renderShiftState(active) {
       isShiftActive = active;
-      if (window.HZ) { var __st = HZ.load(); __st.shift = !!active; HZ.save(__st); }
-      if (!silent && window.hzSetOnline) window.hzSetOnline(!!active);
       var knob = document.getElementById('shift-knob');
       var knobIcon = document.getElementById('shift-knob-icon');
       var beacon = document.getElementById('shift-beacon');
@@ -845,7 +846,7 @@
           beacon.classList.add('bg-secondary', 'animate-pulse');
         }
         if (title) title.textContent = 'آماده به خدمت فوری';
-        if (desc) desc.textContent = 'سامانه دیسپچ ماتریس اعزام ITP-541 فعال است';
+        if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: آمادهٔ دریافت پیشنهاد';
         if (headerText) {
           headerText.textContent = 'شیفت فعال';
           headerText.classList.remove('text-outline');
@@ -857,7 +858,6 @@
         }
         if (shiftNotice) shiftNotice.classList.add('hidden');
         if (offerCard) offerCard.classList.remove('opacity-40', 'pointer-events-none');
-        if (!silent) showToast('شیفت شما فعال گردید. اعزام‌های فوری را دریافت می‌کنید.', 'sensors');
       } else {
         if (knob) {
           knob.classList.remove('-translate-x-7');
@@ -883,7 +883,6 @@
         }
         if (shiftNotice) shiftNotice.classList.remove('hidden');
         if (offerCard) offerCard.classList.add('opacity-40', 'pointer-events-none');
-        if (!silent) showToast('شیفت به حالت استراحت تغییر یافت.', 'pause_circle');
       }
     }
 
@@ -1166,15 +1165,14 @@
     }
 
     // Default initialization
-    window.addEventListener('DOMContentLoaded', function () {
-      setShiftState(!!(window.HZ && HZ.load().shift), true);
-    });
+    // Presence initialization is owned by presence.js, never localStorage.shift.
   </script>
 
 
 
 <script src="ui.js"></script>
 <script src="mission-actions.js"></script>
+<script src="presence.js"></script>
 <script>
 /* میز کار مترجم: اتصال نمونه‌ی code1.html به نشست و نام واقعی؛ حذف تسویه‌ی آنی طبق تصمیم‌ها */
 (function () {
@@ -1535,10 +1533,6 @@
   renderLiveDocs(); renderCapability(); renderNotifications(); renderInterview();
   setInterval(function () { renderLiveDocs(); renderCapability(); renderNotifications(); renderInterview(); }, 30000);
 
-  window.hzSetOnline = function (on) {
-    var stg = HZ.load();
-    fetch('/api/translator/online', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok(), 'Content-Type': 'application/json' }, body: JSON.stringify({ online: on, gender: stg.gender || null }) }).catch(function () {});
-  };
   var offersBox = document.getElementById('offers-box');
   var lastOffers = [];
   var lastChanges = [];
