@@ -62,6 +62,7 @@ run python3 service_actions_ui.py
 run python3 booking_actions_ui.py
 run python3 account_delete_ui.py
 run python3 traveler_support_ui.py
+run python3 traveler_support_claims_ui.py
 run python3 account_truth_ui.py
 run python3 logout_sessions_ui.py
 run python3 traveler_auth_ui.py
