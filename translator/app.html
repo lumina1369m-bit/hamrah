@@ -1593,12 +1593,20 @@
   function renderOffers() {
     if (!offersBox) return;
     offersBox.innerHTML = '';
+    if (offersState === 'error') {
+      offersBox.appendChild(el('span', 'text-[12px] text-error', 'دریافت درخواست‌ها انجام نشد؛ دوباره بررسی کنید.'));
+      var retry = el('button', 'text-[12px] font-bold text-primary', 'دریافت دوبارهٔ درخواست‌ها');
+      retry.type = 'button'; retry.onclick = function () { refreshOffers(true); }; offersBox.appendChild(retry);
+      return;
+    }
     if (!lastOffers.length && !lastChanges.length && !lastExtensions.length) return;
     lastExtensions.forEach(function (e) { offersBox.appendChild(renderExtension(e)); });
     lastChanges.forEach(function (c) { offersBox.appendChild(renderChange(c)); });
     offersBox.appendChild(el('span', 'text-[12px] font-bold text-on-surface-variant px-1', 'درخواست‌های جدید'));
     lastOffers.forEach(function (o) {
       var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-primary/30');
+      var actor = tok();
+      card.setAttribute('data-offer-id', o.id);
       card.appendChild(el('span', 'text-[14px] font-bold text-on-surface', (o.place || 'محل ملاقات نامشخص')));
       var meta = o.kind === 'scheduled' && o.scheduled_at ? HZ.jDate(new Date(o.scheduled_at)) + ' ' + HZ.clock(new Date(o.scheduled_at)) : 'فوری';
       card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (o.traveler_name || '—') + ' • ' + meta));
@@ -1611,29 +1619,35 @@
       var btns = el('div', 'flex gap-2');
       var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
       no.type = 'button';
-      no.onclick = function () { srv('POST', '/translator/offers/' + o.id + '/decline').then(function () { refreshOffers(true); }); };
+      HZ_MISSION_ACTION.bind(no, o.reservation_id);
+      function decideOffer(action) {
+        return HZ_MISSION_ACTION.run({ action: action, id: o.id, reservation_id: o.reservation_id, net: o.net, token: actor,
+          refresh: function () { loadMissions(); refreshOffers(true); } });
+      }
+      no.onclick = function () { decideOffer('offer-decline'); };
       var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
       yes.type = 'button';
-      yes.onclick = function () {
-        srv('POST', '/translator/offers/' + o.id + '/accept').then(function (res) {
-          if (res.status === 200) { HZ.toast('ماموریت پذیرفته شد.'); loadMissions(); }
-          else HZ.toast(res.status === 410 ? 'مهلت پذیرش تمام شده است.' : 'این درخواست دیگر در دسترس نیست.');
-          refreshOffers(true);
-        });
-      };
+      HZ_MISSION_ACTION.bind(yes, o.reservation_id);
+      yes.onclick = function () { decideOffer('offer-accept'); };
       btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
       card.appendChild(row);
       offersBox.appendChild(card);
     });
   }
-  var offersSig = '';
+  var offersSig = '', offersState = 'loading';
   var offerRead = 0, offerApplied = 0, offerRevision = 0;
   function refreshOffers(invalidate) {
     var token = tok(), read = ++offerRead, revision = invalidate ? ++offerRevision : offerRevision;
     if (!token) return;
     srv('GET', '/translator/offers').then(function (res) {
       if (tok() !== token || revision !== offerRevision || read < offerApplied) return;
-      if (res.status !== 200 || !res.data || !Array.isArray(res.data.offers) || !Array.isArray(res.data.changes) || !Array.isArray(res.data.extensions)) return;
+      if (res.status !== 200 || !res.data || !Array.isArray(res.data.offers) || !Array.isArray(res.data.changes) || !Array.isArray(res.data.extensions) ||
+          !res.data.offers.every(function (o) { return o && Number.isSafeInteger(o.id) && o.id > 0 && Number.isSafeInteger(o.reservation_id) && o.reservation_id > 0 &&
+            ['instant', 'scheduled'].includes(o.kind) && Number.isFinite(Date.parse(o.expires_at)) && typeof o.net === 'number' && Number.isFinite(o.net) && o.net >= 0; }) ||
+          new Set(res.data.offers.map(function (o) { return o.id; })).size !== res.data.offers.length) {
+        offerApplied = read; offersState = 'error'; offersSig = ''; lastOffers = []; lastChanges = []; lastExtensions = []; renderOffers(); return;
+      }
+      offersState = 'ok';
       offerApplied = read;
       lastOffers = res.data.offers;
       lastChanges = res.data.changes;

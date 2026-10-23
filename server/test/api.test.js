@@ -134,8 +134,20 @@ async function main() {
   check('یک مترجم پیشنهاد می‌گیرد', !!mine, JSON.stringify([off1.data, off2.data]).slice(0, 200));
   check('پیشنهاد فیلد جنسیت ندارد', mine && !('gender' in mine) && !('total' in mine) && mine.net > 0);
   const tokOffer = mine && (off1.data.offers.find((o) => o.id === mine.id) ? T1 : T2);
+  check('پیشنهاد به شناسه همان رزرو متصل است', mine.reservation_id === bid);
+  const privateOffer = await call('GET', `/api/translator/offers/${mine.id}`, null, tokOffer);
+  check('نمای خصوصی پیشنهاد، شناسه و سهم و انتظار همان رزرو را دارد', privateOffer.status === 200 && privateOffer.data.id === mine.id && privateOffer.data.reservation_id === bid && privateOffer.data.status === 'pending' && privateOffer.data.net === mine.net && privateOffer.data.assigned === false);
+  check('نمای پیشنهاد بدون نشست ممنوع است', (await call('GET', `/api/translator/offers/${mine.id}`)).status === 401);
+  check('مسافر نمای خصوصی پیشنهاد مترجم را نمی‌بیند', (await call('GET', `/api/translator/offers/${mine.id}`, null, tokP)).status === 403);
+  check('مترجم دیگر نمای خصوصی پیشنهاد را نمی‌بیند', (await call('GET', `/api/translator/offers/${mine.id}`, null, tokOffer === T1 ? T2 : T1)).status === 404);
+  check('نمای خصوصی پیشنهاد، جنسیت و مبلغ کل و کد مسافر را افشا نمی‌کند', !('gender' in privateOffer.data) && !('total' in privateOffer.data) && !('service_code' in privateOffer.data) && !('phone' in privateOffer.data));
   r = await call('POST', `/api/translator/offers/${mine.id}/accept`, null, tokOffer);
   check('پذیرش پیشنهاد', r.status === 200, JSON.stringify(r));
+  const acceptedOffer = (await call('GET', `/api/translator/offers/${mine.id}`, null, tokOffer)).data;
+  check('پذیرش در تاریخچه خصوصی همان پیشنهاد ثبت می‌شود', acceptedOffer.status === 'accepted' && acceptedOffer.assigned === true && acceptedOffer.reservation_id === bid);
+  const acceptedMission = (await call('GET', `/api/translator/missions/${bid}`, null, tokOffer)).data;
+  check('پذیرش واقعاً مأموریت همان رزرو با همان سهم می‌سازد', acceptedMission.status === 'matched' && acceptedMission.reservation_id === bid && acceptedMission.net === mine.net);
+
   r = await call('POST', `/api/translator/offers/${mine.id}/accept`, null, tokOffer);
   check('پذیرش دوباره پیشنهاد پذیرفته‌شده رد می‌شود', r.status === 410 || r.status === 409, String(r.status));
   r = await call('GET', '/api/traveler/bookings', null, tokP);
@@ -157,6 +169,10 @@ async function main() {
   const o2 = candOffers.find((o) => o.place === 'مترو');
   r = await call('POST', `/api/translator/offers/${o2.id}/decline`, null, cand);
   check('رد پیشنهاد ثبت می‌شود', r.status === 200);
+  const declinedOffer = (await call('GET', `/api/translator/offers/${o2.id}`, null, cand)).data;
+  check('رد در تاریخچه خصوصی ثبت می‌شود و مأموریت نمی‌سازد', declinedOffer.status === 'declined' && declinedOffer.assigned === false && declinedOffer.reservation_id === bid2);
+  check('رد دوباره پیشنهاد تصمیم‌گرفته‌شده موفق اعلام نمی‌شود', (await call('POST', `/api/translator/offers/${o2.id}/decline`, null, cand)).status === 410);
+
   const nextT = cand === T1 ? T2 : T1;
   r = await call('GET', '/api/translator/offers', null, nextT);
   // مترجمی که همین حالا رزرو پذیرفته، تا دو ساعت مشغول است و پیشنهاد نمی‌گیرد

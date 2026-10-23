@@ -21,6 +21,12 @@
         !money(e.extra_total) || !money(e.extra_net) || !timestamp(e.expires_at)) throw new Error(ERROR);
     return e;
   }
+  function offer(o, oid, rid) {
+    if (!o || !id(oid) || o.id !== oid || o.reservation_id !== rid || !id(rid) ||
+        !['pending', 'accepted', 'declined', 'expired', 'withdrawn'].includes(o.status) ||
+        !timestamp(o.expires_at) || !money(o.net) || typeof o.assigned !== 'boolean') throw new Error(ERROR);
+    return o;
+  }
   function cash(m) {
     if (!['finished', 'done'].includes(m.status) || m.pay_method !== 'cash' ||
         !['awaiting_cash', 'disputed', 'settled'].includes(m.pay_state) ||
@@ -76,7 +82,27 @@
       return extension(res.data, options.id, rid);
     }
     async function work() {
-      var before = await readMission(), e, res, after, decided;
+      var before, e, res, after, decided;
+      if (options.action === 'offer-accept' || options.action === 'offer-decline') {
+        async function readOffer() {
+          var view = await request('GET', 'offers/' + options.id);
+          if (view.status !== 200) throw new Error(ERROR);
+          return offer(view.data, options.id, rid);
+        }
+        before = await readOffer();
+        if (before.status !== 'pending' || before.assigned || before.net !== options.net || Date.parse(before.expires_at) <= Date.now()) throw new Error(ERROR);
+        var accepting = options.action === 'offer-accept';
+        res = await request('POST', 'offers/' + options.id + (accepting ? '/accept' : '/decline'));
+        if (res.status !== 200 || !res.data || res.data.ok !== true || (accepting && res.data.reservation_id !== rid)) throw new Error(ERROR);
+        after = await readOffer();
+        if (after.status !== (accepting ? 'accepted' : 'declined') || after.net !== before.net || after.expires_at !== before.expires_at || after.assigned !== accepting) throw new Error(ERROR);
+        if (accepting) {
+          var acceptedMission = await readMission();
+          if (acceptedMission.status !== 'matched' || acceptedMission.net !== before.net) throw new Error(ERROR);
+        }
+        return accepting ? 'ماموریت پذیرفته شد.' : 'رد پیشنهاد ثبت شد.';
+      }
+      before = await readMission();
       if (options.action === 'cash-confirm' || options.action === 'cash-dispute') {
         cash(before);
         if (before.status !== 'finished' || before.pay_state !== 'awaiting_cash' || before.confirmed ||
