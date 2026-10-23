@@ -204,12 +204,28 @@ async function main() {
   const g3 = r.data.id;
   r = await call('GET', '/api/translator/offers', null, T3);
   check('مترجم بدون پذیرش هر جنسیت، مسافر مخالف را نمی‌گیرد', !r.data.offers.some((o) => o.place === 'مختلط'));
+  const cancelBefore = (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T4)).data;
+  check('وضعیت خصوصی پیش از لغو به همان مأموریت وصل است', cancelBefore.reservation_id === g1 && cancelBefore.cancelled === false && cancelBefore.cancelled_at === null && cancelBefore.assigned === true);
+  check('تاریخچهٔ لغو بدون نشست خصوصی است', (await call('GET', `/api/translator/missions/${g1}/cancellation`)).status === 401);
+  check('مسافر تاریخچهٔ خصوصی لغو مترجم را نمی‌خواند', (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, tokP)).status === 403);
+  check('مترجم دیگر تاریخچهٔ لغو را نمی‌خواند', (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T3)).status === 404);
+  const cancelPrice = (await call('GET', '/api/traveler/bookings', null, tokP)).data.bookings.find(b => b.id === g1).total;
   r = await call('POST', `/api/translator/missions/${g1}/cancel`, null, T4);
   check('مترجم می‌تواند ماموریت پذیرفته‌شده را لغو کند', r.status === 200, JSON.stringify(r));
+  const cancelReceipt = r.data;
+  check('رسید لغو شناسه و زمان ثبت را دارد', cancelReceipt.ok === true && cancelReceipt.reservation_id === g1 && Number.isFinite(Date.parse(cancelReceipt.cancelled_at)) && typeof cancelReceipt.reassigned === 'boolean');
+  const cancelHistory = (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T4)).data;
+  check('لغو واقعاً در تاریخچهٔ خصوصی ثبت شده است', cancelHistory.cancelled === true && cancelHistory.assigned === false && cancelHistory.cancelled_at === cancelReceipt.cancelled_at);
+  check('تاریخچه فقط رسید خصوصی است نه اطلاعات مسافر یا مترجم بعدی', Object.keys(cancelHistory).sort().join(',') === 'assigned,cancelled,cancelled_at,reservation_id');
+  check('پس از واگذاری، جزئیات خصوصی مأموریت برای مترجم قبلی بسته است', (await call('GET', `/api/translator/missions/${g1}`, null, T4)).status === 404);
+  const cancelPassenger = (await call('GET', '/api/traveler/bookings', null, tokP)).data.bookings.find(b => b.id === g1);
+  check('لغو مترجم، رزرو مسافر را لغو یا قیمت را بازنویسی نمی‌کند', cancelPassenger.status !== 'cancelled' && !cancelPassenger.matched && cancelPassenger.total === cancelPrice && !cancelPassenger.service_started);
+
   r = await call('GET', '/api/translator/offers', null, T4);
   check('پس از لغو، رزرو آزاد به همین مترجم (که آزاد شده) پیشنهاد می‌شود', r.data.offers.some((o) => o.place === 'تداخل'));
   r = await call('POST', `/api/translator/missions/${g1}/cancel`, null, T4);
   check('لغو دوباره همان ماموریت ممنوع است', r.status === 404);
+  check('تلاش تکراری، زمان ثبت لغو را عوض نمی‌کند', (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T4)).data.cancelled_at === cancelReceipt.cancelled_at);
   for (const id of [g1, g2, g3]) await call('POST', `/api/traveler/bookings/${id}/cancel`, null, tokP);
   await call('PATCH', '/api/translator/online', { online: false }, T3);
   await call('PATCH', '/api/translator/online', { online: false }, T4);
@@ -348,6 +364,7 @@ async function main() {
   check('مترجم پس از شروع نمی‌تواند با لغو، خدمت را یک‌طرفه قطع یا واگذار کند', r.status === 409 && r.data.error === 'service_already_started', JSON.stringify(r));
   const afterTranslatorCancel = (await call('GET', '/api/translator/missions', null, T9)).data.missions.find((m) => m.reservation_id === pid);
   check('رد لغو مترجم، مأموریت شروع‌شده و مبلغ کامل را نگه می‌دارد', !!afterTranslatorCancel && afterTranslatorCancel.started === true && afterTranslatorCancel.total === matchedView.total);
+  check('لغو ممنوع، رسید تاریخچهٔ جعلی نمی‌سازد', (await call('GET', `/api/translator/missions/${pid}/cancellation`, null, T9)).data.cancelled === false);
   // تمدید زمان خدمت: درخواست مسافر فقط با تأیید مترجم اعمال می‌شود
   const beforeExt = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('زمان واقعی شروع خدمت با قالب ISO به مسافر می‌رسد', Number.isFinite(Date.parse(beforeExt.service_started_at)) && Date.parse(beforeExt.service_started_at) <= Date.now() && beforeExt.finished_at === null);
@@ -527,6 +544,8 @@ async function main() {
   await call('PUT', '/api/admin/settings', { cash_enabled: true }, adm);
   // بررسی مترجم: فقط از «در انتظار بررسی» تصمیم‌پذیر است
   r = await call('GET', '/api/admin/translators?status=active_general', null, adm);
+  const cancelActor = (await call('GET', '/api/auth/me', null, T4)).data;
+  check('جریمهٔ امتیاز لغو فقط یک بار اعمال شده است', r.data.translators.some(t => t.id === cancelActor.id && t.score === 95));
   check('فهرست مترجمان فعال خوانده می‌شود', r.status === 200 && Array.isArray(r.data.translators));
   const act = r.data.translators[0];
   if (act) {

@@ -1319,14 +1319,9 @@
       var cancelBtn = el('button', 'self-start px-3 py-1.5 rounded-xl neu-raised text-[11px] font-bold text-error cursor-pointer', 'لغو ماموریت');
       cancelBtn.type = 'button';
       HZ_MISSION_ACTION.bind(cancelBtn, m.reservation_id);
-      cancelBtn.onclick = function () {
-        if (cancelBtn.disabled || tok() !== actor) return;
-        srv('POST', '/translator/missions/' + m.reservation_id + '/cancel').then(function (res) {
-          HZ.toast(res.status === 200 ? 'ماموریت لغو شد و دوباره تطبیق می‌شود.' : 'لغو انجام نشد.');
-          loadMissions();
-        });
-      };
+      cancelBtn.onclick = function () { serviceAction('cancel', m, undefined, actor); };
       card.appendChild(cancelBtn);
+      card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'لغو پیش از شروع تا ۵ امتیاز کم می‌کند؛ پیدا شدن مترجم جایگزین قطعی نیست.'));
     }
     return card;
   }

@@ -130,6 +130,23 @@
         return accepting ? 'ماموریت پذیرفته شد.' : 'رد پیشنهاد ثبت شد.';
       }
       before = await readMission();
+      if (options.action === 'cancel') {
+        if (before.status !== 'matched' || before.started) throw new Error(ERROR);
+        async function readCancellation() {
+          var view = await request('GET', 'missions/' + rid + '/cancellation'), c = view.data;
+          if (view.status !== 200 || !c || c.reservation_id !== rid || typeof c.cancelled !== 'boolean' || typeof c.assigned !== 'boolean' ||
+              (c.cancelled ? !timestamp(c.cancelled_at) : c.cancelled_at !== null)) throw new Error(ERROR);
+          return c;
+        }
+        var cancellation = await readCancellation();
+        if (cancellation.cancelled || !cancellation.assigned) throw new Error(ERROR);
+        res = await request('POST', 'missions/' + rid + '/cancel');
+        if (res.status !== 200 || !res.data || res.data.ok !== true || res.data.reservation_id !== rid ||
+            !timestamp(res.data.cancelled_at) || typeof res.data.reassigned !== 'boolean') throw new Error(ERROR);
+        var cancelled = await readCancellation();
+        if (!cancelled.cancelled || cancelled.assigned || cancelled.cancelled_at !== res.data.cancelled_at) throw new Error(ERROR);
+        return 'لغو مأموریت شما ثبت شد؛ پیدا شدن مترجم جایگزین هنوز قطعی نیست.';
+      }
       if (options.action === 'change-accept' || options.action === 'change-reject') {
         if (before.status !== 'matched') throw new Error(ERROR);
         var priorDetails = details(before);
