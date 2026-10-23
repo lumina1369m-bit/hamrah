@@ -1,4 +1,4 @@
-"""A matched traveler booking shows server acceptance, never a fake en-route status."""
+"""Traveler search and matched-booking states show only what the server confirms."""
 import asyncio
 from pathlib import Path
 import secrets
@@ -9,6 +9,32 @@ from finish_flow_ui import BASE, api, booking
 from logout_sessions_ui import sign_in
 
 ARTIFACTS = Path(__file__).parent / 'assets' / 'last_traveler_match_status'
+SEARCH_COPY = {
+    'fa': {
+        'pill': 'در حال جست‌وجو',
+        'title': 'در حال جست‌وجوی مترجم برای درخواست شما',
+        'limit': 'حداکثر زمان جست‌وجو: ۱۰ دقیقه',
+        'description': 'مترجمان در دسترس بر اساس زبان‌ها و نوع خدمت درخواست شما بررسی می‌شوند.',
+        'forbidden': ('در شعاع اولیه‌ی تنظیم‌شده (از پنل مدیریت)', 'بهترین مترجم مسلط به عربی (پزشکی)',
+                      'امتیاز عملکرد', 'حوالی میدان ولیعصر'),
+    },
+    'en': {
+        'pill': 'Search in progress',
+        'title': 'Searching for an interpreter for your request',
+        'limit': 'Maximum search time: 10 minutes',
+        'description': 'Available interpreters are matched to the languages and service type in your request.',
+        'forbidden': ('initial radius set in admin', 'best Arabic (medical) interpreter',
+                      'performance scores', 'near Valiasr Square'),
+    },
+    'ar': {
+        'pill': 'جارٍ البحث',
+        'title': 'جارٍ البحث عن مترجم لطلبك',
+        'limit': 'الحد الأقصى لوقت البحث: ١٠ دقائق',
+        'description': 'يتم البحث عن مترجمين متاحين بحسب اللغات ونوع الخدمة في طلبك.',
+        'forbidden': ('النطاق الأولي المحدد في لوحة الإدارة', 'أفضل مترجم للعربية (طبي)',
+                      'تقييم الأداء', 'قرب ميدان وليعصر'),
+    },
+}
 COPY = {
     'fa': {
         'title': 'وضعیت رزرو',
@@ -74,6 +100,29 @@ async def scenario(browser, width):
         response = await response_info.value
         assert response.status == 201, await response.text()
         created = await response.json()
+        assert created['kind'] == 'instant' and created['status'] == 'searching', created
+        await expect(page.locator('#stage-2')).to_be_visible()
+        await page.reload()
+        await page.wait_for_function('() => window.hzBookingsSynced === true')
+        await expect(page.locator('#stage-2')).to_be_visible()
+        current_language = 'fa'
+        for language, copy in SEARCH_COPY.items():
+            if language != current_language:
+                await page.locator('nav a[data-nav="account"]').click()
+                await page.locator('#hz-lang-select').select_option(language)
+                await page.locator('nav a[data-nav="map"]').click()
+                current_language = language
+            await expect(page.locator('#stage-2')).to_be_visible()
+            await expect(page.locator('#search-status-pill')).to_have_text(copy['pill'])
+            await expect(page.locator('#search-status-title')).to_have_text(copy['title'])
+            await expect(page.locator('#search-time-limit')).to_have_text(copy['limit'])
+            await expect(page.locator('#search-status-description')).to_have_text(copy['description'])
+            stage_text = await page.locator('#stage-2').inner_text()
+            for claim in copy['forbidden']:
+                assert claim not in stage_text, f'unsupported search claim remains in {language}: {claim}'
+            await expect(page.locator('#search-timer-display')).to_have_count(0)
+            await expect(page.locator('#btn-cancel-search')).to_be_visible()
+            print(f'PASS [{width}/{language}]: search status is accurate; no fake ranking/radius or resetting countdown')
         offers = await api(context.request, 'GET', '/translator/offers', translator_token)
         assert offers['offers'], 'the real booking did not create an interpreter offer'
         await api(context.request, 'POST', f"/translator/offers/{offers['offers'][0]['id']}/accept", translator_token)
@@ -82,10 +131,11 @@ async def scenario(browser, width):
         await expect(page.locator('#stage-3')).to_be_visible()
 
         for language, copy in COPY.items():
-            if language != 'fa':
+            if language != current_language:
                 await page.locator('nav a[data-nav="account"]').click()
                 await page.locator('#hz-lang-select').select_option(language)
                 await page.locator('nav a[data-nav="map"]').click()
+                current_language = language
             await expect(page.locator('#stage-3')).to_be_visible()
             await expect(page.locator('#match-status-title')).to_have_text(copy['title'])
             await expect(page.locator('#match-status-description')).to_have_text(copy['description'])
@@ -123,7 +173,7 @@ async def main():
             await scenario(browser, 1280)
         finally:
             await browser.close()
-    print('RESULT: PASS (2/2 viewports; 6 language/viewport combinations)')
+    print('RESULT: PASS (2 viewports; 6 language/viewport combinations per booking state)')
 
 
 asyncio.run(main())
