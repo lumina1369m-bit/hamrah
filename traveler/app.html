@@ -457,7 +457,7 @@
 <p class="text-[10px] text-outline text-center">به‌محض اینکه مترجمی درخواست را بپذیرد، این صفحه خودکار به‌روز می‌شود.</p>
 </div>
 <!-- ========================================== -->
-<!-- STAGE 3: TRANSLATOR EN ROUTE (ETA 3 MIN)  -->
+<!-- STAGE 3: SERVER-CONFIRMED MATCHED BOOKING -->
 <!-- ========================================== -->
 <div class="hidden flex-col gap-3" id="nomatch-block">
 <div class="neu-card rounded-2xl p-4 flex flex-col items-center gap-2 text-center">
@@ -470,20 +470,14 @@
 <button id="btn-cancel-nomatch" type="button" class="w-full py-2.5 px-4 rounded-2xl neu-flat text-error font-bold text-[12px] cursor-pointer">لغو یا انصراف</button>
 </div>
 <div class="fsm-stage hidden flex-col gap-3" id="stage-3">
-<!-- ETA Arrival Banner -->
-<div class="neu-pressed rounded-2xl p-3 flex items-center justify-between bg-surface-container">
-<div class="flex items-center gap-2">
-<div class="w-10 h-10 rounded-xl neu-flat flex items-center justify-center text-primary">
-<span class="material-symbols-outlined text-[22px]">directions_car</span>
+<!-- Only the server-confirmed match is shown; no movement or arrival estimate is available. -->
+<div class="neu-pressed rounded-2xl p-3 flex items-center gap-2 bg-surface-container">
+<div class="w-10 h-10 rounded-xl neu-flat flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[22px]">check_circle</span>
 </div>
-<div class="flex flex-col">
-<span class="text-[10.5px] text-on-surface-variant">وضعیت مترجم</span>
-<span class="text-[14px] font-extrabold text-primary">در راه رسیدن به محل شما</span>
-</div>
-</div>
-<div class="flex items-center gap-1 px-2.5 py-1 rounded-full neu-flat text-[10px] text-secondary font-bold">
-<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-<span class="">در حرکت</span>
+<div class="flex flex-col min-w-0">
+<span id="match-status-title" class="text-[10.5px] text-on-surface-variant">وضعیت رزرو</span>
+<span id="match-status-description" class="text-[14px] font-extrabold text-primary">مترجم درخواست شما را پذیرفت.</span>
 </div>
 </div>
 <!-- Certified Translator Info Card -->
@@ -491,7 +485,6 @@
 <div class="flex items-center gap-3">
 <div class="relative w-13 h-13 rounded-2xl neu-flat p-0.5 overflow-hidden flex-shrink-0 flex items-center justify-center">
 <span class="material-symbols-outlined text-[30px] text-secondary">person</span>
-<span class="absolute bottom-1 left-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
 </div>
 <div class="flex-1 flex flex-col">
 <div class="flex items-center gap-1.5">
@@ -1792,7 +1785,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // جلو رفتن صفحه‌ها فقط با وضعیت واقعی رزرو روی سرور است (بدون دکمه‌ی شبیه‌سازی):
-  // تطبیق‌یافتن مترجم ← صفحه‌ی «در راه است»، شروع خدمت با کد امنیتی ← تایمر، پایان خدمت ← فاکتور.
+  // پذیرش درخواست از سوی مترجم ← صفحه‌ی تأیید تطبیق، شروع خدمت با کد امنیتی ← تایمر، پایان خدمت ← فاکتور.
   function readLocalBookings() {
     try { return JSON.parse(localStorage.getItem('hamzaban.bookings.v1') || '[]'); } catch (e) { return []; }
   }
