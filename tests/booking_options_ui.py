@@ -15,6 +15,11 @@ from playwright.async_api import async_playwright, expect
 from finish_flow_ui import BASE, api, booking
 
 ARTIFACTS = Path(__file__).parent / 'assets' / 'last_booking_options'
+SCHEDULE_SEARCH_COPY = {
+    'fa': 'برای رزرو زمان‌دار، جست‌وجوی مترجم یک ساعت پیش از زمان انتخابی آغاز می‌شود. اگر تا ۱۵ دقیقه مانده مترجمی نپذیرد، وضعیت رزرو در برنامه به‌روزرسانی می‌شود.',
+    'en': 'For a scheduled booking, interpreter search starts one hour before the selected time. If no interpreter has accepted by the 15-minute mark, the app updates the booking status.',
+    'ar': 'في الحجز المجدول، يبدأ البحث عن مترجم قبل الموعد المحدد بساعة. إذا لم يقبل أي مترجم قبل ۱۵ دقيقة من الموعد، يحدّث التطبيق حالة الحجز.',
+}
 
 
 async def login(request, role):
@@ -67,6 +72,7 @@ async def scenario(browser, kind, preference, lang):
         await expect(page.locator('#selected-location-title')).to_have_text('تهران، آزمون گزینه‌های رزرو')
         # Wait for live tariffs before comparing the UI estimate to the server total.
         await page.wait_for_function('() => typeof window.HZ_APPLY_CFG === "function" && !!window.HZ_NEAREST_CITY()')
+        await expect(page.locator('#match-chance')).to_have_count(0)
         await page.locator('#confirm-location-btn').click()
         await expect(page.locator('#bottom-sheet')).to_be_visible()
         await page.locator('.cat-chip[data-cat=business]').click()
@@ -84,6 +90,9 @@ async def scenario(browser, kind, preference, lang):
         await page.locator('#notes-input').fill(notes)
         if kind == 'scheduled':
             await page.locator('#btn-mode-scheduled').click()
+            await expect(page.locator('#scheduled-panel')).to_be_visible()
+            await expect(page.locator('#scheduled-search-policy')).to_have_text(SCHEDULE_SEARCH_COPY[lang])
+            await expect(page.locator('#match-chance')).to_have_count(0)
         # Read-only view of the form state; submission itself uses a real click.
         estimate = await page.evaluate('() => window.getBookingPricing(false).total')
         async with page.expect_response(lambda r: r.url.endswith('/api/traveler/bookings')

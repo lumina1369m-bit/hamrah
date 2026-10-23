@@ -300,6 +300,7 @@
 </div>
 </button>
 </div>
+<p id="scheduled-search-policy" class="px-1 text-[10px] leading-relaxed text-on-surface-variant">برای رزرو زمان‌دار، جست‌وجوی مترجم یک ساعت پیش از زمان انتخابی آغاز می‌شود. اگر تا ۱۵ دقیقه مانده مترجمی نپذیرد، وضعیت رزرو در برنامه به‌روزرسانی می‌شود.</p>
 </div>
 <!-- Language Pairing Card -->
 <div class="neu-card rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-white/60">
@@ -920,11 +921,6 @@ const CONFIG = {
   cancelAfterMatchPct: 50,   // لغو بعد از تطبیق (نمونه، از پنل مدیریت)
   retryPromptMin: 15,        // یادآوری «تلاش دوباره یا لغو؟» (فصل ۶.۵)
   maxImportantChanges: 3,    // تاریخ، ساعت و محل جمعاً (فصل ۷.۱)
-  // احتمال تطبیق بر اساس ظرفیت ساعت (دقیقه از نیمه‌شب). نمونه؛ تا وصل شدن به سرویس ظرفیت
-  matchChanceWindows: [
-    { from: 480, to: 1080, label: 'زیاد', cls: 'text-secondary' },
-    { from: 1080, to: 1260, label: 'متوسط', cls: 'text-amber-700' }
-  ]
 };
 
 // Global helpers exposed immediately for inline onclick handlers
@@ -1136,19 +1132,7 @@ document.addEventListener('DOMContentLoaded', function() {
     set('inv-total', formatToman(p.total));
   }
 
-  // احتمال تطبیق در ساعت انتخابی (سند ۶.۱)
-  function updateMatchChance() {
-    var btn = document.getElementById('btn-open-timepicker');
-    if (!btn) return;
-    var el = document.getElementById('match-chance');
-    if (!el) { el = document.createElement('p'); el.id = 'match-chance'; el.className = 'text-[11px] font-bold mt-1 px-1'; el.setAttribute('aria-live', 'polite'); btn.insertAdjacentElement('afterend', el); }
-    var m = slotMinutes(state.scheduledTime);
-    var w = CONFIG.matchChanceWindows.find(function (x) { return m >= x.from && m < x.to; }) || { label: 'کم', cls: 'text-error' };
-    el.className = 'text-[11px] font-bold mt-1 px-1 ' + w.cls;
-    el.textContent = 'احتمال تطبیق در این ساعت: ' + w.label + (w.label === 'کم' ? ' . ساعت دیگری را امتحان کنید' : '');
-  }
   function updateScheduledSummary() {
-    updateMatchChance();
     if (scheduledSummaryPill) scheduledSummaryPill.textContent = `${state.scheduledDate} - ${state.scheduledTime}`;
     if (labelSelectedDate) labelSelectedDate.textContent = state.scheduledDate;
     if (labelSelectedTime) labelSelectedTime.textContent = state.scheduledTime;
