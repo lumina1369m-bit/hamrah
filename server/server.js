@@ -1622,11 +1622,25 @@ route('GET', '/api/translator/offers', async (req, res) => {
     changes: changeRows.map((c) => ({ id: c.id, place: c.place, traveler_name: c.traveler_name,
     kind: c.kind, scheduled_at: c.scheduled_at ? new Date(c.scheduled_at).toISOString() : null, changes: JSON.parse(c.changes), expires_at: new Date(c.expires_at).toISOString() })),
     offers: rows.map((r) => ({
-    id: r.offer_id, kind: r.kind, origin_lang: r.origin_lang, dest_lang: r.dest_lang, field: r.field,
+    id: r.offer_id, reservation_id: r.id, kind: r.kind, origin_lang: r.origin_lang, dest_lang: r.dest_lang, field: r.field,
     place: r.place, traveler_name: r.traveler_name, notes: r.notes,
     scheduled_at: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : null,
     net: r.net, expires_at: new Date(r.expires_at).toISOString(),
   })) });
+});
+
+// Decision history is private to the offered translator; no passenger code or gender.
+route('GET', '/api/translator/offers/:id', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const id = parseId(params.id);
+  const o = id && db.prepare('SELECT * FROM offers WHERE id = ? AND translator_id = ?').get(id, u.id);
+  if (!o) return send(res, 404, { error: 'not_found' });
+  const r = db.prepare('SELECT net, translator_id FROM reservations WHERE id = ?').get(o.reservation_id);
+  if (!r) return send(res, 404, { error: 'not_found' });
+  send(res, 200, { id: o.id, reservation_id: o.reservation_id,
+    status: o.status === 'pending' && o.expires_at <= now() ? 'expired' : o.status,
+    expires_at: new Date(o.expires_at).toISOString(), net: r.net, assigned: r.translator_id === u.id });
 });
 
 route('POST', '/api/translator/offers/:id/accept', async (req, res, url, params) => {
@@ -1650,8 +1664,9 @@ route('POST', '/api/translator/offers/:id/decline', async (req, res, url, params
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const id = parseId(params.id);
-  const o = id && db.prepare("SELECT * FROM offers WHERE id = ? AND translator_id = ? AND status = 'pending'").get(id, u.id);
+  const o = id && db.prepare('SELECT * FROM offers WHERE id = ? AND translator_id = ?').get(id, u.id);
   if (!o) return send(res, 404, { error: 'not_found' });
+  if (o.status !== 'pending' || o.expires_at <= now()) return send(res, 410, { error: 'offer_expired' });
   db.prepare("UPDATE offers SET status = 'declined', decided_at = ? WHERE id = ?").run(now(), o.id);
   sweep();
   send(res, 200, { ok: true });

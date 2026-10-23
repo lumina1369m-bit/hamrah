@@ -259,8 +259,8 @@ async def scenario(browser):
                 await expect(button()).to_be_disabled()
                 release.set()
                 await failed()
-                await page.unroute(decision_pattern, held_decision)
-                await page.unroute('**/api/translator/offers', changed_offer)
+                # Do not remove a polling route while route.fetch/fulfill is active.
+                await page.unroute_all(behavior='wait')
                 await expect(button()).to_be_enabled()
             stale_entered, stale_release = asyncio.Event(), asyncio.Event()
             held_once = False

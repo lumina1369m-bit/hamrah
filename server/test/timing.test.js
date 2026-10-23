@@ -34,9 +34,15 @@ async function main() {
   const firstIsA = oa.data.offers.some((o) => o.place === 'زمان‌بندی');
   const firstIsB = ob.data.offers.some((o) => o.place === 'زمان‌بندی');
   check('پیشنهاد به یک مترجم رسید', firstIsA !== firstIsB);
+  const firstOffer = (firstIsA ? oa : ob).data.offers.find(o => o.place === 'زمان‌بندی');
+  const firstOwner = firstIsA ? A : B;
   // مهلت پذیرش ۰٫۶ ثانیه است؛ بعد از آن پیشنهاد به نفر بعد می‌رود که مهلتش ۰٫۶ ثانیه‌ی دیگر است.
   // باید بین این دو باشیم: ۰٫۹ ثانیه (اگر بیشتر صبر کنیم، پیشنهاد دوم هم منقضی شده است)
   await sleep(900);
+  check('نمای خصوصی پیشنهاد گذشته را منقضی نشان می‌دهد', (await call('GET', `/api/translator/offers/${firstOffer.id}`, null, firstOwner)).data.status === 'expired');
+  check('رد دیرهنگام پیشنهاد موفق اعلام نمی‌شود', (await call('POST', `/api/translator/offers/${firstOffer.id}/decline`, null, firstOwner)).status === 410);
+  check('پذیرش دیرهنگام پیشنهاد ممنوع است', (await call('POST', `/api/translator/offers/${firstOffer.id}/accept`, null, firstOwner)).status === 410);
+
   oa = await call('GET', '/api/translator/offers', null, A);
   ob = await call('GET', '/api/translator/offers', null, B);
   const nowA = oa.data.offers.some((o) => o.place === 'زمان‌بندی');
