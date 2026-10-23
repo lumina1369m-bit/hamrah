@@ -71,7 +71,7 @@ jobs:
   browser-tests:
     name: Browser tests (finish and payment)
     runs-on: ubuntu-latest
-    # Browser installation may take 8 minutes; keep room for all 31 scripts.
+    # Browser installation may take 8 minutes; keep room for all 32 scripts.
     timeout-minutes: 25
     steps:
       - name: دریافت کد
@@ -109,7 +109,7 @@ jobs:
       - name: تست گزینه‌های رزرو، پایان خدمت و پرداخت در Chromium
         working-directory: tests
         run: |
-          for test in translator_workspace_metrics_ui.py translator_earnings_truth_ui.py translator_dispatch_truth_ui.py translator_qualification_badges_ui.py translator_profile_ui.py translator_notifications_ui.py translator_support_ui.py translator_cancel_actions_ui.py translator_change_actions_ui.py translator_offer_actions_ui.py translator_presence_ui.py translator_cash_actions_ui.py translator_service_actions_ui.py service_actions_ui.py booking_actions_ui.py account_delete_ui.py traveler_support_ui.py traveler_support_claims_ui.py account_truth_ui.py logout_sessions_ui.py traveler_auth_ui.py booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
+          for test in translator_workspace_metrics_ui.py translator_earnings_truth_ui.py translator_dispatch_truth_ui.py translator_qualification_badges_ui.py translator_profile_ui.py translator_notifications_ui.py translator_support_ui.py translator_cancel_actions_ui.py translator_change_actions_ui.py translator_offer_actions_ui.py translator_presence_ui.py translator_cash_actions_ui.py translator_service_actions_ui.py service_actions_ui.py booking_actions_ui.py account_delete_ui.py traveler_support_ui.py traveler_support_claims_ui.py traveler_location_claims_ui.py account_truth_ui.py logout_sessions_ui.py traveler_auth_ui.py booking_options_ui.py service_clock_ui.py payment_methods_ui.py settlement_failure_ui.py finish_flow_ui.py extension_ui.py translator_pay_ui.py traveler_pay_ui.py traveler_settle_ui.py traveler_invoice_ui.py; do
             if python "$test" > /tmp/browser-test.log 2>&1; then
               cat /tmp/browser-test.log
             else
@@ -136,6 +136,7 @@ jobs:
             tests/assets/last_account_truth/
             tests/assets/last_traveler_support/
             tests/assets/last_traveler_support_claims/
+            tests/assets/last_traveler_location_claims/
             tests/assets/last_account_delete/
             tests/assets/last_booking_actions/
             tests/assets/last_service_actions/
