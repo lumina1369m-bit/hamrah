@@ -107,47 +107,29 @@
 <!-- MAIN CONTAINER -->
 <!-- ========================================== -->
 <main class="flex flex-col relative w-full pt-24 pb-28 md:pb-12 bg-surface max-w-7xl mx-auto flex-1 min-h-[calc(100vh-5rem)] px-4 sm:px-6 lg:px-8">
-<!-- 1. INLINE HEADER PANEL: Profile Details (No Modal) -->
-<section class="hidden mb-6 w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20 transition-all duration-300" id="inline-profile-panel">
+<!-- Profile summary shows only local display name; unsupported metrics are omitted. -->
+<section aria-labelledby="profile-title" class="hidden mb-6 w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20 transition-all duration-300" id="inline-profile-panel">
 <div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
 <div class="flex items-center gap-2 text-primary">
 <span class="material-symbols-outlined text-[24px]">account_box</span>
-<h3 class="font-bold text-[16px] text-on-surface">پروفایل و پرونده هویتی مترجم تشریفات</h3>
+<h3 class="font-bold text-[16px] text-on-surface" id="profile-title">نمایه مترجم</h3>
 </div>
 <button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleInlinePanel('profile')" type="button">
-<span class="">بستن پنل</span>
+<span>بستن پنل</span>
 <span class="material-symbols-outlined text-[16px]">expand_less</span>
 </button>
 </div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 items-center">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-center">
 <div class="flex items-center gap-4">
-<div class="w-16 h-16 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg text-[32px] flex-shrink-0">
+<div class="w-16 h-16 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg text-[32px] flex-shrink-0" aria-hidden="true">
 <span class="material-symbols-outlined text-[36px]">person</span>
 </div>
 <div>
 <h4 class="font-bold text-[16px] text-on-surface" data-tr-name>مترجم</h4>
-<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold inline-block mt-0.5">مترجم ارشد تشریفات و همراه سلامت</span>
-<span class="text-[12px] text-on-surface-variant block mt-1">کد ملی: ۰۰۸****۳۲۱ • شناسه: CAP-100-IR41</span>
+<span class="text-[12px] text-on-surface-variant block mt-1">نام نمایشی</span>
 </div>
 </div>
-<div class="grid grid-cols-2 gap-2 text-right">
-<div class="p-3 rounded-xl bg-surface-container-low shadow-inner">
-<span class="text-[11px] text-on-surface-variant block">امتیاز کل:</span>
-<span class="text-[14px] text-on-surface font-bold">۴.۹۵ از ۵ (۱۲۸ نظر)</span>
-</div>
-<div class="p-3 rounded-xl bg-surface-container-low shadow-inner">
-<span class="text-[11px] text-on-surface-variant block">ساعات مأموریت این ماه:</span>
-<span class="text-[14px] text-primary font-bold">۶۴ ساعت تشریفات</span>
-</div>
-</div>
-<div class="p-3.5 rounded-xl bg-surface-container-low border border-surface-variant/40 flex items-center justify-between">
-<div>
-<span class="text-[11px] text-on-surface-variant block">خودرو تایید شده سامانه:</span>
-<span class="text-[14px] text-on-surface font-bold"></span>
-<span class="text-[11px] text-secondary font-semibold block mt-0.5">دارای بیمه‌نامه کامل بدنه و سرنشین</span>
-</div>
-<span class="material-symbols-outlined text-[28px] text-primary">verified</span>
-</div>
+<p class="p-3.5 rounded-xl bg-surface-container-low text-[12px] leading-6 text-on-surface-variant" id="profile-data-note" role="note">نام بالا از نمایهٔ ذخیره‌شده در همین مرورگر می‌آید و به‌تنهایی هویت تأییدشده را ثابت نمی‌کند. امتیاز، تعداد نظر، ساعات مأموریت، شناسهٔ صلاحیت و تأیید خودرو در این کارت نمایش داده نمی‌شوند، چون از حساب شما دریافت نشده‌اند.</p>
 </div>
 </section>
 <!-- Notifications are read from the authenticated account, never sample events. -->
@@ -1596,11 +1578,11 @@
   loadMissions();
 
   var p = state.profile || {};
-  var fullName = [p.nameFa, p.lastFa].filter(Boolean).join(' ') || 'مترجم';
+  var displayName = [p.nameFa, p.lastFa].filter(Boolean).join(' ') || 'مترجم';
 
-  // نام واقعی مترجم (از پروفایل ذخیره‌شده) در سرایند و کارت‌ها درج می‌شود
-  function applyRealName() {
-    document.querySelectorAll('[data-tr-name]').forEach(function (el) { el.textContent = fullName; });
+  // نام نمایشی از دادهٔ محلی در سرایند و کارت‌ها می‌آید؛ این داده به‌تنهایی هویت سروری را ثابت نمی‌کند.
+  function applyDisplayName() {
+    document.querySelectorAll('[data-tr-name]').forEach(function (el) { el.textContent = displayName; });
   }
 
   // حذف عناصر تسویه‌ی آنی (تصمیم: فقط تسویه‌ی دوره‌ای)؛ فقط خود عنصر حذف می‌شود، نه والدها
@@ -1612,10 +1594,10 @@
     });
   }
 
-  applyRealName();
+  applyDisplayName();
   removeInstantPayout();
 
-  window.addEventListener('DOMContentLoaded', function () { applyRealName(); removeInstantPayout(); });
+  window.addEventListener('DOMContentLoaded', function () { applyDisplayName(); removeInstantPayout(); });
 })();
 </script>
 
