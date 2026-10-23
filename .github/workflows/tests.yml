@@ -69,7 +69,8 @@ jobs:
   browser-tests:
     name: Browser tests (finish and payment)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Browser installation may take 8 minutes; keep room for all 22 scripts.
+    timeout-minutes: 25
     steps:
       - name: دریافت کد
         uses: actions/checkout@v4
