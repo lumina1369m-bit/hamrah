@@ -96,9 +96,9 @@
 <span class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,106,97,0.7)] animate-pulse" id="header-shift-pulse"></span>
 <span class="text-[11px] text-secondary font-bold" id="header-shift-text">وضعیت نامشخص</span>
 </button>
-<button aria-label="اعلان‌ها" class="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_8px_rgba(163,180,204,0.5)] active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] relative cursor-pointer" id="notifications-btn" onclick="toggleInlinePanel('notifications')" type="button">
+<button aria-label="اعلان‌ها" class="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_8px_rgba(163,180,204,0.5)] active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] relative cursor-pointer" aria-controls="inline-notifications-panel" aria-expanded="false" id="notifications-btn" onclick="toggleInlinePanel('notifications')" type="button">
 <span class="material-symbols-outlined text-[20px]">notifications</span>
-<span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface" id="notif-badge-dot"></span>
+
 </button>
 </div>
 </div>
@@ -150,43 +150,17 @@
 </div>
 </div>
 </section>
-<!-- 2. INLINE HEADER PANEL: Notifications (No Modal) -->
-<section class="hidden mb-6 w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20 transition-all duration-300" id="inline-notifications-panel">
-<div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
-<div class="flex items-center gap-2 text-primary">
-<span class="material-symbols-outlined text-[24px]">notifications_active</span>
-<h3 class="font-bold text-[16px] text-on-surface">اعلان‌های سامانه اعزام و کیف پول</h3>
+<!-- Notifications are read from the authenticated account, never sample events. -->
+<section aria-labelledby="notifications-title" class="hidden mb-6 w-full rounded-3xl bg-surface p-5 sm:p-6 neu-card border border-primary/20" id="inline-notifications-panel">
+<div class="flex items-center justify-between gap-2 pb-3 border-b border-surface-variant/40">
+<h3 class="font-bold text-[16px] text-on-surface" id="notifications-title">اعلان‌های حساب</h3>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-[12px] cursor-pointer" id="notifications-close" onclick="toggleInlinePanel('notifications')" type="button">بستن</button>
 </div>
-<div class="flex items-center gap-2">
-<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-primary text-[11px] font-semibold transition-colors cursor-pointer" onclick="markAllNotificationsRead()" type="button">علامت‌گذاری خوانده شده</button>
-<button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleInlinePanel('notifications')" type="button">
-<span class="">بستن</span>
-<span class="material-symbols-outlined text-[16px]">expand_less</span>
-</button>
-</div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
-<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-start gap-3 border border-secondary/20">
-<span class="material-symbols-outlined text-secondary text-[22px] mt-0.5">account_balance</span>
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-bold text-[14px] text-on-surface">واریز موفق پایا</span>
-<span class="text-[11px] text-outline">۲ ساعت پیش</span>
-</div>
-<span class="text-[12px] text-on-surface-variant mt-0.5 block">مبلغ ۱,۸۵۰,۰۰۰ تومان از مأموریت صبحگاهی تسویه شد.</span>
-</div>
-</div>
-<div class="p-3.5 rounded-2xl bg-surface-container-low flex items-start gap-3 border border-primary/20">
-<span class="material-symbols-outlined text-primary text-[22px] mt-0.5">verified</span>
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-bold text-[14px] text-on-surface">تمدید صلاحیت پزشکی CAP</span>
-<span class="text-[11px] text-outline">دیروز</span>
-</div>
-<span class="text-[12px] text-on-surface-variant mt-0.5 block">گواهی استاندارد مترجم همراه سلامت تا پاییز ۱۴۰۵ معتبر گردید.</span>
-</div>
-</div>
-</div>
+<p class="mt-3 text-[12px] text-on-surface-variant" id="notifications-unavailable">ثبت وضعیت خوانده‌شدن هنوز فعال نیست؛ این فهرست حداکثر ۲۰ اعلان آخر حساب شما را نشان می‌دهد.</p>
+<button aria-describedby="notifications-unavailable" class="mt-2 text-[12px] opacity-60 cursor-not-allowed" disabled id="notifications-mark-read" type="button">علامت‌گذاری خوانده‌شده — فعال نیست</button>
+<p aria-live="polite" class="mt-3 text-[13px] text-on-surface-variant" id="notifications-status" role="status">اعلان‌ها هنوز دریافت نشده‌اند.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3" id="notifications-list"></div>
+<button class="mt-3 px-3 py-2 rounded-xl bg-surface-container text-primary text-[12px] font-bold cursor-pointer" id="notifications-retry" type="button">دریافت دوبارهٔ اعلان‌ها</button>
 </section>
 <!-- 3. INLINE BADGE DETAIL BANNER -->
 <section class="hidden mb-6 w-full rounded-2xl bg-surface p-4 sm:p-5 neu-card border border-primary/30" id="inline-badge-detail-card">
@@ -1036,34 +1010,19 @@
       showToast('آمادگی شما برای رزرو ' + bkgId + ' در سامانه ثبت گردید.', 'event_available');
     }
 
-    // 8. Header Inline Panels (Profile & Notifications)
+    // Notifications have their own account-bound read controller.
     function toggleInlinePanel(type) {
       var profilePanel = document.getElementById('inline-profile-panel');
-      var notifPanel = document.getElementById('inline-notifications-panel');
-
       if (type === 'profile') {
-        if (notifPanel) notifPanel.classList.add('hidden');
+        window.HZ_NOTIFICATIONS.close();
         if (profilePanel) {
           profilePanel.classList.toggle('hidden');
-          if (!profilePanel.classList.contains('hidden')) {
-            profilePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
+          if (!profilePanel.classList.contains('hidden')) profilePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       } else if (type === 'notifications') {
         if (profilePanel) profilePanel.classList.add('hidden');
-        if (notifPanel) {
-          notifPanel.classList.toggle('hidden');
-          if (!notifPanel.classList.contains('hidden')) {
-            notifPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-        }
+        window.HZ_NOTIFICATIONS.toggle();
       }
-    }
-
-    function markAllNotificationsRead() {
-      var dot = document.getElementById('notif-badge-dot');
-      if (dot) dot.classList.add('hidden');
-      showToast('تمام اعلان‌ها به عنوان خوانده شده ثبت شدند.', 'done_all');
     }
 
     // 9. Badges
@@ -1135,6 +1094,7 @@
 <script src="mission-actions.js"></script>
 <script src="presence.js"></script>
 <script src="support.js"></script>
+<script src="notifications.js"></script>
 <script>
 /* میز کار مترجم: اتصال نمونه‌ی code1.html به نشست و نام واقعی؛ حذف تسویه‌ی آنی طبق تصمیم‌ها */
 (function () {
