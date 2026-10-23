@@ -87,6 +87,8 @@ async function main() {
     await sleep(3600); // ۵ دقیقه ≈ ۳ ثانیه با مقیاس؛ کمی بیشتر
     view = (await call('GET', '/api/traveler/bookings', null, P2)).data.bookings.find((b) => b.id === bk2.id);
     check('پس از پنجره، درخواست بی‌پاسخ منقضی و پاک می‌شود', view.pending_change === null, JSON.stringify(view.pending_change));
+    check('نمای خصوصی تغییر منقضی را منتظر نشان نمی‌دهد', (await call('GET', `/api/translator/changes/${ch.data.id}`, null, tokOwner)).data.status === 'expired');
+    check('رد دیرهنگام تغییر موفق اعلام نمی‌شود', (await call('POST', `/api/translator/changes/${ch.data.id}/reject`, null, tokOwner)).status === 410);
     check('مکان بدون پاسخ مترجم عوض نشده', view.place === place0, view.place);
     const late = await call('POST', `/api/translator/changes/${ch.data.id}/accept`, null, tokOwner);
     check('پذیرش دیرهنگام مترجم رد می‌شود', late.status === 410, String(late.status));
@@ -115,6 +117,12 @@ async function main() {
       check('پذیرش در پنجره ممکن است', acc.status === 200, JSON.stringify(acc));
       const fin = await call('POST', `/api/translator/missions/${rs.data.id}/finish`, null, owner);
       check('پایان خدمت پیش از زمان قرار: ۴۰۹', fin.status === 409 && fin.data.error === 'too_early', JSON.stringify(fin));
+      const newTime = new Date(Date.now() + 90 * 1000).toISOString();
+      const timeChange = await call('POST', `/api/traveler/bookings/${rs.data.id}/change`, { scheduled_at: newTime }, P);
+      check('تغییر زمان قرار هم رضایت می‌خواهد', timeChange.status === 202);
+      check('مترجم تغییر زمان را می‌پذیرد', (await call('POST', `/api/translator/changes/${timeChange.data.id}/accept`, null, owner)).status === 200);
+      check('زمان جدید در نمای خصوصی مأموریت اعمال می‌شود', (await call('GET', `/api/translator/missions/${rs.data.id}`, null, owner)).data.details.scheduled_at === Date.parse(newTime));
+
     }
     await call('POST', `/api/traveler/bookings/${rs.data.id}/cancel`, null, P);
   }

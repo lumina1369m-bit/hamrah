@@ -229,8 +229,17 @@ async function main() {
   r = await call('GET', '/api/translator/offers', null, T5);
   const ch = (r.data.changes || []).find((c) => c.changes.place === 'مقصد جدید');
   check('مترجم درخواست تغییر را می‌بیند', !!ch);
+  const privateChange = await call('GET', `/api/translator/changes/${ch.id}`, null, T5);
+  check('نمای خصوصی تغییر به همان درخواست و رزرو متصل است', privateChange.status === 200 && privateChange.data.id === ch.id && privateChange.data.reservation_id === cr && privateChange.data.status === 'pending' && privateChange.data.changes.place === 'مقصد جدید');
+  check('تغییر بدون نشست دیده نمی‌شود', (await call('GET', `/api/translator/changes/${ch.id}`)).status === 401);
+  check('مسافر نمای خصوصی رضایت مترجم را نمی‌بیند', (await call('GET', `/api/translator/changes/${ch.id}`, null, tokP)).status === 403);
+  check('مترجم دیگر درخواست تغییر را نمی‌بیند', (await call('GET', `/api/translator/changes/${ch.id}`, null, T1)).status === 404);
+  check('نمای تغییر کد مسافر یا شماره تماس را افشا نمی‌کند', !('service_code' in privateChange.data) && !('phone' in privateChange.data));
+  const priorChangeMission = (await call('GET', `/api/translator/missions/${cr}`, null, T5)).data;
+  check('نمای خصوصی مأموریت، مشخصات پیش از تغییر را دارد', priorChangeMission.details.place === 'مبدأ اولیه' && priorChangeMission.details.hours === priorChangeMission.hours);
   r = await call('POST', `/api/translator/changes/${ch.id}/reject`, null, T5);
   check('مترجم تغییر را رد می‌کند', r.status === 200);
+  check('رد در تاریخچه همان تغییر ثبت شده است', (await call('GET', `/api/translator/changes/${ch.id}`, null, T5)).data.status === 'rejected');
   r = await call('GET', '/api/traveler/bookings', null, tokP);
   const bc = r.data.bookings.find((b) => b.id === cr);
   check('رد شدن، مکان را تغییر نمی‌دهد و درخواست باز را پاک می‌کند', bc.place === 'مبدأ اولیه' && bc.pending_change === null);
@@ -238,6 +247,11 @@ async function main() {
   r = await call('GET', '/api/translator/offers', null, T5);
   const ch2 = (r.data.changes || []).find((c) => c.changes.place === 'مقصد نهایی');
   await call('POST', `/api/translator/changes/${ch2.id}/accept`, null, T5);
+  const appliedChangeMission = (await call('GET', `/api/translator/missions/${cr}`, null, T5)).data;
+  check('پذیرش واقعاً مشخصات مأموریت را تغییر می‌دهد', appliedChangeMission.details.place === 'مقصد نهایی' && (await call('GET', `/api/translator/changes/${ch2.id}`, null, T5)).data.status === 'accepted');
+  check('رضایت تغییر، قیمت نمونهٔ رزرو را بازنویسی نمی‌کند', appliedChangeMission.total === priorChangeMission.total && appliedChangeMission.net === priorChangeMission.net);
+  check('پذیرش تکراری تغییر موفق اعلام نمی‌شود', (await call('POST', `/api/translator/changes/${ch2.id}/accept`, null, T5)).status === 410);
+
   r = await call('GET', '/api/traveler/bookings', null, tokP);
   check('پذیرش مترجم، مکان جدید را ثبت می‌کند', r.data.bookings.find((b) => b.id === cr).place === 'مقصد نهایی');
   r = await call('POST', `/api/traveler/bookings/${cr}/change`, { notes: 'طبقه ۳' }, tokP);
@@ -249,6 +263,18 @@ async function main() {
   r = await call('POST', `/api/traveler/bookings/${cr}/change`, { place: 'پنجم' }, tokP);
   check('بیش از ۳ درخواست تغییر ممنوع است', r.status === 409 && r.data.error === 'change_limit', JSON.stringify(r));
   await call('POST', `/api/traveler/bookings/${cr}/cancel`, null, tokP);
+  const terminalBooking = (await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'تغییر قبل پایان', traveler_name: 'A' }, tokP)).data;
+  const terminalOffer = (await call('GET', '/api/translator/offers', null, T5)).data.offers.find(o => o.reservation_id === terminalBooking.id);
+  await call('POST', `/api/translator/offers/${terminalOffer.id}/accept`, null, T5);
+  await startService(terminalBooking.id, T5, tokP);
+  const terminalChange = await call('POST', `/api/traveler/bookings/${terminalBooking.id}/change`, { place: 'تغییر بعد پایان' }, tokP);
+  check('درخواست تغییر برای آزمون پایان ساخته شد', terminalChange.status === 202);
+  await call('POST', `/api/traveler/bookings/${terminalBooking.id}/finish`, null, tokP);
+  const refusedChange = await call('POST', `/api/translator/changes/${terminalChange.data.id}/accept`, null, T5);
+  check('تغییر روی مأموریت پایان‌یافته پذیرفته نمی‌شود', refusedChange.status === 409 && refusedChange.data.error === 'change_not_allowed');
+  check('پذیرش نامعتبر، تاریخچه را پذیرفته‌شده نمی‌کند', (await call('GET', `/api/translator/changes/${terminalChange.data.id}`, null, T5)).data.status === 'pending');
+  check('پایان خدمت مشخصات و قیمت رزرو را حفظ می‌کند', (await call('GET', `/api/translator/missions/${terminalBooking.id}`, null, T5)).data.details.place === 'تغییر قبل پایان' && (await call('GET', `/api/translator/missions/${terminalBooking.id}`, null, T5)).data.total === terminalBooking.total);
+
   await call('PATCH', '/api/translator/online', { online: false }, T5);
 
   console.log('== زمان‌بندی و لغو');
