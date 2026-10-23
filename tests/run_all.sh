@@ -47,6 +47,7 @@ run python3 admin_system_ui.py http://127.0.0.1:8081
 run python3 features_ui.py http://127.0.0.1:8081 test-admin-pass
 run python3 translator_workspace_metrics_ui.py
 run python3 translator_earnings_truth_ui.py
+run python3 translator_dispatch_truth_ui.py
 run python3 translator_qualification_badges_ui.py
 run python3 translator_profile_ui.py
 run python3 translator_notifications_ui.py
