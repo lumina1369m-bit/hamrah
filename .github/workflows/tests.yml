@@ -88,11 +88,26 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: tests/requirements.txt
-      - name: نصب وابستگی‌ها و مرورگر
+      - name: نصب وابستگی‌های سرور برای آزمون مرورگر
+        run: npm ci --prefix server
+      - name: نصب وابستگی‌های Python
+        run: python -m pip install -r tests/requirements.txt
+      - name: نصب Chromium برای Playwright
+        shell: bash
         run: |
-          npm ci --prefix server
-          python -m pip install -r tests/requirements.txt
-          python -m playwright install --with-deps chromium
+          set +e
+          python -m playwright install --with-deps chromium > /tmp/playwright-install.log 2>&1
+          status=$?
+          cat /tmp/playwright-install.log
+          if [ "$status" -ne 0 ]; then
+            python - <<'PY'
+          from pathlib import Path
+          message = Path('/tmp/playwright-install.log').read_text(errors='replace')[-6000:]
+          message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::error title=Playwright browser setup::' + message)
+          PY
+            exit "$status"
+          fi
       - name: بالا آوردن سرور مستقل مرورگر با داده‌های آزمایشی تازه
         working-directory: server
         run: |
