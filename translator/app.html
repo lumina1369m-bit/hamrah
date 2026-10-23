@@ -144,47 +144,17 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3" id="notifications-list"></div>
 <button class="mt-3 px-3 py-2 rounded-xl bg-surface-container text-primary text-[12px] font-bold cursor-pointer" id="notifications-retry" type="button">دریافت دوبارهٔ اعلان‌ها</button>
 </section>
-<!-- 3. INLINE BADGE DETAIL BANNER -->
-<section class="hidden mb-6 w-full rounded-2xl bg-surface p-4 sm:p-5 neu-card border border-primary/30" id="inline-badge-detail-card">
-<div class="flex items-center justify-between pb-2 border-b border-surface-variant/40">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-[22px]" id="inline-badge-icon">verified_user</span>
-<h4 class="font-bold text-[15px] text-on-surface" id="inline-badge-title">تأییدیه صلاحیت</h4>
-</div>
-<button class="px-3 py-1 rounded-full bg-surface-container text-[12px] text-on-surface-variant hover:text-on-surface cursor-pointer" onclick="closeBadgeDetail()" type="button">بستن</button>
-</div>
-<p class="text-[13px] text-on-surface mt-2.5 leading-relaxed" id="inline-badge-desc">توضیحات صلاحیت ثبت شده در سازمان.</p>
-<div class="mt-3 p-3 rounded-xl bg-surface-container flex flex-wrap gap-4 justify-between text-[11px]">
-<div class="flex items-center gap-1.5"><span class="text-on-surface-variant">شماره استعلام:</span><span class="font-mono font-bold text-on-surface" id="inline-badge-code">CAP-84912-VERIFIED</span></div>
-<div class="flex items-center gap-1.5"><span class="text-on-surface-variant">وضعیت اعتبار:</span><span class="text-secondary font-bold">معتبر تا اسفند ۱۴۰۵ (تایید شده بیومتریک)</span></div>
-</div>
-</section>
 <!-- ======================================================== -->
 <!-- TAB VIEW 1: WORKSPACE / MEIZ KAR (DEFAULT ACTIVE TAB) -->
 <!-- ======================================================== -->
 <div class="tab-view-content flex flex-col w-full space-y-6 hidden" id="view-workspace">
-<!-- Multi-Vector Qualification Pills -->
-<section aria-label="مدل صلاحیت CAP" class="w-full flex items-center overflow-x-auto no-scrollbar py-1 gap-2.5 sm:gap-3 flex-nowrap lg:flex-wrap">
-<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('cap100')" type="button">
-<span class="material-symbols-outlined text-[17px] text-secondary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
-<span class="text-[11px] text-on-surface font-medium">هویت CAP-100: تایید شده</span>
-</button>
-<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('lang')" type="button">
-<span class="material-symbols-outlined text-[17px] text-primary" style="font-variation-settings: 'FILL' 1;">translate</span>
-<span class="text-[11px] text-on-surface font-medium">عربی • انگلیسی C1</span>
-</button>
-<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('medical')" type="button">
-<span class="material-symbols-outlined text-[17px] text-tertiary" style="font-variation-settings: 'FILL' 1;">medical_services</span>
-<span class="text-[11px] text-on-surface font-medium">صلاحیت تخصصی: پزشکی</span>
-</button>
-<button class="pill-badge flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('car')" type="button">
-<span class="material-symbols-outlined text-[17px] text-secondary" style="font-variation-settings: 'FILL' 1;">directions_car</span>
-<span class="text-[11px] text-on-surface font-medium">پژو ۲۰۷ تشریفات</span>
-</button>
-<button class="pill-badge hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface shadow-[-3px_-3px_7px_rgba(255,255,255,0.9),3px_3px_7px_rgba(163,180,204,0.45)] active:shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5)] whitespace-nowrap text-right cursor-pointer transition-all hover:bg-surface-container-low" onclick="showBadgeDetail('insurance')" type="button">
-<span class="material-symbols-outlined text-[17px] text-primary" style="font-variation-settings: 'FILL' 1;">security</span>
-<span class="text-[11px] text-on-surface font-medium">پوشش بیمه مأموریت فعال</span>
-</button>
+<!-- Qualification shortcut: detailed statuses are shown only in the server-backed credentials view. -->
+<section aria-label="مدارک و صلاحیت" class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl bg-surface p-4 sm:p-5 neu-card border border-primary/20" id="qualification-shortcut">
+<div>
+<h2 class="font-bold text-[16px] text-on-surface">مدارک و صلاحیت</h2>
+<p class="mt-1 text-[12px] leading-5 text-on-surface-variant">برای دیدن وضعیت ثبت‌شدهٔ مدارک و صلاحیت، بخش مدارک را باز کنید. نشان تأیید یا سطح زبانیِ نمونه نمایش داده نمی‌شود.</p>
+</div>
+<button aria-controls="view-credentials" class="shrink-0 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-[12px] font-bold cursor-pointer" onclick="switchView('credentials')" type="button">مشاهده وضعیت مدارک</button>
 </section>
 <!-- Main Responsive Grid -->
 <div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-start">
@@ -647,8 +617,8 @@
 <span class="material-symbols-outlined text-[24px]">badge</span>
 </div>
 <div>
-<h2 class="font-bold text-[18px] text-on-surface">وضعیت صلاحیت ۴ بُعدی CAP و مدارک</h2>
-<span class="text-[12px] text-on-surface-variant">احراز هویت، گواهی زبان C1، مجوز خودرو و عدم سوءپیشینه</span>
+<h2 class="font-bold text-[18px] text-on-surface">وضعیت مدارک و صلاحیت</h2>
+<span class="text-[12px] text-on-surface-variant">جزئیات زیر از پاسخ فعلی سامانه دریافت می‌شوند.</span>
 </div>
 </div>
 <button class="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-bold flex items-center gap-1 cursor-pointer" onclick="switchView('workspace')" type="button">
@@ -1007,65 +977,6 @@
       }
     }
 
-    // 9. Badges
-    var badgeData = {
-      'cap100': {
-        title: 'گواهی صلاحیت هویت CAP-100',
-        desc: 'احراز هویت جامع بیومتریک، عدم سوءپیشینه و تاییدیه امنیتی تشریفات بین‌المللی با اعتبار فعال تا پایان ۱۴۰۴.',
-        code: 'CAP-100-IR-9921',
-        icon: 'verified_user'
-      },
-      'lang': {
-        title: 'گواهی مهارت زبانی تخصصی C1',
-        desc: 'تسلط کامل به عربی گویش عراقی و خلیجی با نمره ۴.۸ به انضمام مدرک بین‌المللی C1 انگلیسی تخصصی مذاکرات بازرگانی.',
-        code: 'LNG-AR-EN-C1-801',
-        icon: 'translate'
-      },
-      'medical': {
-        title: 'صلاحیت ترجمه همراه پزشکی (IPD)',
-        desc: 'گواهینامه اصطلاحات پزشکی بالینی، تریاژ و هماهنگی پرونده‌های بیماران بین‌الملل بیمارستان‌های دی و نور.',
-        code: 'MED-IPD-IR-402',
-        icon: 'medical_services'
-      },
-      'car': {
-        title: 'خودرو تشریفات',
-        desc: 'پژو ۲۰۷i مدل ۱۴۰۲، دارای بیمه‌نامه بدنه کامل، معاینه فنی ویژه و مجوز تردد در جایگاه‌های تشریفات.',
-        code: 'VIP-CAR-207-66A',
-        icon: 'directions_car'
-      },
-      'insurance': {
-        title: 'پوشش بیمه مأموریت فعال',
-        desc: 'بیمه مسئولیت مدنی جامع مترجمان همراه تشریفات با سقف پوشش کامل حوادث و خسارات سرنشین.',
-        code: 'INS-RESP-88902',
-        icon: 'security'
-      }
-    };
-
-    function showBadgeDetail(type) {
-      var info = badgeData[type];
-      if (!info) return;
-      var card = document.getElementById('inline-badge-detail-card');
-      var title = document.getElementById('inline-badge-title');
-      var desc = document.getElementById('inline-badge-desc');
-      var code = document.getElementById('inline-badge-code');
-      var icon = document.getElementById('inline-badge-icon');
-
-      if (title) title.textContent = info.title;
-      if (desc) desc.textContent = info.desc;
-      if (code) code.textContent = info.code;
-      if (icon) icon.textContent = info.icon;
-
-      if (card) {
-        card.classList.remove('hidden');
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
-
-    function closeBadgeDetail() {
-      var card = document.getElementById('inline-badge-detail-card');
-      if (card) card.classList.add('hidden');
-    }
-
     // Default initialization
     // Presence initialization is owned by presence.js, never localStorage.shift.
   </script>
@@ -1356,11 +1267,18 @@
     srv('GET', '/translator/capability').then(function (res) {
       if (res.status !== 200 || !res.data.dimensions) return;
       var dm = res.data.dimensions;
+      var medicalPermit = !dm.medical || typeof dm.medical.permit_required !== 'boolean'
+        ? { ok: false, text: 'وضعیت نامشخص' }
+        : dm.medical.permit_required === false
+          ? { ok: false, text: 'ارائهٔ مجوز پزشکی در این نسخه الزامی نیست' }
+          : typeof dm.medical.ok !== 'boolean'
+            ? { ok: false, text: 'وضعیت نامشخص' }
+            : { ok: dm.medical.ok, text: dm.medical.ok ? 'مدرک تأیید شده' : 'مدرک تأیید نشده' };
       var rows = [
         ['احراز هویت و صلاحیت امنیتی', dm.identity.ok, dm.identity.ok ? 'کامل و تأیید شده' : 'کمبود: ' + dm.identity.missing.map(function (k) { return DOC_LABELS[k] || k; }).join('، ')],
         ['آزمون زبان', dm.language.ok, dm.language.ok ? 'جفت‌زبان ثبت شده: ' + dm.language.langs.join('، ') : 'هنوز تکمیل نشده'],
         ['خودرو و بیمه‌نامه', dm.car.active, dm.car.active ? 'فعال' : (dm.car.registered ? 'غیرفعال (مدارک تأییدشده یا معتبر نیست)' : 'ثبت نشده (اختیاری)')],
-        ['صلاحیت پزشکی بین‌الملل (IPD)', dm.medical.ok, dm.medical.ok ? 'مجوز تأیید شده' : 'مجوز تأیید نشده (حوزه‌ی درمانی قفل است)']
+        ['مدرک پزشکی (IPD)', medicalPermit.ok, medicalPermit.text]
       ];
       box.textContent = '';
       rows.forEach(function (r) {
