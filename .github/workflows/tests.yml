@@ -70,7 +70,8 @@ jobs:
 
   browser-tests:
     name: Browser tests (finish and payment)
-    runs-on: ubuntu-latest
+    # Playwright 1.55 does not support the Ubuntu 26 image behind ubuntu-latest; pin its runner.
+    runs-on: ubuntu-24.04
     # Browser installation may take 8 minutes; keep room for all 33 scripts.
     timeout-minutes: 25
     steps:
