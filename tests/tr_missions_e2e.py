@@ -38,7 +38,9 @@ async def scenario(browser, width):
     text = await page.locator('#missions-list').inner_text()
     assert 'Fixture Passenger' not in text and 'Fixture Place' not in text, text
     assert await page.locator('#day-bar').is_hidden()
+    assert await page.locator('#translator-map').is_visible()
     assert await page.locator('#translator-map-placeholder').is_visible()
+    assert await page.locator('#translator-map .leaflet-marker-icon').count() == 0
     assert not errors, errors
     print(f'PASS [{width}]: no development fixture cards or map points appear')
     await context.close()

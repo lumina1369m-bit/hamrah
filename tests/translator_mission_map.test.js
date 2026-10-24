@@ -38,9 +38,12 @@ function createFixture(origin = 'https://preview.example') {
   const mapState = {
     center: null,
     zoom: 0,
+    worldFits: 0,
+    worldView: false,
     layers: [],
     removed: [],
-    setView(center, zoom) { this.center = center.slice(); this.zoom = zoom; return this; },
+    setView(center, zoom) { this.center = center.slice(); this.zoom = zoom; this.worldView = false; return this; },
+    fitWorld(options) { this.worldFits++; this.fitOptions = options; this.center = null; this.zoom = 2; this.worldView = true; return this; },
     setZoom(zoom) { this.zoom = zoom; return this; },
     getZoom() { return this.zoom; },
     invalidateSize() { this.invalidated = true; },
@@ -74,16 +77,25 @@ function createFixture(origin = 'https://preview.example') {
   return { elements, window, mapState, get mapCreated() { return mapCreated; } };
 }
 
-test('does not create or center a map before an accepted mission has valid server coordinates', () => {
+test('shows the real base map before an accepted mission, without inventing a meeting pin or center', () => {
   const f = createFixture();
-  assert.equal(f.mapCreated, 0);
+  assert.equal(f.mapCreated, 1);
+  assert.equal(f.mapState.layers[0].url, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+  assert.equal(f.mapState.worldFits, 1);
+  assert.equal(f.mapState.worldView, true);
+  assert.equal(f.mapState.zoom, 2);
+  assert.equal(f.mapState.options.minZoom, 2);
+  assert.equal(f.mapState.center, null); // fitWorld is a neutral overview, not a mission coordinate.
+  assert.equal(f.mapState.marker, undefined);
   assert.equal(f.elements['translator-map-placeholder'].hidden, false);
-  assert.equal(f.elements['translator-map'].style.visibility, 'hidden');
-  assert.equal(f.elements['translator-map-zoom-in'].disabled, true);
+  assert.equal(f.elements['translator-map'].style.visibility, 'visible');
+  assert.equal(f.elements['translator-map-zoom-in'].disabled, false);
   assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ reservation_id: 42, lat: '35.6997', lng: 51.338 }), false);
   assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ lat: 35.6997, lng: 51.338 }), false);
   assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ reservation_id: 0, lat: 35.6997, lng: 51.338 }), false);
-  assert.equal(f.mapCreated, 0);
+  assert.equal(f.mapCreated, 1);
+  assert.equal(f.mapState.marker, undefined);
+  assert.equal(f.mapState.center, null);
 });
 
 test('uses the shared OpenStreetMap tiles and only the accepted mission point', () => {
@@ -114,12 +126,17 @@ test('uses the shared OpenStreetMap tiles and only the accepted mission point', 
   assert.equal(f.mapState.zoom, 16);
 });
 
-test('matches the passenger app in an opaque-origin preview and offers a top-level map view', () => {
+test('shows a neutral overview in an opaque-origin preview and offers a top-level map view', () => {
   const f = createFixture('null');
-  const mission = { reservation_id: 18, lat: 35.7, lng: 51.4, place: 'نشانی واقعی سرور' };
-  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission(mission), true);
   assert.equal(f.mapCreated, 1);
   assert.equal(f.mapState.layers.length, 0); // OSM blocks opaque-origin requests in the sandbox iframe.
+  assert.equal(f.mapState.worldFits, 1);
+  assert.equal(f.elements['translator-map'].style.visibility, 'visible');
+  assert.equal(f.elements['translator-map-preview-note'].hidden, false);
+  assert.equal(f.elements['translator-map-preview-open'].href, f.window.location.href);
+  assert.equal(f.mapState.marker, undefined);
+  const mission = { reservation_id: 18, lat: 35.7, lng: 51.4, place: 'نشانی واقعی سرور' };
+  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission(mission), true);
   assert.deepEqual(Array.from(f.mapState.center), [mission.lat, mission.lng]);
   assert.equal(f.mapState.marker.latlng[0], mission.lat);
   assert.equal(f.mapState.marker.latlng[1], mission.lng);
@@ -136,13 +153,16 @@ test('clears a previous pin and refuses invalid coordinates instead of leaving s
     title: 'مختصات در دسترس نیست', note: 'مختصات معتبر از سرور نیامده است.'
   }), false);
   assert.equal(f.mapState.removed.includes(marker), true);
-  assert.equal(f.elements['translator-map'].style.visibility, 'hidden');
+  assert.equal(f.mapState.worldFits, 2);
+  assert.equal(f.mapState.worldView, true);
+  assert.equal(f.mapState.center, null); // Never keep the previous meeting point centered.
+  assert.equal(f.elements['translator-map'].style.visibility, 'visible');
   assert.equal(f.elements['translator-map-placeholder'].hidden, false);
   assert.equal(f.elements['translator-map-placeholder-title'].textContent, 'مختصات در دسترس نیست');
   assert.equal(f.elements['translator-map-location'].hidden, true);
   assert.equal(f.elements['translator-map-open'].hidden, true);
-  assert.equal(f.elements['translator-map-zoom-in'].disabled, true);
-  assert.equal(f.elements['translator-map-recenter'].disabled, true);
+  assert.equal(f.elements['translator-map-zoom-in'].disabled, false);
+  assert.equal(f.elements['translator-map-recenter'].disabled, false);
 });
 
 test('signed-in workspace replaces the previous shell with the code6 sheet and local production assets', () => {
@@ -157,14 +177,17 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(workspaceHTML, /code6-header/);
   assert.match(workspaceHTML, /code6-sheet-handle/);
   assert.match(workspaceHTML, /code6-map-placeholder/);
+  assert.match(workspaceHTML, /نقشهٔ پایه آماده است/);
+  assert.match(appSource, /نقشهٔ پایه نمایش داده می‌شود/);
+  assert.doesNotMatch(appSource, /نقشهٔ پیش‌فرض یا موقعیت ساختگی نمایش داده نمی‌شود|موقعیت ساختگی یا نقشهٔ پیش‌فرض نمایش داده نمی‌شود/);
   assert.doesNotMatch(workspaceHTML, /translator-workspace-sheet|translator-header-capsule|translator-sheet-topline|translator-map-grid|id="mobile-nav"|id="desktop-nav"/);
   assert.doesNotMatch(workspaceHTML, /<svg\b|https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
-  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=48"/);
-  assert.match(workspaceHTML, /href="code6\.css\?v=48"/);
+  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=49"/);
+  assert.match(workspaceHTML, /href="code6\.css\?v=49"/);
   assert.ok(workspaceHTML.includes(`href="/traveler/vendor/leaflet/leaflet.css" integrity="${sri(leafletCSS)}"`), 'Leaflet CSS SRI must match the real asset');
   assert.ok(workspaceHTML.includes(`src="/traveler/vendor/leaflet/leaflet.js" integrity="${sri(leafletJS)}"`), 'Leaflet JS SRI must match the real asset');
   for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'app.js', 'config-features.js']) {
-    assert.ok(workspaceHTML.includes(`src="${asset}?v=48"`), `missing versioned local script ${asset}`);
+    assert.ok(workspaceHTML.includes(`src="${asset}?v=49"`), `missing versioned local script ${asset}`);
   }
   assert.match(styleSource, /#mission-sheet\.sheet-collapsed/);
   assert.match(styleSource, /\.translator-offer-card/);
@@ -172,9 +195,9 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(styleSource, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.match(utilitySource, /\.bg-outline/);
   assert.match(utilitySource, /\.bg-surface-container-high/);
-  assert.match(serviceWorkerSource, /hz-translator-v48/);
-  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=48/);
-  assert.match(serviceWorkerSource, /code6\.css\?v=48/);
+  assert.match(serviceWorkerSource, /hz-translator-v49/);
+  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=49/);
+  assert.match(serviceWorkerSource, /code6\.css\?v=49/);
   assert.doesNotMatch(serviceWorkerSource, /hz-translator-v46|app\.js\?v=46|workspace\.css\?v=46/);
   assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
   assert.match(appSource, /Number\.isSafeInteger\(m\.reservation_id\)/);
