@@ -915,6 +915,8 @@ async function main() {
   check('نشست دوم پس از خروج تکی معتبر است', r.status === 200);
   r = await call('GET', '/api/auth/me', null, sessionC.token);
   check('نشست سوم پس از خروج تکی معتبر است', r.status === 200);
+  const fallbackBookings = await fetch(BASE + '/api/traveler/bookings', { headers: { 'X-Auth-Token': sessionC.token } });
+  check('دریافت رزروهای مسافر با سرصفحه جایگزین معتبر است', fallbackBookings.status === 200);
   r = await call('POST', '/api/auth/logout', null, sessionA.token);
   check('خروج تکی تکراری بی‌خطر است', r.status === 200 && r.data.ok === true);
   // A supplied target is deliberately ignored: only the caller's account is affected.

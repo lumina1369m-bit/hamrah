@@ -62,7 +62,19 @@ async def scenario(browser, lang):
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.on('request', lambda r: posts.append(r.url) if '/api/auth/' in r.url and r.method == 'POST' else None)
     request_release, verify_release = asyncio.Event(), asyncio.Event()
+    proxy_forwarded = []
+
+    async def strip_authorization(route):
+        # Model the preview proxy: it may drop Authorization, but preserves the
+        # X-Auth-Token fallback that the server already accepts.
+        headers = dict(route.request.headers)
+        headers.pop('authorization', None)
+        proxy_forwarded.append({'url': route.request.url, 'headers': dict(headers)})
+        await route.continue_(headers=headers)
+
     try:
+        await page.route('**/api/auth/me', strip_authorization)
+        await page.route('**/api/traveler/bookings*', strip_authorization)
         # A historical demo/email profile is not an authenticated session.
         await ctx.add_init_script('localStorage.setItem("hamzaban_lang", ' + json.dumps(lang) + ');')
         await page.goto(BASE + '/traveler/index.html')
@@ -149,15 +161,25 @@ async def scenario(browser, lang):
         await page.locator('#id-name').fill('Ali')
         await page.locator('#id-last').fill('Rezaei')
         await page.locator('.id-gender').nth(1).click()
-        await page.locator('#id-save').click()
+        async with page.expect_response(lambda r: r.url.endswith('/api/traveler/bookings') and r.request.method == 'GET') as bookings_response:
+            await page.locator('#id-save').click()
         await expect(page).to_have_url(BASE + '/traveler/app.html')
         token = await page.evaluate("() => localStorage.getItem('hamzaban.token.v1')")
+        booking_result = await bookings_response.value
+        assert booking_result.status == 200, f'booking sync failed after Authorization was stripped: {booking_result.status}'
+        forwarded_bookings = next((r for r in reversed(proxy_forwarded) if r['url'].split('?', 1)[0].endswith('/api/traveler/bookings')), None)
+        assert forwarded_bookings and 'authorization' not in forwarded_bookings['headers']
+        assert forwarded_bookings['headers'].get('x-auth-token') == token, 'traveler app must send X-Auth-Token when Authorization is stripped'
         user = await api(ctx.request, 'GET', '/auth/me', token)
         profile = await page.evaluate("() => JSON.parse(localStorage.getItem('hamzaban.user.v1'))")
         assert user['phone'] == phone and profile['authUserId'] == user['id'] and profile['phone'] == phone
         assert len(requests) == 1 and len(verifications) == 1
-        await page.goto(BASE + '/traveler/index.html')
+        async with page.expect_response(lambda r: r.url.endswith('/api/auth/me') and r.request.method == 'GET') as session_response:
+            await page.goto(BASE + '/traveler/index.html')
+        assert (await session_response.value).status == 200, 'session restore must work when Authorization is stripped'
         await expect(page).to_have_url(BASE + '/traveler/app.html')
+        forwarded_me = next((r for r in reversed(proxy_forwarded) if r['url'].split('?', 1)[0].endswith('/api/auth/me') and r['headers'].get('x-auth-token') == token), None)
+        assert forwarded_me and 'authorization' not in forwarded_me['headers']
         # A token for another account cannot reuse the first account's cached identity.
         other = '9' + str(secrets.randbelow(900000000) + 100000000)
         await api(ctx.request, 'POST', '/auth/request-code', data={'phone': other, 'role': 'traveler'})

@@ -1964,7 +1964,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function srvToken() { try { return localStorage.getItem(KEY_TOKEN_T); } catch (e) { return null; } }
   function srvCall(method, path, body, options) {
     var t = srvToken(); if (!t) return Promise.reject({ status: 401 });
-    var headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t };
+    var headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t, 'X-Auth-Token': t };
     return fetch('/api' + path, { method: method, headers: headers, signal: options && options.signal, body: body ? JSON.stringify(body) : undefined })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (d) {

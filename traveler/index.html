@@ -739,7 +739,10 @@
     const API = (method, path, body) => {
       const headers = { 'Content-Type': 'application/json' };
       const tk = (() => { try { return localStorage.getItem(KEY_TOKEN); } catch (e) { return null; } })();
-      if (tk) headers.Authorization = 'Bearer ' + tk;
+      if (tk) {
+        headers.Authorization = 'Bearer ' + tk;
+        headers['X-Auth-Token'] = tk;
+      }
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       return fetch('/api' + path, { method, headers, cache: 'no-store', signal: controller.signal, body: body ? JSON.stringify(body) : undefined })
