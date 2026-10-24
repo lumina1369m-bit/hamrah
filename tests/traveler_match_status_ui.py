@@ -120,9 +120,11 @@ async def scenario(browser, width):
             stage_text = await page.locator('#stage-2').inner_text()
             for claim in copy['forbidden']:
                 assert claim not in stage_text, f'unsupported search claim remains in {language}: {claim}'
+            search_icons = await page.locator('#stage-2 .material-symbols-outlined').all_text_contents()
+            assert 'verified_user' not in search_icons and 'verified' not in search_icons, 'a static identity-verification icon remains during search'
             await expect(page.locator('#search-timer-display')).to_have_count(0)
             await expect(page.locator('#btn-cancel-search')).to_be_visible()
-            print(f'PASS [{width}/{language}]: search status is accurate; no fake ranking/radius or resetting countdown')
+            print(f'PASS [{width}/{language}]: accurate search status; no fabricated ranking, radius, identity badge, or resetting countdown')
         offers = await api(context.request, 'GET', '/translator/offers', translator_token)
         assert offers['offers'], 'the real booking did not create an interpreter offer'
         await api(context.request, 'POST', f"/translator/offers/{offers['offers'][0]['id']}/accept", translator_token)
