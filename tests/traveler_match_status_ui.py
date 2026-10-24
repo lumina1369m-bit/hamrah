@@ -15,6 +15,7 @@ SEARCH_COPY = {
         'title': 'در حال جست‌وجوی مترجم برای درخواست شما',
         'limit': 'حداکثر زمان جست‌وجو: ۱۰ دقیقه',
         'description': 'مترجمان در دسترس بر اساس زبان‌ها و نوع خدمت درخواست شما بررسی می‌شوند.',
+        'notifications': 'اعلان‌های مسافر در این نسخه در دسترس نیستند',
         'forbidden': ('در شعاع اولیه‌ی تنظیم‌شده (از پنل مدیریت)', 'بهترین مترجم مسلط به عربی (پزشکی)',
                       'امتیاز عملکرد', 'حوالی میدان ولیعصر'),
     },
@@ -23,6 +24,7 @@ SEARCH_COPY = {
         'title': 'Searching for an interpreter for your request',
         'limit': 'Maximum search time: 10 minutes',
         'description': 'Available interpreters are matched to the languages and service type in your request.',
+        'notifications': 'Traveler notifications are not available in this version',
         'forbidden': ('initial radius set in admin', 'best Arabic (medical) interpreter',
                       'performance scores', 'near Valiasr Square'),
     },
@@ -31,6 +33,7 @@ SEARCH_COPY = {
         'title': 'جارٍ البحث عن مترجم لطلبك',
         'limit': 'الحد الأقصى لوقت البحث: ١٠ دقائق',
         'description': 'يتم البحث عن مترجمين متاحين بحسب اللغات ونوع الخدمة في طلبك.',
+        'notifications': 'إشعارات المسافر غير متاحة في هذا الإصدار',
         'forbidden': ('النطاق الأولي المحدد في لوحة الإدارة', 'أفضل مترجم للعربية (طبي)',
                       'تقييم الأداء', 'قرب ميدان وليعصر'),
     },
@@ -124,7 +127,11 @@ async def scenario(browser, width):
             assert 'verified_user' not in search_icons and 'verified' not in search_icons, 'a static identity-verification icon remains during search'
             await expect(page.locator('#search-timer-display')).to_have_count(0)
             await expect(page.locator('#btn-cancel-search')).to_be_visible()
-            print(f'PASS [{width}/{language}]: accurate search status; no fabricated ranking, radius, identity badge, or resetting countdown')
+            await page.locator('#btn-notifications').click()
+            await expect(page.locator('#toast-pill')).to_be_visible()
+            await expect(page.locator('#toast-text')).to_have_text(copy['notifications'])
+            await page.locator('#toast-pill button').click()
+            print(f'PASS [{width}/{language}]: accurate search status; no fabricated ranking, radius, identity badge, resetting countdown, or empty-notification claim')
         offers = await api(context.request, 'GET', '/translator/offers', translator_token)
         assert offers['offers'], 'the real booking did not create an interpreter offer'
         await api(context.request, 'POST', f"/translator/offers/{offers['offers'][0]['id']}/accept", translator_token)
