@@ -12,6 +12,7 @@ ARTIFACTS = Path(__file__).parent / 'assets' / 'last_traveler_match_status'
 SEARCH_COPY = {
     'fa': {
         'pill': 'در حال جست‌وجو',
+        'tagline': 'درخواست و رزرو مترجم',
         'title': 'در حال جست‌وجوی مترجم برای درخواست شما',
         'limit': 'حداکثر زمان جست‌وجو: ۱۰ دقیقه',
         'description': 'مترجمان در دسترس بر اساس زبان‌ها و نوع خدمت درخواست شما بررسی می‌شوند.',
@@ -21,6 +22,7 @@ SEARCH_COPY = {
     },
     'en': {
         'pill': 'Search in progress',
+        'tagline': 'Interpreter requests and bookings',
         'title': 'Searching for an interpreter for your request',
         'limit': 'Maximum search time: 10 minutes',
         'description': 'Available interpreters are matched to the languages and service type in your request.',
@@ -30,6 +32,7 @@ SEARCH_COPY = {
     },
     'ar': {
         'pill': 'جارٍ البحث',
+        'tagline': 'طلبات وحجوزات المترجمين',
         'title': 'جارٍ البحث عن مترجم لطلبك',
         'limit': 'الحد الأقصى لوقت البحث: ١٠ دقائق',
         'description': 'يتم البحث عن مترجمين متاحين بحسب اللغات ونوع الخدمة في طلبك.',
@@ -91,6 +94,7 @@ async def scenario(browser, width):
             localStorage.setItem('hamzaban_lang', lang);
         }''', [session['token'], profile, 'fa'])
         await page.goto(BASE + '/traveler/app.html')
+        await expect(page).to_have_title('همراه - درخواست و رزرو مترجم')
         await page.wait_for_function('() => window.hzBookingsSynced === true && !!window.HZ_NEAREST_CITY()')
         await expect(page.locator('header .animate-pulse, header .bg-emerald-500')).to_have_count(0)
         await page.locator('nav a[data-nav="map"]').click()
@@ -117,6 +121,7 @@ async def scenario(browser, width):
                 await page.locator('nav a[data-nav="map"]').click()
                 current_language = language
             await expect(page.locator('#stage-2')).to_be_visible()
+            await expect(page.locator('#app-header-tagline')).to_have_text(copy['tagline'])
             await expect(page.locator('#search-status-pill')).to_have_text(copy['pill'])
             await expect(page.locator('#search-status-title')).to_have_text(copy['title'])
             await expect(page.locator('#search-time-limit')).to_have_text(copy['limit'])
