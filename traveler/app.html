@@ -2330,7 +2330,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var ui = {};
     var modal = openModal('تبدیل به رزرو زمان‌دار', function (body) {
       var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
-      n.textContent = 'مترجمی برای الان پیدا نشد. زمان قرار را انتخاب کنید؛ مترجم یک ساعت قبل از قرار و در صورت نیاز با شعاع بزرگ‌تر جستجو می‌شود. حداقل ۲ ساعت بعد از اکنون.';
+      n.textContent = 'برای درخواست فوری مترجمی پیدا نشد. اگر آن را زمان‌دار کنید، جست‌وجو یک ساعت پیش از زمان قرار آغاز می‌شود؛ زمان قرار باید دست‌کم ۲ ساعت بعد از اکنون باشد.';
       body.appendChild(n);
       ui.dt = fillDateTime(body);
     }, [
