@@ -13,6 +13,7 @@ from playwright.async_api import async_playwright, expect
 from hz_api import LOGIN_JS
 
 BASE = os.environ.get('BASE', 'http://127.0.0.1:8081').rstrip('/')
+INVOICE_SOURCE_LABELS = {'fa': 'جزئیات رزرو', 'en': 'Booking details', 'ar': 'تفاصيل الحجز'}
 ARTIFACTS = Path(__file__).parent / 'assets' / 'last_finish_flow'
 
 
@@ -142,11 +143,23 @@ async def scenario(browser, own_finish):
         response = await result.value
         assert response.status == 200, await response.text()
         await expect(traveler.locator('#stage-6')).to_be_visible()
+        current_language = 'fa'
+        for language, invoice_copy in INVOICE_SOURCE_LABELS.items():
+            if language != current_language:
+                await traveler.locator('nav a[data-nav="account"]').click()
+                await traveler.locator('#hz-lang-select').select_option(language)
+                await traveler.locator('nav a[data-nav="map"]').click()
+                current_language = language
+            await expect(traveler.locator('#stage-6')).to_be_visible()
+            await expect(traveler.locator('#invoice-source-label')).to_have_text(invoice_copy)
+            invoice_text = await traveler.locator('#stage-6').inner_text()
+            for unsupported_label in ('تأیید طرفین', 'Both parties confirm', 'تأكيد الطرفين'):
+                assert unsupported_label not in invoice_text, f'unsupported mutual-confirmation claim remains in {language}: {unsupported_label}'
         final = await booking(traveler_ctx.request, ptok, bid)
         assert final['status'] == 'finished' and final['finished_by'] == finished_by
         assert final['total'] == total, 'Early finish must not discount the agreed total'
         assert not errors, errors
-        print(f'PASS: {label}; full agreed total preserved ({total})')
+        print(f'PASS: {label}; full agreed total preserved ({total}); neutral invoice label in all three languages')
     except Exception:
         print('JavaScript errors:', errors)
         for name, page in pages:
