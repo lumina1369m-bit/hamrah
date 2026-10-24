@@ -26,20 +26,32 @@
   var lastCenter = null;
 
   function setPlaceholder(title, note) {
+    var hadMission = !!current;
     if (titleEl) titleEl.textContent = title || 'نقشهٔ محل ملاقات';
-    if (noteEl) noteEl.textContent = note || 'پس از پذیرش مأموریت، اگر مختصات واقعی محل در سرور ثبت شده باشد، اینجا نمایش داده می‌شود.';
+    if (noteEl) noteEl.textContent = note || 'نقشهٔ پایه نمایش داده می‌شود؛ پس از پذیرش مأموریت، فقط مختصات واقعی ثبت‌شده در سرور نشان داده می‌شود.';
     if (placeholder) placeholder.hidden = false;
-    if (previewNote) previewNote.hidden = true;
-    if (mapEl) mapEl.style.visibility = 'hidden';
     if (locationBox) locationBox.hidden = true;
     if (externalLink) externalLink.hidden = true;
-    if (zoomIn) zoomIn.disabled = true;
-    if (zoomOut) zoomOut.disabled = true;
-    if (recenter) recenter.disabled = true;
     if (marker && map) map.removeLayer(marker);
     marker = null;
     current = null;
     lastCenter = null;
+
+    // Keep real map tiles visible while waiting; only the meeting marker needs mission coordinates.
+    var baseMap = ensureMap();
+    if (baseMap) {
+      if (mapEl) mapEl.style.visibility = 'visible';
+      // Do not leave an old mission's location centered after its data becomes unavailable.
+      if (hadMission) baseMap.fitWorld({ animate: false });
+      if (zoomIn) zoomIn.disabled = false;
+      if (zoomOut) zoomOut.disabled = false;
+      if (recenter) recenter.disabled = false;
+    } else {
+      if (mapEl) mapEl.style.visibility = 'hidden';
+      if (zoomIn) zoomIn.disabled = true;
+      if (zoomOut) zoomOut.disabled = true;
+      if (recenter) recenter.disabled = true;
+    }
   }
 
   function validCoordinates(mission) {
@@ -55,7 +67,7 @@
 
     map = w.L.map(mapEl, {
       zoomControl: false,
-      minZoom: 5,
+      minZoom: 2,
       maxZoom: 19,
       attributionControl: true
     });
@@ -77,6 +89,9 @@
       }
       if (previewNote) previewNote.hidden = false;
     }
+    // Show a neutral world overview until the server supplies an accepted meeting point.
+    // This is a viewport only; it is never presented as the mission's location.
+    map.fitWorld({ animate: false });
     return map;
   }
 
@@ -139,17 +154,18 @@
   }
 
   function zoom(delta) {
-    if (!map || !current) return;
-    map.setZoom(Math.max(5, Math.min(19, map.getZoom() + Number(delta || 0))));
+    if (!map) return;
+    map.setZoom(Math.max(2, Math.min(19, map.getZoom() + Number(delta || 0))));
   }
 
   function reset() {
-    if (!map || !current || !lastCenter) return;
-    map.setView(lastCenter, 16, { animate: false });
+    if (!map) return;
+    if (current && lastCenter) map.setView(lastCenter, 16, { animate: false });
+    else map.fitWorld({ animate: false });
   }
 
   function invalidateSize() {
-    if (!map || !current) return;
+    if (!map) return;
     w.requestAnimationFrame(function () {
       if (map && mapEl && mapEl.offsetWidth && mapEl.offsetHeight) map.invalidateSize({ pan: false });
     });
