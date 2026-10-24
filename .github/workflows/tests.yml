@@ -32,6 +32,7 @@ jobs:
           node --check server/lib/sms.js
           node --check traveler/payment-methods.js
           node --check traveler/support.js
+          node --check translator/ui.js
           node --check translator/mission-actions.js
           node --check translator/app.js
           node --check translator/config-features.js

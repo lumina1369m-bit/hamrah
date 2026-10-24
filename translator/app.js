@@ -97,7 +97,7 @@
     if (!st.token) { MISSIONS = []; missionsSignature = ''; serverClockOffset = 0; missionsState = 'nosession'; renderMissions(); return; }
     // Preserve the last confirmed cards while a background refresh is in flight.
     if (missionsState !== 'ok') { missionsState = 'loading'; MISSIONS = []; renderMissions(); }
-    fetch('/api/translator/missions', { headers: { Authorization: 'Bearer ' + st.token }, cache: 'no-store' })
+    fetch('/api/translator/missions', { headers: H.authHeaders(st.token), cache: 'no-store' })
       .then(function (r) {
         if (!r.ok) throw new Error('missions');
         return r.json();
@@ -267,7 +267,7 @@
   function loadPayments(invalidate) {
     var token = tok(), read = ++paymentRead, revision = invalidate ? ++paymentRevision : paymentRevision;
     if (!token) { PAYMENTS_LIST = []; paymentsState = 'error'; renderPayments(); return; }
-    fetch('/api/translator/payments', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' })
+    fetch('/api/translator/payments', { headers: H.authHeaders(token), cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('payments'); return r.json(); })
       .then(function (d) {
         if (tok() !== token || revision !== paymentRevision || read < paymentApplied) return;
@@ -350,7 +350,7 @@
   function tok() { return HZ.load().token || null; }
   function srv(method, path) {
     var t = tok(); if (!t) return Promise.resolve({ status: 401, data: {} });
-    return fetch('/api' + path, { method: method, headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: arguments[2] !== undefined ? JSON.stringify(arguments[2]) : undefined })
+    return fetch('/api' + path, { method: method, headers: H.authHeaders(t, { 'Content-Type': 'application/json' }), body: arguments[2] !== undefined ? JSON.stringify(arguments[2]) : undefined })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, data: d }; }); })
       .catch(function () { return { status: 0, data: {} }; });
   }

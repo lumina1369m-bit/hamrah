@@ -87,7 +87,7 @@
       current();
       var response = await fetch('/api/translator/' + path, {
         method: method, signal: controller.signal, cache: 'no-store',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        headers: window.HZ.authHeaders(token, { 'Content-Type': 'application/json' }),
         body: body === undefined ? undefined : JSON.stringify(body)
       });
       var data = await response.json(); current();

@@ -9,9 +9,9 @@ function check(name, ok, extra = '') {
   if (ok) { passed++; console.log('  ok   ' + name); }
   else { failed++; console.log('  FAIL ' + name + (extra ? '  [' + extra + ']' : '')); }
 }
-async function call(method, p, body, token) {
+async function call(method, p, body, token, authHeader = 'Authorization') {
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = 'Bearer ' + token;
+  if (token) headers[authHeader] = authHeader === 'Authorization' ? 'Bearer ' + token : token;
   const r = await fetch(BASE + p, { method, headers, body: body ? JSON.stringify(body) : undefined });
   let data = null; try { data = await r.json(); } catch (e) { /* non-json */ }
   return { status: r.status, data };
@@ -73,6 +73,8 @@ async function main() {
   check('مترجم غیرفعال ماموریت نمی‌بیند', r.status === 403);
   r = await call('POST', '/api/dev/approve-translator', null, tokT);
   check('تأیید آزمایشی مترجم را فعال می‌کند', r.status === 200 && r.data.status === 'active_general');
+  r = await call('GET', '/api/translator/missions', null, tokT, 'X-Auth-Token');
+  check('هدر جایگزین X-Auth-Token نشست مترجم را برای فهرست مأموریت می‌پذیرد', r.status === 200 && Array.isArray(r.data.missions), JSON.stringify(r));
   const soon = new Date(Date.now() + 5 * 86400000).toISOString();
   const later = new Date(Date.now() + 6 * 86400000).toISOString();
   const past = new Date(Date.now() - 5 * 86400000).toISOString();

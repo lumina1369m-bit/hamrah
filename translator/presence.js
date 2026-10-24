@@ -43,7 +43,7 @@
     async function request(method, body) {
       current();
       var response = await fetch('/api/translator/online', { method: method, cache: 'no-store', signal: controller.signal,
-        headers: { Authorization: 'Bearer ' + actor, 'Content-Type': 'application/json' },
+        headers: window.HZ.authHeaders(actor, { 'Content-Type': 'application/json' }),
         body: body === undefined ? undefined : JSON.stringify(body) });
       var data = await response.json(); current();
       if (response.status !== 200 || !data || typeof data.online !== 'boolean') throw new Error(ERROR);

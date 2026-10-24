@@ -54,7 +54,7 @@
       });
       var data = await Promise.race([(async function () {
         var response = await fetch('/api/translator/notifications', {
-          headers: { Authorization: 'Bearer ' + actor }, cache: 'no-store', signal: abort.signal
+          headers: window.HZ.authHeaders(actor), cache: 'no-store', signal: abort.signal
         });
         if (response.status !== 200) throw new Error('unavailable');
         return response.json();
