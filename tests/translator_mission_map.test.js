@@ -10,7 +10,9 @@ const root = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'translator/mission-map.js'), 'utf8');
 const workspaceHTML = fs.readFileSync(path.join(root, 'translator/app.html'), 'utf8');
 const appSource = fs.readFileSync(path.join(root, 'translator/app.js'), 'utf8');
-const styleSource = fs.readFileSync(path.join(root, 'translator/workspace.css'), 'utf8');
+const styleSource = fs.readFileSync(path.join(root, 'translator/code6.css'), 'utf8');
+const utilitySource = fs.readFileSync(path.join(root, 'translator/code6-utilities.css'), 'utf8');
+const serviceWorkerSource = fs.readFileSync(path.join(root, 'translator/sw.js'), 'utf8');
 const serverSource = fs.readFileSync(path.join(root, 'server/server.js'), 'utf8');
 
 function createFixture(origin = 'https://preview.example') {
@@ -65,13 +67,15 @@ function createFixture(origin = 'https://preview.example') {
   return { elements, window, mapState, get mapCreated() { return mapCreated; } };
 }
 
-test('does not create or center a map before server coordinates are available', () => {
+test('does not create or center a map before an accepted mission has valid server coordinates', () => {
   const f = createFixture();
   assert.equal(f.mapCreated, 0);
   assert.equal(f.elements['translator-map-placeholder'].hidden, false);
   assert.equal(f.elements['translator-map'].style.visibility, 'hidden');
   assert.equal(f.elements['translator-map-zoom-in'].disabled, true);
-  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ lat: '35.6997', lng: 51.338 }), false);
+  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ reservation_id: 42, lat: '35.6997', lng: 51.338 }), false);
+  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ lat: 35.6997, lng: 51.338 }), false);
+  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ reservation_id: 0, lat: 35.6997, lng: 51.338 }), false);
   assert.equal(f.mapCreated, 0);
 });
 
@@ -103,7 +107,7 @@ test('clears a previous pin and refuses invalid coordinates instead of leaving s
   const f = createFixture();
   f.window.HZ_TRANSLATOR_MAP.setMission({ reservation_id: 7, lat: 40, lng: -73, place: 'نشانی واقعی' });
   const marker = f.mapState.marker;
-  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ lat: 91, lng: -73, place: 'مختصات نامعتبر' }, {
+  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission({ reservation_id: 7, lat: 91, lng: -73, place: 'مختصات نامعتبر' }, {
     title: 'مختصات در دسترس نیست', note: 'مختصات معتبر از سرور نیامده است.'
   }), false);
   assert.equal(f.mapState.removed.includes(marker), true);
@@ -116,25 +120,35 @@ test('clears a previous pin and refuses invalid coordinates instead of leaving s
   assert.equal(f.elements['translator-map-recenter'].disabled, true);
 });
 
-test('the signed-in workspace uses the reference drawer, local assets and server-backed cards', () => {
+test('signed-in workspace replaces the previous shell with the code6 sheet and local production assets', () => {
   for (const id of ['translator-map-stage', 'mission-sheet', 'translator-sheet-toggle', 'sheet-scroll-area',
     'workspace-sheet-state', 'workspace-sheet-meta', 'offers-box', 'missions-list', 'payments-box',
-    'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut']) {
+    'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut', 'sos-chevron']) {
     assert.match(workspaceHTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
-  assert.match(workspaceHTML, /class="translator-workspace-sheet sheet-expanded"/);
-  assert.match(workspaceHTML, /class="translator-header-capsule"/);
-  assert.match(workspaceHTML, /class="translator-sheet-topline"/);
-  assert.match(workspaceHTML, /translator-map-grid/);
-  assert.match(workspaceHTML, /<main id="view-workspace" class="translator-workspace-view">/);
-  assert.doesNotMatch(workspaceHTML, /id="mobile-nav"|id="desktop-nav"/);
-  assert.doesNotMatch(workspaceHTML, /https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
-  for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'notifications.js', 'support.js', 'app.js', 'config-features.js']) {
-    assert.ok(workspaceHTML.includes(`src="${asset}?v=46"`), `missing versioned local script ${asset}`);
+  assert.match(workspaceHTML, /<main id="view-workspace" class="relative w-full h-full overflow-hidden">/);
+  assert.match(workspaceHTML, /class="[^"]*sheet-expanded" id="mission-sheet"/);
+  assert.match(workspaceHTML, /code6-header/);
+  assert.match(workspaceHTML, /code6-sheet-handle/);
+  assert.match(workspaceHTML, /code6-map-placeholder/);
+  assert.doesNotMatch(workspaceHTML, /translator-workspace-sheet|translator-header-capsule|translator-sheet-topline|translator-map-grid|id="mobile-nav"|id="desktop-nav"/);
+  assert.doesNotMatch(workspaceHTML, /<svg\b|https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
+  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=47"/);
+  assert.match(workspaceHTML, /href="code6\.css\?v=47"/);
+  for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'app.js', 'config-features.js']) {
+    assert.ok(workspaceHTML.includes(`src="${asset}?v=47"`), `missing versioned local script ${asset}`);
   }
-  assert.match(styleSource, /\.translator-map-grid/);
-  assert.match(styleSource, /\.translator-workspace-sheet/);
+  assert.match(styleSource, /#mission-sheet\.sheet-collapsed/);
+  assert.match(styleSource, /\.translator-offer-card/);
+  assert.match(styleSource, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
+  assert.match(utilitySource, /\.bg-outline/);
+  assert.match(utilitySource, /\.bg-surface-container-high/);
+  assert.match(serviceWorkerSource, /hz-translator-v47/);
+  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=47/);
+  assert.match(serviceWorkerSource, /code6\.css\?v=47/);
+  assert.doesNotMatch(serviceWorkerSource, /hz-translator-v46|app\.js\?v=46|workspace\.css\?v=46/);
   assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
+  assert.match(appSource, /Number\.isSafeInteger\(m\.reservation_id\)/);
   assert.match(appSource, /window\.HZ_TRANSLATOR_MAP\.setMission\(selected/);
   assert.match(appSource, /data-service-clock/);
   assert.match(appSource, /serverClockOffset/);

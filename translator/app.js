@@ -46,10 +46,11 @@
   var serverClockOffset = 0;
   var selectedMapMissionKey = null;
   function hasMissionCoordinates(m) {
-    return !!m && typeof m.lat === 'number' && Number.isFinite(m.lat) && m.lat >= -90 && m.lat <= 90 &&
+    return !!m && Number.isSafeInteger(m.reservation_id) && m.reservation_id > 0 &&
+      typeof m.lat === 'number' && Number.isFinite(m.lat) && m.lat >= -90 && m.lat <= 90 &&
       typeof m.lng === 'number' && Number.isFinite(m.lng) && m.lng >= -180 && m.lng <= 180;
   }
-  function missionMapKey(m) { return String(m && (m.reservation_id || m.id) || ''); }
+  function missionMapKey(m) { return String(m && m.reservation_id || ''); }
   function updateTranslatorMap(forceCenter) {
     if (!window.HZ_TRANSLATOR_MAP) return;
     var mapped = MISSIONS.filter(hasMissionCoordinates);
@@ -570,8 +571,12 @@
     var actor = tok();
     var card = el('div', 'translator-extension-card rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-amber-500/50');
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تمدید خدمت'));
-    card.appendChild(el('span', 'text-[11px] text-on-surface-variant',
-      'مسافر: ' + (e.traveler_name || '—') + ' • ' + (e.place || '') + ' • تمدید ' + HZ.toFa(e.extra_hours || 1) + ' ساعت • سهم شما پس از تمدید: ' + HZ.money(e.new_net || 0)));
+    var details = [];
+    if (e.traveler_name) details.push('مسافر: ' + e.traveler_name);
+    if (e.place) details.push('محل ملاقات: ' + e.place);
+    details.push('تمدید ' + HZ.toFa(e.extra_hours) + ' ساعت');
+    details.push('سهم شما پس از تمدید: ' + HZ.money(e.new_net));
+    card.appendChild(el('span', 'text-[11px] text-on-surface-variant', details.join(' • ')));
     var row = el('div', 'flex items-center justify-between gap-2 pt-2 border-t border-surface-variant/40 text-[12px]');
     var tm = el('span', 'font-bold text-secondary', HZ.toFa(Math.max(0, Math.ceil((Date.parse(e.expires_at) - Date.now()) / 1000))) + ' ثانیه');
     tm.setAttribute('data-exp', e.expires_at); tm.setAttribute('data-pure', '1');
@@ -726,8 +731,15 @@
       if (res.status !== 200 || !res.data || !Array.isArray(res.data.offers) || !Array.isArray(res.data.changes) || !Array.isArray(res.data.extensions) ||
           !res.data.changes.every(function (c) { return c && Number.isSafeInteger(c.id) && c.id > 0 && Number.isSafeInteger(c.reservation_id) && c.reservation_id > 0 &&
             typeof c.expires_at === 'string' && Number.isFinite(Date.parse(c.expires_at)) && HZ_MISSION_ACTION.validChanges(c.changes); }) ||
+          !res.data.extensions.every(function (e) { return e && Number.isSafeInteger(e.id) && e.id > 0 && Number.isSafeInteger(e.reservation_id) && e.reservation_id > 0 &&
+            Number.isInteger(e.extra_hours) && e.extra_hours >= 1 && e.extra_hours <= 4 && typeof e.extra_net === 'number' && Number.isFinite(e.extra_net) && e.extra_net >= 0 &&
+            typeof e.new_net === 'number' && Number.isFinite(e.new_net) && e.new_net >= 0 && typeof e.expires_at === 'string' && Number.isFinite(Date.parse(e.expires_at)) &&
+            (e.traveler_name == null || typeof e.traveler_name === 'string') && (e.place == null || typeof e.place === 'string'); }) ||
           !res.data.offers.every(function (o) { return o && Number.isSafeInteger(o.id) && o.id > 0 && Number.isSafeInteger(o.reservation_id) && o.reservation_id > 0 &&
-            ['instant', 'scheduled'].includes(o.kind) && Number.isFinite(Date.parse(o.expires_at)) && typeof o.net === 'number' && Number.isFinite(o.net) && o.net >= 0; }) ||
+            ['instant', 'scheduled'].includes(o.kind) && typeof o.expires_at === 'string' && Number.isFinite(Date.parse(o.expires_at)) && typeof o.net === 'number' && Number.isFinite(o.net) && o.net >= 0 &&
+            (o.kind !== 'scheduled' || (typeof o.scheduled_at === 'string' && Number.isFinite(Date.parse(o.scheduled_at)))) &&
+            (o.traveler_name == null || typeof o.traveler_name === 'string') && (o.place == null || typeof o.place === 'string') &&
+            (o.notes == null || typeof o.notes === 'string'); }) ||
           new Set(res.data.offers.map(function (o) { return o.id; })).size !== res.data.offers.length) {
         offerApplied = read; offersState = 'error'; offersSig = ''; lastOffers = []; lastChanges = []; lastExtensions = []; renderOffers(); return;
       }

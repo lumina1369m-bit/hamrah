@@ -36,10 +36,12 @@
     if (marker && map) map.removeLayer(marker);
     marker = null;
     current = null;
+    lastCenter = null;
   }
 
   function validCoordinates(mission) {
-    return !!mission && typeof mission.lat === 'number' && Number.isFinite(mission.lat) &&
+    return !!mission && Number.isSafeInteger(mission.reservation_id) && mission.reservation_id > 0 &&
+      typeof mission.lat === 'number' && Number.isFinite(mission.lat) &&
       typeof mission.lng === 'number' && Number.isFinite(mission.lng) &&
       mission.lat >= -90 && mission.lat <= 90 && mission.lng >= -180 && mission.lng <= 180;
   }
@@ -81,7 +83,7 @@
     }
 
     var latlng = [mission.lat, mission.lng];
-    var identity = String(mission.reservation_id || mission.id || mission.lat + ',' + mission.lng);
+    var identity = String(mission.reservation_id);
     var changed = !current || current.identity !== identity || current.lat !== mission.lat || current.lng !== mission.lng;
     var place = typeof mission.place === 'string' && mission.place.trim() ? mission.place.trim() : 'محل ملاقات';
 

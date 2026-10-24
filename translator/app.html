@@ -1,367 +1,369 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf2f7">
-  <meta name="description" content="میزکار مترجم همراه؛ پیشنهادها و مأموریت‌های تأییدشده از سرور">
-  <title>میزکار مترجم | همراه</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="vendor/fonts.css">
-  <link rel="stylesheet" href="vendor/theme.css">
-  <link rel="stylesheet" href="vendor/tailwind.css">
-  <link rel="stylesheet" href="ui.css?v=46">
-  <link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="">
-  <link rel="stylesheet" href="workspace.css?v=46">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDF2F7">
+<meta name="description" content="میزکار مترجم؛ درخواست‌ها و مأموریت‌های واقعی از سرور">
+<title>میزکار مترجم | همراه</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="vendor/fonts.css">
+<link rel="stylesheet" href="code6-utilities.css?v=47">
+<link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="">
+<style>
+:root {
+      --bg-color: #EDF2F7;
+      --neu-light: #FFFFFF;
+      --neu-dark: #CAD6E2;
+      --primary-teal: #00685F;
+      --primary-dark: #004D46;
+      --primary-light: #008378;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      user-select: none;
+      overscroll-behavior-y: none;
+    }
+
+    /* Precision Soft UI Neumorphism */
+    .neu-flat {
+      background: #EDF2F7;
+      box-shadow: 6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light);
+    }
+
+    .neu-flat-sm {
+      background: #EDF2F7;
+      box-shadow: 3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light);
+    }
+
+    .neu-pressed {
+      background: #EDF2F7;
+      box-shadow: inset 3px 3px 7px var(--neu-dark), inset -3px -3px 7px var(--neu-light);
+    }
+
+    .neu-btn-primary {
+      background: linear-gradient(135deg, #008378 0%, #00685F 100%);
+      box-shadow: 4px 4px 12px rgba(0, 104, 95, 0.32), -3px -3px 9px #FFFFFF;
+      color: #FFFFFF;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .neu-btn-primary:active {
+      transform: scale(0.985);
+      box-shadow: inset 2px 2px 5px rgba(0, 30, 25, 0.5);
+    }
+
+    .neu-btn-danger {
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      box-shadow: 4px 4px 12px rgba(220, 38, 38, 0.3), -3px -3px 9px #FFFFFF;
+      color: #FFFFFF;
+    }
+    .neu-btn-danger:active {
+      transform: scale(0.985);
+      box-shadow: inset 2px 2px 5px rgba(120, 0, 0, 0.5);
+    }
+
+    /* Bottom Sheet Dynamic Heights */
+    #mission-sheet {
+      transition: max-height 0.35s cubic-bezier(0.2, 0.8, 0.25, 1);
+    }
+
+    .sheet-collapsed {
+      max-height: 104px !important;
+    }
+    .sheet-mid {
+      max-height: 48vh !important;
+    }
+    .sheet-expanded {
+      max-height: calc(88vh - env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Clean Map Canvas */
+    .map-grid-pattern {
+      background-size: 60px 60px;
+      background-image:
+        linear-gradient(to right, rgba(195, 209, 222, 0.35) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(195, 209, 222, 0.35) 1px, transparent 1px);
+    }
+
+    /* Hide standard scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CAD6E2;
+      border-radius: 4px;
+    }
+</style>
+<link rel="stylesheet" href="code6.css?v=47">
 </head>
-<body class="translator-app-body workspace-sheet-expanded">
-  <main id="view-workspace" class="translator-workspace-view">
-    <div id="translator-map-stage" aria-label="نقشهٔ محل ملاقات مأموریت پذیرفته‌شده">
-      <div class="translator-map-grid" aria-hidden="true"></div>
-      <div id="translator-map" role="region" aria-label="نقشهٔ محل ملاقات"></div>
-
-      <div id="translator-map-placeholder" class="translator-map-placeholder" role="status" aria-live="polite">
-        <span class="material-symbols-outlined translator-map-placeholder-icon" aria-hidden="true">location_on</span>
-        <strong id="translator-map-placeholder-title">نقشهٔ محل ملاقات</strong>
-        <p id="translator-map-placeholder-note">پس از پذیرش مأموریت، اگر مختصات واقعی محل در سرور ثبت شده باشد، اینجا نمایش داده می‌شود.</p>
-      </div>
-
-      <div class="translator-map-controls" aria-label="کنترل‌های نقشه">
-        <div class="translator-map-zoom-group">
-          <button id="translator-map-zoom-in" class="translator-map-control" type="button" aria-label="بزرگ‌نمایی" title="بزرگ‌نمایی" disabled onclick="window.HZ_TRANSLATOR_MAP && window.HZ_TRANSLATOR_MAP.zoom(1)">
-            <span class="material-symbols-outlined" aria-hidden="true">add</span>
-          </button>
-          <button id="translator-map-zoom-out" class="translator-map-control" type="button" aria-label="کوچک‌نمایی" title="کوچک‌نمایی" disabled onclick="window.HZ_TRANSLATOR_MAP && window.HZ_TRANSLATOR_MAP.zoom(-1)">
-            <span class="material-symbols-outlined" aria-hidden="true">remove</span>
-          </button>
+<body class="w-full h-full relative bg-[#EDF2F7] text-[#171c21] overflow-hidden font-sans">
+<main id="view-workspace" class="relative w-full h-full overflow-hidden">
+  <div class="absolute inset-0 w-full h-full overflow-hidden" id="map-wrapper" style="transform-origin: 50% 50%; transition: transform 0.25s ease-out;">
+    <div id="translator-map-stage" class="absolute inset-0 w-full h-full" aria-label="نقشهٔ محل ملاقات مأموریت پذیرفته‌شده">
+      <div class="absolute inset-0 w-full h-full bg-[#E8EEF4]" aria-hidden="true"></div>
+      <div id="translator-map" aria-label="نقشهٔ محل ملاقات"></div>
+      <div id="translator-map-placeholder" class="code6-map-placeholder neu-flat-sm" role="status" aria-live="polite">
+        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+        <div>
+          <strong id="translator-map-placeholder-title">منتظر مختصات واقعی</strong>
+          <p id="translator-map-placeholder-note">نقشه فقط با مختصات معتبر مأموریت پذیرفته‌شده از سرور نمایش داده می‌شود.</p>
         </div>
-        <button id="translator-map-recenter" class="translator-map-control translator-map-recenter" type="button" aria-label="مرکز روی محل ملاقات" title="مرکز روی محل ملاقات" disabled onclick="window.HZ_TRANSLATOR_MAP && window.HZ_TRANSLATOR_MAP.reset()">
-          <span class="material-symbols-outlined" aria-hidden="true">center_focus_strong</span>
-        </button>
       </div>
-
-      <div id="translator-map-location" class="translator-map-location" hidden>
+      <div id="translator-map-location" class="code6-map-location neu-flat-sm" hidden>
         <span class="material-symbols-outlined" aria-hidden="true">place</span>
-        <strong id="translator-map-label" class="translator-map-location-text"></strong>
-        <a id="translator-map-open" class="translator-map-open" target="_blank" rel="noopener noreferrer" hidden>بازکردن همین نقطه در OpenStreetMap</a>
+        <strong id="translator-map-label"></strong>
+        <a id="translator-map-open" target="_blank" rel="noopener noreferrer" hidden>بازکردن نقطه در OpenStreetMap</a>
       </div>
     </div>
+  </div>
 
-    <aside id="mission-sheet" class="translator-workspace-sheet sheet-expanded" aria-label="پنل مأموریت مترجم">
-      <button id="translator-sheet-toggle" class="translator-sheet-handle" type="button" aria-expanded="true" aria-label="جمع‌کردن پنل مأموریت" onclick="toggleWorkspaceSheet()">
-        <span aria-hidden="true"></span>
+  <div class="absolute left-3 md:left-6 top-24 z-20 flex flex-col gap-2" aria-label="کنترل‌های نقشه">
+    <div class="neu-flat p-1 rounded-2xl flex flex-col gap-1 border border-white/70">
+      <button id="translator-map-zoom-in" class="w-9 h-9 rounded-xl neu-flat-sm active:neu-pressed flex items-center justify-center text-on-surface hover:text-primary transition-all" onclick="window.HZ_TRANSLATOR_MAP && window.HZ_TRANSLATOR_MAP.zoom(1)" title="بزرگ‌نمایی نقشه" aria-label="بزرگ‌نمایی نقشه" type="button" disabled>
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
       </button>
-      <div class="translator-sheet-topline">
-        <div class="translator-sheet-state" aria-live="polite">
-          <span id="workspace-sheet-state-dot" class="translator-sheet-state-dot is-loading" aria-hidden="true"></span>
-          <strong id="workspace-sheet-state">در حال دریافت وضعیت از سرور</strong>
-        </div>
-        <span id="workspace-sheet-meta" class="translator-sheet-meta">فاصله و زمان مسیر نمایش داده نمی‌شود</span>
-      </div>
+      <div class="w-full h-[1px] bg-slate-300/50" aria-hidden="true"></div>
+      <button id="translator-map-zoom-out" class="w-9 h-9 rounded-xl neu-flat-sm active:neu-pressed flex items-center justify-center text-on-surface hover:text-primary transition-all" onclick="window.HZ_TRANSLATOR_MAP && window.HZ_TRANSLATOR_MAP.zoom(-1)" title="کوچک‌نمایی نقشه" aria-label="کوچک‌نمایی نقشه" type="button" disabled>
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">remove</span>
+      </button>
+    </div>
+    <button id="translator-map-recenter" class="w-10 h-10 rounded-2xl neu-flat active:neu-pressed flex items-center justify-center text-primary border border-white/80" onclick="window.HZ_TRANSLATOR_MAP && window.HZ_TRANSLATOR_MAP.reset()" title="مرکز روی محل ملاقات" aria-label="مرکز روی محل ملاقات" type="button" disabled>
+      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">center_focus_strong</span>
+    </button>
+  </div>
 
-      <div id="sheet-scroll-area" class="translator-sheet-scroll">
-        <div id="shift-paused-notice" class="translator-shift-paused hidden" role="status">
-          <span class="material-symbols-outlined" aria-hidden="true">pause_circle</span>
-          <div>
-            <strong id="shift-status-title">شیفت غیرفعال</strong>
-            <p id="shift-status-desc">آخرین وضعیت آمادگی از سرور دریافت می‌شود.</p>
-          </div>
-          <button type="button" data-presence-control onclick="toggleShift()">آماده‌شدن</button>
-        </div>
-
-        <div id="calendar-section" class="translator-mission-section">
-          <section class="translator-section" aria-labelledby="offers-heading">
-            <div class="translator-section-heading">
-              <span class="material-symbols-outlined" aria-hidden="true">inbox</span>
-              <h1 id="offers-heading">پیشنهادها و درخواست‌های منتظر پاسخ</h1>
-            </div>
-            <div id="offers-box" aria-live="polite"></div>
-          </section>
-
-          <section class="translator-section" aria-labelledby="missions-heading">
-            <div class="translator-section-heading">
-              <span class="material-symbols-outlined" aria-hidden="true">event_available</span>
-              <h2 id="missions-heading">مأموریت‌های پذیرفته‌شده</h2>
-            </div>
-            <div id="missions-list" aria-live="polite">
-              <div class="translator-empty-missions">در حال دریافت مأموریت‌ها از سرور…</div>
-            </div>
-          </section>
-
-          <section class="translator-section" aria-labelledby="payments-heading">
-            <div class="translator-section-heading">
-              <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-              <h2 id="payments-heading">پرداخت‌های نیازمند پیگیری</h2>
-            </div>
-            <div id="payments-box" aria-live="polite"></div>
-          </section>
-
-        </div>
-
-        <div id="translator-workspace-more-content" class="translator-workspace-more-content">
-          <section id="qualification-shortcut" class="translator-qualification-shortcut">
-            <h2>مدارک و صلاحیت</h2>
-            <p>وضعیت فقط از پروندهٔ ثبت‌شده در سامانه خوانده می‌شود؛ نشان تأیید یا قابلیتِ تأییدنشده نمایش داده نمی‌شود.</p>
-            <button type="button" data-target="credentials" aria-controls="view-credentials" onclick="switchView('credentials')">مشاهدهٔ وضعیت مدارک</button>
-          </section>
-
-          <section class="translator-qualification-shortcut translator-schedule-shortcut">
-            <h2>برنامهٔ مأموریت‌ها</h2>
-            <p>فهرست برنامه فقط از مأموریت‌های رزرو‌شده و دریافت‌شده از سرور ساخته می‌شود.</p>
-            <button type="button" data-target="schedule" aria-controls="view-schedule" onclick="switchView('schedule')">بازکردن برنامه</button>
-          </section>
-
-          <section id="workspace-metrics-note" class="translator-metrics-note" aria-labelledby="workspace-metrics-title">
-            <h3 id="workspace-metrics-title">خلاصهٔ عملکرد</h3>
-            <p>آمار سفر، ساعات کار، امتیاز و درآمد تجمیعی از سرور دریافت نمی‌شوند؛ عدد نمونه نمایش داده نمی‌شود.</p>
-          </section>
-
-          <section class="translator-support-section" aria-label="راهنمای پشتیبانی">
-            <button id="sos-btn" class="translator-support-trigger" type="button" aria-controls="inline-sos-panel" aria-expanded="false" onclick="toggleSosInline()">
-              <span class="material-symbols-outlined translator-support-icon" aria-hidden="true">support_agent</span>
-              <span class="translator-support-copy">
-                <strong>راهنمای پشتیبانی</strong>
-                <small>شماره فقط از تنظیمات فعلی سرور خوانده می‌شود؛ موقعیت یا درخواست کمک خودکار ارسال نمی‌شود.</small>
-              </span>
-              <span id="sos-chevron" class="material-symbols-outlined" aria-hidden="true">expand_more</span>
-            </button>
-            <div id="inline-sos-panel" class="translator-support-panel" hidden>
-              <div class="translator-support-panel-heading">
-                <h3>اطلاعات پشتیبانی</h3>
-                <button id="translator-support-close" type="button" onclick="window.HZ_TRANSLATOR_SUPPORT && window.HZ_TRANSLATOR_SUPPORT.toggle()">بستن</button>
-              </div>
-              <p id="translator-support-status" role="status">شمارهٔ پشتیبانی هنوز دریافت نشده است.</p>
-              <p>شمارهٔ ثبت‌شده: <strong id="translator-support-phone"></strong></p>
-              <a id="translator-support-call" class="hidden" href="#">تماس با پشتیبانی</a>
-              <button id="translator-support-retry" type="button">دریافت دوبارهٔ شماره</button>
-              <button id="translator-support-escort" type="button" disabled>درخواست همراهی — در دسترس نیست</button>
-              <p id="translator-support-safety-note" class="translator-safety-note">در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
-            </div>
-          </section>
-        </div>
-      </div>
-    </aside>
-  </main>
-
-  <header class="translator-app-header">
-    <div class="translator-header-frame">
-      <div class="translator-header-capsule">
-        <button id="header-profile-btn" class="translator-header-profile" type="button" aria-label="بازکردن نمایهٔ مترجم" onclick="toggleInlinePanel('profile')">
-          <span class="translator-header-avatar" aria-hidden="true">
-            <span class="material-symbols-outlined">person</span>
-            <span id="header-avatar-status" class="translator-header-avatar-status bg-outline"></span>
-          </span>
-          <span class="translator-header-profile-copy">
-            <strong data-tr-name>مترجم</strong>
-            <small>نمایهٔ ذخیره‌شدهٔ حساب</small>
-          </span>
+  <header class="relative z-30 px-3 md:px-6 pt-3 md:pt-4 pb-1 w-full max-w-7xl mx-auto md:pr-[440px]">
+    <div class="neu-flat px-3.5 py-2.5 rounded-2xl md:rounded-3xl flex items-center justify-between gap-3 border border-white/80 code6-header">
+      <button id="header-profile-btn" class="flex items-center gap-2.5 min-w-0 code6-profile" type="button" aria-label="بازکردن نمایهٔ مترجم" onclick="toggleInlinePanel('profile')">
+        <span class="relative shrink-0">
+          <span class="w-11 h-11 rounded-2xl neu-pressed p-0.5 border border-white/70 shadow-xs code6-avatar" aria-hidden="true"><span class="material-symbols-outlined">person</span></span>
+          <span id="header-avatar-status" class="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full bg-outline ring-2 ring-[#EDF2F7]"></span>
+        </span>
+        <span class="flex flex-col text-right justify-center truncate">
+          <strong class="text-[13.5px] md:text-[14px] font-extrabold text-on-surface truncate" data-tr-name>مترجم</strong>
+          <small class="text-[10px] text-on-surface-variant font-medium mt-0.5 truncate">نمایهٔ حساب</small>
+        </span>
+      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button class="neu-pressed px-3 py-1.5 rounded-xl flex items-center gap-2 shrink-0 active:scale-95 transition-all border border-white/40 cursor-pointer" id="shift-toggle-btn" data-presence-control aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="mixed" onclick="toggleShift()" type="button">
+          <span class="w-2 h-2 rounded-full bg-outline" id="header-shift-pulse" aria-hidden="true"></span>
+          <span class="text-[11px] font-bold text-primary" id="header-shift-text">وضعیت نامشخص</span>
         </button>
-
-        <div class="translator-header-actions">
-          <button id="notifications-btn" class="translator-header-icon" type="button" aria-label="اعلان‌ها" aria-controls="inline-notifications-panel" aria-expanded="false" onclick="toggleInlinePanel('notifications')">
-            <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
-          </button>
-          <div class="translator-presence-retry-slot" id="presence-retry-slot"></div>
-          <button id="shift-toggle-btn" class="translator-header-shift" type="button" data-presence-control aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="mixed" onclick="toggleShift()">
-            <span id="header-shift-pulse" class="translator-header-status-dot bg-outline" aria-hidden="true"></span>
-            <span id="header-shift-text">وضعیت نامشخص</span>
-          </button>
-        </div>
-
-        <button id="header-financial-shortcut" class="translator-header-finance" type="button" data-target="earnings" aria-label="گزارش مالی" onclick="switchView('earnings')">
-          <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>
-          <span>
-            <small>گزارش مالی</small>
-            <strong>اطلاعات تجمیعی در دسترس نیست</strong>
+        <button id="header-financial-shortcut" class="neu-flat-sm px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-white/70 shadow-xs code6-finance" data-target="earnings" aria-label="گزارش مالی" onclick="switchView('earnings')" type="button">
+          <span class="material-symbols-outlined text-primary text-[17px]" aria-hidden="true">account_balance_wallet</span>
+          <span class="flex flex-col text-right">
+            <small class="text-[9px] font-bold text-on-surface-variant">گزارش مالی</small>
+            <strong id="header-wallet-balance" class="text-[10px] font-extrabold text-on-surface">اطلاعات تجمیعی در دسترس نیست</strong>
           </span>
         </button>
       </div>
     </div>
   </header>
 
-  <section id="view-earnings" class="translator-alt-view hidden" aria-labelledby="earnings-heading">
-    <div class="translator-alt-card">
-      <div class="translator-alt-heading">
-        <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>
-        <h1 id="earnings-heading">گزارش مالی</h1>
-      </div>
-      <div id="earnings-data-note" class="translator-data-note" role="status">
-        <span class="material-symbols-outlined" aria-hidden="true">info</span>
-        <span>
-          <strong id="earnings-data-title">گزارش مالی در دسترس نیست</strong>
-            <small>عدد، نمودار یا نتیجهٔ تسویهٔ نمونه نمایش داده نمی‌شود. گزارش درآمد تجمیعی و کیف پول از سرور دریافت نمی‌شوند؛ پرداخت‌های منتظر تأیید در میزکار نمایش داده می‌شوند.</small>
+  <aside class="fixed z-40 pointer-events-auto bottom-0 right-0 left-0 rounded-t-[32px] md:top-4 md:bottom-4 md:right-5 md:left-auto md:w-[410px] md:max-h-[calc(100vh-2rem)] md:rounded-3xl neu-flat border border-white/90 p-4 flex flex-col justify-between overflow-hidden shadow-2xl sheet-expanded" id="mission-sheet" aria-label="پنل مأموریت مترجم">
+    <button id="translator-sheet-toggle" class="flex md:hidden flex-col items-center pb-2 select-none -mt-1 cursor-pointer shrink-0 code6-sheet-handle" onclick="toggleWorkspaceSheet()" type="button" aria-expanded="true" aria-label="جمع‌کردن پنل مأموریت">
+      <span class="w-12 h-1.5 rounded-full neu-pressed mx-auto mb-2" aria-hidden="true"></span>
+      <span class="flex items-center justify-between w-full px-2 text-[10px] text-on-surface-variant font-bold">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-primary" id="workspace-sheet-state-dot" aria-hidden="true"></span>
+          <strong class="text-on-surface font-extrabold" id="workspace-sheet-state">در حال دریافت وضعیت از سرور</strong>
         </span>
+        <span class="text-primary font-mono text-[10.5px] font-bold px-2 py-0.5 rounded-lg neu-pressed" id="workspace-sheet-meta">فاصله و زمان مسیر نمایش داده نمی‌شود</span>
+      </span>
+    </button>
+
+    <div class="overflow-y-auto flex-1 min-h-0 space-y-3 pl-0.5 py-1" id="sheet-scroll-area">
+      <div class="neu-pressed p-3.5 rounded-2xl space-y-1 border border-primary/20 hidden" id="shift-paused-notice" role="status">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary" aria-hidden="true">pause_circle</span>
+          <strong class="text-[11px] font-black" id="shift-status-title">وضعیت آمادگی مشخص نیست</strong>
+        </div>
+        <p class="text-[9.5px] text-on-surface-variant" id="shift-status-desc">آخرین وضعیت از سرور خوانده می‌شود.</p>
+        <button class="neu-flat-sm px-3 py-2 rounded-xl text-[10px] font-bold" type="button" data-presence-control onclick="toggleShift()">آماده‌شدن</button>
+        <span id="presence-retry-slot"></span>
       </div>
-      <button type="button" class="translator-alt-back" data-target="workspace" onclick="switchView('workspace')">بازگشت به میز کار</button>
-    </div>
-  </section>
 
-  <section id="view-schedule" class="translator-alt-view hidden" aria-labelledby="schedule-heading">
-    <div class="translator-alt-card">
-      <div class="translator-alt-heading"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><h1 id="schedule-heading">برنامهٔ مأموریت‌ها</h1></div>
-      <p class="translator-alt-note">فقط مأموریت‌هایی که از سرور دریافت شده‌اند فهرست می‌شوند.</p>
-      <div id="day-bar" class="translator-daybar"></div>
-      <div id="schedule-list" class="translator-schedule-list"></div>
-      <button type="button" class="translator-alt-back" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
-    </div>
-  </section>
-
-  <section id="view-credentials" class="translator-alt-view hidden" aria-labelledby="credentials-heading">
-    <div class="translator-alt-card">
-      <div class="translator-alt-heading">
-        <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
-        <h2 id="credentials-heading">وضعیت مدارک و صلاحیت</h2>
+      <div id="calendar-section" class="flex flex-col gap-3">
+        <div id="offers-box" class="flex flex-col gap-3" aria-live="polite">
+          <div class="translator-empty-offers" role="status">در حال دریافت درخواست‌ها از سرور…</div>
+        </div>
+        <div id="missions-list" class="flex flex-col gap-3" aria-live="polite"></div>
+        <div id="payments-box" class="flex flex-col gap-3" aria-live="polite"></div>
       </div>
-      <p class="translator-alt-note">وضعیت‌های زیر از پرونده و قابلیت‌های واقعی سامانه خوانده می‌شوند؛ نمایش آن‌ها به‌تنهایی تأیید هویت نیست.</p>
-      <div id="cap-box" class="translator-alt-list" aria-live="polite"><p>در حال دریافت وضعیت…</p></div>
-      <div class="translator-alt-subsection">
-        <h3>مدارک ثبت‌شده</h3>
-        <div id="live-docs-box" class="translator-alt-list" aria-live="polite"><p>در حال دریافت مدارک…</p></div>
-      </div>
-      <div class="translator-alt-subsection">
-        <h3>اعلان‌های پرونده</h3>
-        <div id="notif-box" class="translator-alt-list" aria-live="polite"></div>
-      </div>
-      <div id="iv-box" class="translator-alt-subsection"></div>
-      <button type="button" class="translator-alt-back" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
-    </div>
-  </section>
 
-  <section id="inline-profile-panel" class="translator-overlay-card hidden" aria-labelledby="profile-title">
-    <div class="translator-alt-heading">
-      <span class="material-symbols-outlined" aria-hidden="true">person</span>
-      <h2 id="profile-title">نمایه مترجم</h2>
+      <section id="translator-workspace-more-content" class="flex flex-col gap-2.5 code6-more-content">
+        <section id="workspace-metrics-note" class="neu-flat-sm p-3 rounded-xl" aria-labelledby="workspace-metrics-title">
+          <h2 id="workspace-metrics-title" class="text-[11px] font-black text-on-surface">خلاصهٔ عملکرد</h2>
+          <p class="text-[9.5px] text-on-surface-variant mt-1">آمار تجمیعی سفر، درآمد یا امتیاز از سرور دریافت نمی‌شود؛ عدد نمونه نمایش داده نمی‌شود.</p>
+        </section>
+        <section id="qualification-shortcut" class="neu-flat-sm p-3 rounded-xl flex items-center justify-between gap-2">
+          <span class="text-[10px] font-bold text-on-surface">مدارک و صلاحیت</span>
+          <button type="button" class="neu-flat px-3 py-2 rounded-xl text-[10px] font-bold" data-target="credentials" aria-controls="view-credentials" onclick="switchView('credentials')">مشاهدهٔ وضعیت</button>
+        </section>
+        <section class="neu-flat-sm p-3 rounded-xl flex items-center justify-between gap-2">
+          <span class="text-[10px] font-bold text-on-surface">برنامهٔ مأموریت‌ها</span>
+          <button type="button" class="neu-flat px-3 py-2 rounded-xl text-[10px] font-bold" data-target="schedule" aria-controls="view-schedule" onclick="switchView('schedule')">بازکردن برنامه</button>
+        </section>
+        <section class="neu-flat-sm p-3 rounded-xl">
+          <button id="notifications-btn" class="flex items-center gap-2 text-[10px] font-bold text-on-surface" type="button" aria-controls="inline-notifications-panel" aria-expanded="false" onclick="toggleInlinePanel('notifications')">
+            <span class="material-symbols-outlined text-primary" aria-hidden="true">notifications</span>اعلان‌های حساب
+          </button>
+        </section>
+        <section id="inline-notifications-panel" class="neu-pressed p-3 rounded-xl hidden" aria-labelledby="notifications-heading">
+          <h2 id="notifications-heading" class="text-[11px] font-black">اعلان‌ها</h2>
+          <p id="notifications-status" role="status" class="text-[9.5px] text-on-surface-variant">اعلان‌ها فقط از حساب فعلی دریافت می‌شوند.</p>
+          <div id="notifications-list" class="flex flex-col gap-2"></div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button id="notifications-retry" class="neu-flat-sm px-3 py-2 rounded-lg text-[10px] font-bold" type="button">دریافت دوباره</button>
+            <button id="notifications-mark-read" class="neu-flat-sm px-3 py-2 rounded-lg text-[10px] font-bold" type="button" disabled>علامت‌گذاری — در دسترس نیست</button>
+            <button id="notifications-close" class="neu-flat-sm px-3 py-2 rounded-lg text-[10px] font-bold" type="button" onclick="window.HZ_NOTIFICATIONS && window.HZ_NOTIFICATIONS.toggle()">بستن</button>
+          </div>
+        </section>
+        <section class="neu-flat-sm p-3 rounded-xl">
+          <button id="sos-btn" class="flex items-center gap-2 text-[10px] font-bold text-on-surface w-full text-right" type="button" aria-controls="inline-sos-panel" aria-expanded="false" onclick="toggleSosInline()">
+            <span class="material-symbols-outlined text-primary" aria-hidden="true">support_agent</span>
+            <span>راهنمای پشتیبانی</span>
+            <small class="text-[9px] text-on-surface-variant">موقعیت یا درخواست کمک خودکار ارسال نمی‌شود</small>
+            <span id="sos-chevron" class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+          </button>
+          <div id="inline-sos-panel" class="neu-pressed p-3 rounded-xl mt-2 hidden">
+            <div class="flex items-center justify-between"><h3 class="text-[11px] font-black">اطلاعات پشتیبانی</h3><button id="translator-support-close" class="text-[10px] font-bold" type="button" onclick="window.HZ_TRANSLATOR_SUPPORT && window.HZ_TRANSLATOR_SUPPORT.toggle()">بستن</button></div>
+            <p id="translator-support-status" class="text-[9.5px] text-on-surface-variant" role="status">شمارهٔ پشتیبانی هنوز دریافت نشده است.</p>
+            <p class="text-[9.5px]">شمارهٔ ثبت‌شده: <strong id="translator-support-phone"></strong></p>
+            <a id="translator-support-call" class="hidden" href="#">تماس با پشتیبانی</a>
+            <button id="translator-support-retry" class="neu-flat-sm px-3 py-2 rounded-lg text-[10px] font-bold" type="button">دریافت دوبارهٔ شماره</button>
+            <button id="translator-support-escort" class="neu-flat-sm px-3 py-2 rounded-lg text-[10px] font-bold" type="button" disabled>درخواست همراهی — در دسترس نیست</button>
+            <p class="text-[9px] text-on-surface-variant mt-2">در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
+          </div>
+        </section>
+      </section>
     </div>
-    <p class="translator-profile-name"><strong data-tr-name>مترجم</strong></p>
-    <p id="profile-data-note" class="translator-alt-note">نام نمایشی از اطلاعات ذخیره‌شدهٔ همین مرورگر خوانده می‌شود و به‌تنهایی هویت تأییدشده را ثابت نمی‌کند؛ امتیاز، ساعات خدمت، شناسهٔ صلاحیت و تأیید خودرو از حساب شما دریافت نشده‌اند.</p>
-    <button type="button" class="translator-alt-back" onclick="toggleInlinePanel('profile')">بستن پنل</button>
-  </section>
+  </aside>
+</main>
 
-  <section id="inline-notifications-panel" class="translator-overlay-card hidden" aria-labelledby="notifications-heading">
-    <div class="translator-alt-heading">
-      <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
-      <h2 id="notifications-heading">اعلان‌ها</h2>
-    </div>
-    <p id="notifications-status" role="status" class="translator-alt-note">اعلان‌ها فقط از حساب فعلی دریافت می‌شوند.</p>
-    <div id="notifications-list" class="translator-alt-list"></div>
-    <div class="translator-overlay-actions">
-      <button id="notifications-retry" type="button">دریافت دوباره</button>
-      <button id="notifications-mark-read" type="button" disabled>علامت‌گذاری به‌عنوان خوانده‌شده — در دسترس نیست</button>
-      <button id="notifications-close" type="button" onclick="window.HZ_NOTIFICATIONS && window.HZ_NOTIFICATIONS.toggle()">بستن اعلان‌ها</button>
-    </div>
-  </section>
-
-  <div id="generic-toast" class="translator-generic-toast translate-y-28 opacity-0" role="status" aria-live="polite">
-    <span id="toast-icon" class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-    <span id="toast-message"></span>
+<section id="view-earnings" class="translator-alt-view hidden" aria-labelledby="earnings-heading">
+  <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
+    <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><h1 id="earnings-heading" class="text-[15px] font-black">گزارش مالی</h1></div>
+    <div id="earnings-data-note" class="neu-pressed p-3 rounded-2xl mt-3" role="status"><strong id="earnings-data-title" class="text-[11px] font-black">گزارش تجمیعی در دسترس نیست</strong><p class="text-[10px] text-on-surface-variant mt-1">موجودی کیف پول، نمودار یا تسویهٔ نمونه نمایش داده نمی‌شود؛ پرداخت‌های واقعیِ نیازمند پیگیری در میزکار می‌آیند.</p></div>
+    <button type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
   </div>
-  <div id="hz-toast" class="translator-hz-toast" role="status" aria-live="polite"></div>
+</section>
+<section id="view-schedule" class="translator-alt-view hidden" aria-labelledby="schedule-heading">
+  <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
+    <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><h1 id="schedule-heading" class="text-[15px] font-black">برنامهٔ مأموریت‌ها</h1></div>
+    <p class="text-[10px] text-on-surface-variant mt-2">فقط مأموریت‌های رزرو‌شده و دریافت‌شده از سرور نمایش داده می‌شوند.</p>
+    <div id="day-bar" class="flex gap-2 overflow-x-auto my-3"></div>
+    <div id="schedule-list" class="flex flex-col gap-2"></div>
+    <button type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
+  </div>
+</section>
+<section id="view-credentials" class="translator-alt-view hidden" aria-labelledby="credentials-heading">
+  <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
+    <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><h1 id="credentials-heading" class="text-[15px] font-black">وضعیت مدارک و صلاحیت</h1></div>
+    <p class="text-[10px] text-on-surface-variant mt-2">وضعیت فقط از پرونده و قابلیت‌های واقعی سامانه خوانده می‌شود؛ نمایش آن به‌تنهایی تأیید هویت نیست.</p>
+    <div id="cap-box" class="flex flex-col gap-2 mt-3" aria-live="polite"><p>در حال دریافت وضعیت…</p></div>
+    <div class="mt-3"><h2 class="text-[11px] font-black">مدارک ثبت‌شده</h2><div id="live-docs-box" class="flex flex-col gap-2 mt-2" aria-live="polite"><p>در حال دریافت مدارک…</p></div></div>
+    <div class="mt-3"><h2 class="text-[11px] font-black">اعلان‌های پرونده</h2><div id="notif-box" class="flex flex-col gap-2 mt-2" aria-live="polite"></div></div>
+    <div id="iv-box" class="mt-3"></div>
+    <button type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
+  </div>
+</section>
+<section id="inline-profile-panel" class="neu-flat p-4 rounded-2xl fixed z-50 top-24 right-3 left-3 hidden code6-overlay-card" aria-labelledby="profile-title">
+  <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">person</span><h2 id="profile-title" class="text-[12px] font-black">نمایهٔ مترجم</h2></div>
+  <p class="text-[12px] mt-2"><strong data-tr-name>مترجم</strong></p>
+  <p id="profile-data-note" class="text-[10px] text-on-surface-variant mt-2">نام نمایشی از دادهٔ ذخیره‌شدهٔ حساب خوانده می‌شود و به‌تنهایی هویت تأییدشده را ثابت نمی‌کند؛ امتیاز، ساعات خدمت و تأیید خودرو از حساب دریافت نشده‌اند.</p>
+  <button type="button" class="translator-alt-back neu-flat-sm px-3 py-2 rounded-xl mt-3 text-[10px] font-bold" onclick="toggleInlinePanel('profile')">بستن پنل</button>
+</section>
+<div id="generic-toast" class="translator-generic-toast translate-y-28 opacity-0" role="status" aria-live="polite"><span id="toast-icon" class="material-symbols-outlined" aria-hidden="true">check_circle</span><span id="toast-message"></span></div>
+<div id="hz-toast" class="translator-hz-toast" role="status" aria-live="polite"></div>
 
-  <script>
-    // Toast, view switching, bottom sheet, and server-confirmed presence presentation.
-    function showToast(msg, icon) {
-      if (!icon) icon = 'check_circle';
-      var toast = document.getElementById('generic-toast');
-      var toastMsg = document.getElementById('toast-message');
-      var toastIcon = document.getElementById('toast-icon');
-      if (!toast) return;
-      toastMsg.textContent = msg;
-      toastIcon.textContent = icon;
-      toast.classList.remove('translate-y-28', 'opacity-0');
-      toast.classList.add('translate-y-0', 'opacity-100');
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(function () {
-        toast.classList.add('translate-y-28', 'opacity-0');
-        toast.classList.remove('translate-y-0', 'opacity-100');
-      }, 3500);
+<script>
+  function showToast(message, icon) {
+    var box = document.getElementById('generic-toast');
+    if (!box) return;
+    document.getElementById('toast-message').textContent = message;
+    document.getElementById('toast-icon').textContent = icon || 'info';
+    box.classList.remove('translate-y-28', 'opacity-0');
+    box.classList.add('translate-y-0', 'opacity-100');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(function () { box.classList.add('translate-y-28', 'opacity-0'); box.classList.remove('translate-y-0', 'opacity-100'); }, 3500);
+  }
+  var isShiftActive = null;
+  function renderShiftState(active) {
+    window.isShiftActive = active;
+    var title = document.getElementById('shift-status-title');
+    var desc = document.getElementById('shift-status-desc');
+    var status = document.getElementById('header-shift-text');
+    var dot = document.getElementById('header-shift-pulse');
+    var avatar = document.getElementById('header-avatar-status');
+    var notice = document.getElementById('shift-paused-notice');
+    if (active) {
+      if (title) title.textContent = 'آمادهٔ دریافت پیشنهاد';
+      if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: آمادهٔ دریافت پیشنهاد';
+      if (status) status.textContent = 'آماده به خدمت';
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-secondary';
+      if (avatar) avatar.className = 'absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full bg-secondary ring-2 ring-[#EDF2F7]';
+      if (notice) notice.classList.add('hidden');
+    } else {
+      if (title) title.textContent = 'آمادگی غیرفعال';
+      if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: غیرفعال';
+      if (status) status.textContent = 'در حال استراحت';
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-outline';
+      if (avatar) avatar.className = 'absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full bg-outline ring-2 ring-[#EDF2F7]';
+      if (notice) notice.classList.remove('hidden');
     }
-
-    function switchView(target) {
-      ['workspace', 'schedule', 'earnings', 'credentials'].forEach(function (name) {
-        var panel = document.getElementById('view-' + name);
-        if (panel) panel.classList.toggle('hidden', name !== target);
-      });
-      var sheet = document.getElementById('mission-sheet');
-      document.body.classList.toggle('workspace-sheet-expanded', target === 'workspace' && sheet && !sheet.classList.contains('sheet-collapsed'));
-      if (target === 'workspace' && window.HZ_TRANSLATOR_MAP) {
-        window.requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function toggleShift() { if (window.HZ_PRESENCE && typeof window.isShiftActive === 'boolean') window.HZ_PRESENCE.set(!window.isShiftActive); }
+  function toggleWorkspaceSheet() {
+    var sheet = document.getElementById('mission-sheet');
+    var handle = document.getElementById('translator-sheet-toggle');
+    if (!sheet || !handle) return;
+    var collapsed = sheet.classList.toggle('sheet-collapsed');
+    sheet.classList.toggle('sheet-expanded', !collapsed);
+    handle.setAttribute('aria-expanded', String(!collapsed));
+    handle.setAttribute('aria-label', collapsed ? 'بازکردن پنل مأموریت' : 'جمع‌کردن پنل مأموریت');
+    if (!collapsed && window.HZ_TRANSLATOR_MAP) requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
+  }
+  function expandWorkspaceSheet() {
+    var sheet = document.getElementById('mission-sheet');
+    if (sheet) { sheet.classList.remove('sheet-collapsed'); sheet.classList.add('sheet-expanded'); }
+  }
+  function switchView(target) {
+    ['workspace', 'schedule', 'earnings', 'credentials'].forEach(function (name) {
+      var panel = document.getElementById(name === 'workspace' ? 'view-workspace' : 'view-' + name);
+      if (panel) panel.classList.toggle('hidden', name !== target);
+    });
+    if (target === 'workspace' && window.HZ_TRANSLATOR_MAP) requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function toggleSosInline() { if (window.HZ_TRANSLATOR_SUPPORT) window.HZ_TRANSLATOR_SUPPORT.toggle(); }
+  function toggleInlinePanel(type) {
+    var profile = document.getElementById('inline-profile-panel');
+    if (type === 'profile') {
+      if (window.HZ_NOTIFICATIONS) window.HZ_NOTIFICATIONS.close();
+      if (profile) profile.classList.toggle('hidden');
+    } else if (type === 'notifications') {
+      if (profile) profile.classList.add('hidden');
+      if (window.HZ_NOTIFICATIONS) window.HZ_NOTIFICATIONS.toggle();
     }
-
-    function toggleWorkspaceSheet() {
-      var sheet = document.getElementById('mission-sheet');
-      var handle = document.getElementById('translator-sheet-toggle');
-      if (!sheet || !handle) return;
-      var collapsed = sheet.classList.toggle('sheet-collapsed');
-      sheet.classList.toggle('sheet-expanded', !collapsed);
-      document.body.classList.toggle('workspace-sheet-expanded', !collapsed && !document.getElementById('view-workspace').classList.contains('hidden'));
-      handle.setAttribute('aria-expanded', String(!collapsed));
-      handle.setAttribute('aria-label', collapsed ? 'بازکردن پنل مأموریت' : 'جمع‌کردن پنل مأموریت');
-      if (!collapsed && window.HZ_TRANSLATOR_MAP) window.requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
-    }
-
-    function expandWorkspaceSheet() {
-      var sheet = document.getElementById('mission-sheet');
-      var handle = document.getElementById('translator-sheet-toggle');
-      if (!sheet || !handle) return;
-      sheet.classList.remove('sheet-collapsed');
-      sheet.classList.add('sheet-expanded');
-      document.body.classList.toggle('workspace-sheet-expanded', !document.getElementById('view-workspace').classList.contains('hidden'));
-      handle.setAttribute('aria-expanded', 'true');
-      handle.setAttribute('aria-label', 'جمع‌کردن پنل مأموریت');
-    }
-
-    var isShiftActive = null;
-    function setShiftState(active) { if (window.HZ_PRESENCE) return window.HZ_PRESENCE.set(active); }
-    function renderShiftState(active) {
-      isShiftActive = active;
-      var title = document.getElementById('shift-status-title');
-      var desc = document.getElementById('shift-status-desc');
-      var headerText = document.getElementById('header-shift-text');
-      var headerPulse = document.getElementById('header-shift-pulse');
-      var avatarStatus = document.getElementById('header-avatar-status');
-      var notice = document.getElementById('shift-paused-notice');
-      if (active) {
-        if (title) title.textContent = 'آمادهٔ دریافت پیشنهاد';
-        if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: آمادهٔ دریافت پیشنهاد';
-        if (headerText) headerText.textContent = 'آماده به خدمت';
-        if (headerPulse) headerPulse.className = 'translator-header-status-dot bg-secondary';
-        if (avatarStatus) avatarStatus.className = 'translator-header-avatar-status bg-secondary';
-        if (notice) notice.classList.add('hidden');
-      } else {
-        if (title) title.textContent = 'آمادگی غیرفعال';
-        if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: غیرفعال';
-        if (headerText) headerText.textContent = 'در حال استراحت';
-        if (headerPulse) headerPulse.className = 'translator-header-status-dot bg-outline';
-        if (avatarStatus) avatarStatus.className = 'translator-header-avatar-status bg-outline';
-        if (notice) notice.classList.remove('hidden');
-      }
-    }
-    function toggleShift() { setShiftState(!isShiftActive); }
-    function toggleSosInline() { if (window.HZ_TRANSLATOR_SUPPORT) window.HZ_TRANSLATOR_SUPPORT.toggle(); }
-    function toggleInlinePanel(type) {
-      var profile = document.getElementById('inline-profile-panel');
-      if (type === 'profile') {
-        if (window.HZ_NOTIFICATIONS) window.HZ_NOTIFICATIONS.close();
-        if (profile) {
-          profile.classList.toggle('hidden');
-          if (!profile.classList.contains('hidden')) profile.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      } else if (type === 'notifications') {
-        if (profile) profile.classList.add('hidden');
-        if (window.HZ_NOTIFICATIONS) window.HZ_NOTIFICATIONS.toggle();
-      }
-    }
-  </script>
-  <script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
-  <script src="mission-map.js?v=46"></script>
-  <script src="ui.js?v=46"></script>
-  <script src="mission-actions.js?v=46"></script>
-  <script src="presence.js?v=46"></script>
-  <script src="support.js?v=46"></script>
-  <script src="notifications.js?v=46"></script>
-  <script src="app.js?v=46"></script>
-  <script src="config-features.js?v=46"></script>
+  }
+</script>
+<script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
+<script src="mission-map.js?v=47"></script>
+<script src="ui.js?v=47"></script>
+<script src="mission-actions.js?v=47"></script>
+<script src="presence.js?v=47"></script>
+<script src="support.js?v=47"></script>
+<script src="notifications.js?v=47"></script>
+<script src="app.js?v=47"></script>
+<script src="config-features.js?v=47"></script>
 </body>
 </html>
