@@ -92,6 +92,7 @@ async def scenario(browser, width):
         }''', [session['token'], profile, 'fa'])
         await page.goto(BASE + '/traveler/app.html')
         await page.wait_for_function('() => window.hzBookingsSynced === true && !!window.HZ_NEAREST_CITY()')
+        await expect(page.locator('header .animate-pulse, header .bg-emerald-500')).to_have_count(0)
         await page.locator('nav a[data-nav="map"]').click()
         await expect(page.locator('#selected-location-title')).to_have_text('تهران، آزمون وضعیت رزرو')
         await page.locator('#confirm-location-btn').click()
@@ -131,7 +132,7 @@ async def scenario(browser, width):
             await expect(page.locator('#toast-pill')).to_be_visible()
             await expect(page.locator('#toast-text')).to_have_text(copy['notifications'])
             await page.locator('#toast-pill button').click()
-            print(f'PASS [{width}/{language}]: accurate search status; no fabricated ranking, radius, identity badge, resetting countdown, or empty-notification claim')
+            print(f'PASS [{width}/{language}]: accurate search status; no fabricated ranking, radius, identity badge, resetting countdown, empty-notification claim, or global online light')
         offers = await api(context.request, 'GET', '/translator/offers', translator_token)
         assert offers['offers'], 'the real booking did not create an interpreter offer'
         await api(context.request, 'POST', f"/translator/offers/{offers['offers'][0]['id']}/accept", translator_token)
