@@ -11,11 +11,11 @@ async function call(method, p, body, token) {
   return { status: r.status, data };
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function makeTranslator(phone) {
+async function makeTranslator(phone, online = true) {
   await call('POST', '/api/auth/request-code', { phone, role: 'translator' });
   const v = await call('POST', '/api/auth/verify', { phone, role: 'translator', code: '123456' });
   await call('POST', '/api/dev/approve-translator', null, v.data.token);
-  await call('PATCH', '/api/translator/online', { online: true }, v.data.token);
+  if (online) await call('PATCH', '/api/translator/online', { online: true }, v.data.token);
   return v.data.token;
 }
 async function main() {
@@ -23,6 +23,7 @@ async function main() {
   const A = await makeTranslator('9' + k + '1');
   await sleep(50);
   const B = await makeTranslator('9' + k + '2');
+  const C = await makeTranslator('9' + k + '5', false); // آفلاین تا آزمون تلاش دوباره
   await call('POST', '/api/auth/request-code', { phone: '9' + k + '3', role: 'traveler' });
   const pv = await call('POST', '/api/auth/verify', { phone: '9' + k + '3', role: 'traveler', code: '123456' });
   const P = pv.data.token;
@@ -64,6 +65,33 @@ async function main() {
   check('قبل از پنجره، هنوز پیشنهادی نیست (در انتظار)', rs.data.status === 'waiting_schedule');
   const cancelled = await call('POST', `/api/traveler/bookings/${rs.data.id}/cancel`, null, P);
   check('لغو زمان‌دار منتظر رایگان است', cancelled.status === 200 && cancelled.data.fee_percent === 0);
+  console.log('== زمان‌دار: تلاش دوباره پس از مهلت ۱۵ دقیقه‌ای');
+  const retryAt = new Date(Date.now() + 73 * 1000).toISOString(); // حداقل فاصله‌ی زمان‌دار با مقیاس ۰٫۰۱ کمی بیش از ۷۲ ثانیه است
+  const retryBooking = await call('POST', '/api/traveler/bookings', {
+    kind: 'scheduled', origin_lang: 'ar', dest_lang: 'fa', place: 'تلاش دوباره زمان‌دار',
+    scheduled_at: retryAt, traveler_name: 'T'
+  }, P);
+  check('رزرو زمان‌دار آزمون تلاش دوباره ساخته شد', retryBooking.status === 201, JSON.stringify(retryBooking));
+  if (retryBooking.status === 201) {
+    await sleep(Math.max(0, Date.parse(retryAt) - 8000 - Date.now())); // یک ثانیه پس از مهلتِ ۱۵ دقیقه‌ای
+    let retryView = (await call('GET', '/api/traveler/bookings', null, P)).data.bookings.find(b => b.id === retryBooking.data.id);
+    for (let i = 0; i < 20 && retryView.status !== 'unmatched_ask'; i++) {
+      await sleep(250);
+      retryView = (await call('GET', '/api/traveler/bookings', null, P)).data.bookings.find(b => b.id === retryBooking.data.id);
+    }
+    check('پس از نبود پذیرش تا ۱۵ دقیقه مانده، انتخاب دوباره یا لغو نمایش داده می‌شود', retryView.status === 'unmatched_ask', retryView.status);
+    await call('PATCH', '/api/translator/online', { online: true }, C);
+    const resumed = await call('POST', `/api/traveler/bookings/${retryBooking.data.id}/retry`, null, P);
+    check('درخواست تلاش دوباره از سوی سرور پذیرفته می‌شود', resumed.status === 200, JSON.stringify(resumed));
+    const resumedOffers = (await call('GET', '/api/translator/offers', null, C)).data.offers || [];
+    check('تلاش دوباره جستجو را از سر می‌گیرد و به مترجم تازه‌در‌دسترس پیشنهاد می‌دهد', resumedOffers.some(o => o.reservation_id === retryBooking.data.id));
+    retryView = (await call('GET', '/api/traveler/bookings', null, P)).data.bookings.find(b => b.id === retryBooking.data.id);
+    check('وضعیت پس از تلاش دوباره واقعاً «در حال تطبیق» است', retryView.status === 'matching', retryView.status);
+    await sleep(Math.max(0, Date.parse(retryAt) - Date.now() + 150));
+    retryView = (await call('GET', '/api/traveler/bookings', null, P)).data.bookings.find(b => b.id === retryBooking.data.id);
+    check('رزروِ بی‌تطبیق در موعد مقرر خودکار و رایگان لغو می‌شود', retryView.status === 'cancelled', retryView.status);
+    await call('PATCH', '/api/translator/online', { online: false }, C);
+  }
   console.log('== پنجره‌ی ۵ دقیقه‌ای درخواست تغییر (مقیاس ۰٫۰۱ ≈ ۳ ثانیه)');
   {
     const P2phone = '9' + k + '4';

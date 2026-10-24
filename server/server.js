@@ -1116,13 +1116,16 @@ function sweep() {
       setStatus(r.id, 'no_match'); closeOffers(r.id); continue;
     }
     if (r.kind === 'scheduled') {
+      if (t >= r.scheduled_at) {
+        // اگر تا لحظه‌ی قرار تطبیق نشده، چه در انتظار و چه در جستجوی دوباره، لغو خودکار و رایگان
+        setStatus(r.id, 'cancelled'); closeOffers(r.id); continue;
+      }
       if (r.status === 'waiting_schedule' && t >= r.scheduled_at - TIMING.SCHEDULE_MATCH_BEFORE_MS) {
         setStatus(r.id, 'matching');
-      } else if (r.status === 'matching' && t >= r.scheduled_at - TIMING.SCHEDULE_ASK_BEFORE_MS) {
+      // search_started_at پس از آستانه یعنی مسافر «تلاش دوباره» را زده؛ جست‌وجو تا موعد ادامه می‌یابد.
+      } else if (r.status === 'matching' && t >= r.scheduled_at - TIMING.SCHEDULE_ASK_BEFORE_MS
+        && r.search_started_at < r.scheduled_at - TIMING.SCHEDULE_ASK_BEFORE_MS) {
         setStatus(r.id, 'unmatched_ask'); closeOffers(r.id);
-      } else if (r.status === 'unmatched_ask' && t >= r.scheduled_at) {
-        // بدون پاسخ تا لحظه‌ی قرار: لغو خودکار و رایگان
-        setStatus(r.id, 'cancelled'); closeOffers(r.id);
       }
     }
   }
@@ -1285,8 +1288,9 @@ route('POST', '/api/traveler/bookings/:id/retry', async (req, res, url, params) 
   const r = ownReservation(res, u, params); if (!r) return;
   if (r.status === 'no_match' && r.kind === 'instant') {
     db.prepare("UPDATE reservations SET status = 'searching', search_started_at = ?, updated_at = ? WHERE id = ?").run(now(), now(), r.id);
-  } else if (r.status === 'unmatched_ask') {
-    setStatus(r.id, 'matching');
+  } else if (r.status === 'unmatched_ask' && r.kind === 'scheduled' && now() < r.scheduled_at) {
+    const t = now();
+    db.prepare("UPDATE reservations SET status = 'matching', search_started_at = ?, updated_at = ? WHERE id = ?").run(t, t, r.id);
   } else return send(res, 409, { error: 'retry_not_allowed' });
   sweep();
   send(res, 200, { ok: true });
