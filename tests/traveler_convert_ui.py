@@ -1,10 +1,20 @@
 # تست رابط «تبدیل به رزرو زمان‌دار»: رزرو فوری بدون مترجم → زمان قرار → وضعیت زمان‌دار.
-# باید روی سروری با HZ_TIME_SCALE=0.01 اجرا شود تا سقف ۱۰ دقیقه‌ای جستجو (≈۶ ثانیه) زود برسد.
+# متن سیاست در سه زبان بررسی می‌شود؛ سرور باید با HZ_TIME_SCALE=0.01 اجرا شود تا جستجو زود منقضی شود.
 import asyncio, re, random, sys, datetime
 from playwright.async_api import async_playwright
 from hz_api import LOGIN_JS
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8082'
+CONVERSION_COPY = {
+    'fa': 'برای درخواست فوری مترجمی پیدا نشد. اگر آن را زمان‌دار کنید، جست‌وجو یک ساعت پیش از زمان قرار آغاز می‌شود؛ زمان قرار باید دست‌کم ۲ ساعت بعد از اکنون باشد.',
+    'en': 'No interpreter was found for the instant request. If you schedule it, matching starts one hour before the appointment; the appointment must be at least two hours from now.',
+    'ar': 'لم يُعثر على مترجم للطلب الفوري. إذا حوّلته إلى حجز مجدول، يبدأ البحث قبل الموعد بساعة؛ ويجب أن يكون الموعد بعد ساعتين على الأقل من الآن.',
+}
+RADIUS_CLAIMS = {
+    'fa': ('شعاع بزرگ‌تر',),
+    'en': ('larger radius',),
+    'ar': ('نطاق أكبر', 'نطاق أوسع'),
+}
 results = []
 def check(name, ok):
     results.append(bool(ok))
@@ -44,6 +54,12 @@ async def main():
         check('دکمه‌ی «تبدیل به رزرو زمان‌دار» بعد از سقف جستجو ظاهر شد', has_btn)
         await P.evaluate("()=>{const b=[...document.querySelectorAll('#bk-list button')].find(x=>x.textContent.trim()==='تبدیل به رزرو زمان‌دار'); b && b.click();}")
         await P.wait_for_timeout(400)
+        for language, expected in CONVERSION_COPY.items():
+            await P.evaluate('(language) => window.HZ_I18N.set(language)', language)
+            modal_text = await P.locator('#bk-modal').inner_text()
+            no_radius_claim = not any(claim in modal_text for claim in RADIUS_CLAIMS[language])
+            check(f'متن تبدیل در زبان {language} دقیق است و شعاعِ پشتیبانی‌نشده را وعده نمی‌دهد', expected in modal_text and no_radius_claim)
+        await P.evaluate("(language) => window.HZ_I18N.set(language)", 'fa')
         tomorrow = (datetime.date.today() + datetime.timedelta(days=2)).isoformat()
         await P.fill('#bk-modal input[type=date]', tomorrow)
         await P.select_option('#bk-modal select', '10:00')
