@@ -39,19 +39,19 @@ COPY = {
     'fa': {
         'title': 'وضعیت رزرو',
         'description': 'مترجم درخواست شما را پذیرفت.',
-        'forbidden': ('در راه رسیدن به محل شما', 'در حرکت', 'زمان تخمینی رسیدن مترجم'),
+        'forbidden': ('در راه رسیدن به محل شما', 'در حرکت', 'زمان تخمینی رسیدن مترجم', 'مترجم احراز هویت‌شده‌ی همراه'),
         'arrived': 'مترجم به محل رسید',
     },
     'en': {
         'title': 'Booking status',
         'description': 'The interpreter accepted your request.',
-        'forbidden': ('On the way to your location', 'On the way', 'Estimated translator arrival time'),
+        'forbidden': ('On the way to your location', 'On the way', 'Estimated translator arrival time', 'Verified Hamrah interpreter'),
         'arrived': 'Interpreter arrived',
     },
     'ar': {
         'title': 'حالة الحجز',
         'description': 'قبل المترجم طلبك.',
-        'forbidden': ('في الطريق إلى موقعك', 'في الطريق', 'وقت الوصول المتوقع للمترجم'),
+        'forbidden': ('في الطريق إلى موقعك', 'في الطريق', 'وقت الوصول المتوقع للمترجم', 'مترجم همره موثّق الهوية'),
         'arrived': 'وصل المترجم',
     },
 }
@@ -141,11 +141,13 @@ async def scenario(browser, width):
             await expect(page.locator('#match-status-description')).to_have_text(copy['description'])
             stage_text = await page.locator('#stage-3').inner_text()
             for claim in copy['forbidden']:
-                assert claim not in stage_text, f'unsupported route/ETA status remains in {language}: {claim}'
+                assert claim not in stage_text, f'unsupported route/ETA/identity claim remains in {language}: {claim}'
+            matched_icons = await page.locator('#stage-3 .material-symbols-outlined').all_text_contents()
+            assert 'verified' not in matched_icons, 'a static translator verification badge remains'
             assert await page.locator('#stage-3 .animate-ping, #stage-3 .animate-pulse, #stage-3 .bg-emerald-500').count() == 0, 'a fake live movement/presence indicator remains'
             await expect(page.locator('#btn-arrived')).to_be_visible()
             await expect(page.locator('#btn-arrived > span:last-child')).to_have_text(copy['arrived'])
-            print(f'PASS [{width}/{language}]: matched status is server-confirmed; arrival remains an explicit traveler confirmation')
+            print(f'PASS [{width}/{language}]: server-confirmed match; no fabricated verification badge; arrival remains explicit')
         assert not errors, errors
     except Exception:
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
