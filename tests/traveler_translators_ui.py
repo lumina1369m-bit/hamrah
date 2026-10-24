@@ -1,4 +1,4 @@
-"""The traveler translators screen must not invent a nearby-online count."""
+"""The traveler translators screen must not invent counts or imply unverified professional status."""
 import asyncio
 import secrets
 from pathlib import Path
@@ -8,16 +8,22 @@ from logout_sessions_ui import sign_in
 ARTIFACTS = Path(__file__).parent / 'assets' / 'last_traveler_translators'
 COPY = {
     'fa': {
+        'subheading': 'اطلاعات مترجمان',
         'heading': 'حریم خصوصی مترجمان',
         'note': 'برای حفظ حریم خصوصی، هویت و موقعیت دقیق مترجمان پیش از تطبیق نمایش داده نمی‌شود. مترجم فقط پس از پذیرش درخواست شما معرفی می‌شود.',
+        'unsupported_subheading': 'شبکه‌ی مترجمان همزمان و حرفه‌ای شما',
     },
     'en': {
+        'subheading': 'Interpreter information',
         'heading': 'Translator privacy',
         'note': "To protect privacy, translators' identity and exact location are not shown before matching. A translator is introduced only after accepting your request.",
+        'unsupported_subheading': 'Your network of professional interpreters',
     },
     'ar': {
+        'subheading': 'معلومات المترجمين',
         'heading': 'خصوصية المترجمين',
         'note': 'لحماية الخصوصية، لا تُعرض هوية المترجمين ومواقعهم الدقيقة قبل التطابق. لا يُعرَّف المترجم إلا بعد قبول طلبك.',
+        'unsupported_subheading': 'شبكة المترجمين المحترفين الخاصة بك',
     },
 }
 
@@ -55,14 +61,16 @@ async def scenario(browser, width):
             await page.locator('nav a[data-nav="translators"]').click()
             screen = page.locator('#scr-translators')
             await expect(screen).to_be_visible()
+            await expect(screen.locator('.scr-sub')).to_have_text(copy['subheading'])
             await expect(screen.locator('.tr-card > span')).to_have_text(copy['heading'])
             await expect(screen.locator('#translator-privacy-note')).to_have_text(copy['note'])
             await expect(screen.locator('.tr-count')).to_have_count(0)
             text = await screen.inner_text()
+            assert copy['unsupported_subheading'] not in text, 'an unverified professional-network claim remains on the translators screen'
             assert 'مترجمان آنلاین در محدوده‌ی شما' not in text
             assert 'online interpreters in your area' not in text
             assert '۴' not in text and '4' not in text and '٤' not in text, 'a fixed interpreter count remains on the translators screen'
-            print(f'PASS [{width}/{language}]: no fabricated nearby translator count')
+            print(f'PASS [{width}/{language}]: no fabricated count or unverified professional-network claim')
         assert not errors, errors
     except Exception:
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
