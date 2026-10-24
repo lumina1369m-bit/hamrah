@@ -82,6 +82,7 @@ async function main() {
   r = await call('GET', '/api/translator/missions', null, tokT);
   const codes = (r.data && r.data.missions || []).map((m) => m.code);
   check('فقط ماموریت پذیرفته‌شده و آینده برمی‌گردد', r.status === 200 && codes.length === 1 && codes[0] === 'M-1', JSON.stringify(codes));
+  check('پاسخ فهرست مأموریت زمان سرور را دارد', r.status === 200 && Number.isFinite(Date.parse(r.data.server_time)));
   check('مبلغ کل و سهم خالص دارد', r.data && r.data.missions[0].total === 100 && r.data.missions[0].net === 80);
 
   console.log('== مسافر و جداسازی نقش‌ها');
@@ -355,7 +356,13 @@ async function main() {
   check('کد امنیتی اشتباه پذیرفته نمی‌شود', r.status === 401 && r.data.error === 'wrong_code' && r.data.attempts_left === 4, JSON.stringify(r));
   r = await startService(pid, T9, tokP9);
   check('شروع خدمت با کد صادرشده‌ی سرور ثبت می‌شود', r.status === 200 && r.data.started === true, JSON.stringify(r));
-  check('مسافر شروع خدمت را در نمای رزرو می‌بیند', (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid).service_started === true);
+  const liveTravelerBooking = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
+  check('مسافر شروع خدمت را در نمای رزرو می‌بیند', liveTravelerBooking.service_started === true);
+  const liveMissionList = (await call('GET', '/api/translator/missions', null, T9)).data;
+  const liveMissionRow = liveMissionList.missions.find((m) => m.reservation_id === pid);
+  check('فهرست مترجم زمان شروع و مدت واقعی خدمت را دارد و کد محرمانه را افشا نمی‌کند', !!liveMissionRow &&
+    liveMissionRow.started === true && liveMissionRow.service_started_at === liveTravelerBooking.service_started_at &&
+    liveMissionRow.hours === liveTravelerBooking.hours && !('service_code' in liveMissionRow));
   r = await call('POST', `/api/traveler/bookings/${pid}/cancel`, null, tokP9);
   check('پس از شروع خدمت، لغو با کارمزد جایگزین پایان با مبلغ کامل نمی‌شود', r.status === 409 && r.data.error === 'service_already_started', JSON.stringify(r));
   const afterBlockedCancel = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
@@ -936,9 +943,10 @@ async function main() {
   const f = await fetch(BASE + '/traveler/index.html');
   check('فایل استاتیک مسافر سرو می‌شود', f.status === 200);
   const t = await fetch(BASE + '/translator/index.html');
-  check('صفحه ورود و ثبت‌نام مترجم سرو می‌شود', t.status === 200);
-  const tApp = await fetch(BASE + '/translator/app.html');
-  check('اپ مترجم پس از ورود حذف شده است', tApp.status === 404);
+  check('فایل استاتیک ورود/ثبت‌نام مترجم سرو می‌شود', t.status === 200);
+  const translatorApp = await fetch(BASE + '/translator/app.html');
+  const translatorAppHTML = await translatorApp.text();
+  check('میزکار مترجم پس از ورود در دسترس است', translatorApp.status === 200 && /id="mission-sheet"/.test(translatorAppHTML));
   const trav = await fetch(BASE + '/traveler/..%2fserver%2fserver.js');
   check('مسیر خارج از پوشه مسدود است', trav.status !== 200);
 
