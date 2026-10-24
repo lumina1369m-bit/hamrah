@@ -169,7 +169,8 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   for (const id of ['translator-map-stage', 'mission-sheet', 'translator-sheet-toggle', 'sheet-scroll-area',
     'workspace-sheet-state', 'workspace-sheet-meta', 'offers-box', 'missions-list', 'payments-box',
     'translator-map-preview-note', 'translator-map-preview-open',
-    'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut', 'sos-chevron']) {
+    'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut', 'sos-chevron',
+    'view-settings', 'translator-traveler-gender-pref', 'translator-gender-pref-save']) {
     assert.match(workspaceHTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
   assert.match(workspaceHTML, /<main id="view-workspace" class="relative w-full h-full overflow-hidden">/);
@@ -178,16 +179,18 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(workspaceHTML, /code6-sheet-handle/);
   assert.match(workspaceHTML, /code6-map-placeholder/);
   assert.match(workspaceHTML, /نقشهٔ پایه آماده است/);
+  assert.equal(fs.existsSync(path.join(root, 'translator/workspace.css')), false, 'the unused legacy translator workspace stylesheet must be removed');
+  assert.doesNotMatch(workspaceHTML, /workspace\.css/);
   assert.match(appSource, /نقشهٔ پایه نمایش داده می‌شود/);
   assert.doesNotMatch(appSource, /نقشهٔ پیش‌فرض یا موقعیت ساختگی نمایش داده نمی‌شود|موقعیت ساختگی یا نقشهٔ پیش‌فرض نمایش داده نمی‌شود/);
   assert.doesNotMatch(workspaceHTML, /translator-workspace-sheet|translator-header-capsule|translator-sheet-topline|translator-map-grid|id="mobile-nav"|id="desktop-nav"/);
   assert.doesNotMatch(workspaceHTML, /<svg\b|https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
-  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=50"/);
-  assert.match(workspaceHTML, /href="code6\.css\?v=50"/);
+  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=51"/);
+  assert.match(workspaceHTML, /href="code6\.css\?v=51"/);
   assert.ok(workspaceHTML.includes(`href="/traveler/vendor/leaflet/leaflet.css" integrity="${sri(leafletCSS)}"`), 'Leaflet CSS SRI must match the real asset');
   assert.ok(workspaceHTML.includes(`src="/traveler/vendor/leaflet/leaflet.js" integrity="${sri(leafletJS)}"`), 'Leaflet JS SRI must match the real asset');
-  for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'app.js', 'config-features.js']) {
-    assert.ok(workspaceHTML.includes(`src="${asset}?v=50"`), `missing versioned local script ${asset}`);
+  for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'settings.js', 'app.js', 'config-features.js']) {
+    assert.ok(workspaceHTML.includes(`src="${asset}?v=51"`), `missing versioned local script ${asset}`);
   }
   assert.match(styleSource, /#mission-sheet\.sheet-collapsed/);
   assert.match(styleSource, /\.translator-offer-card/);
@@ -195,9 +198,9 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(styleSource, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.match(utilitySource, /\.bg-outline/);
   assert.match(utilitySource, /\.bg-surface-container-high/);
-  assert.match(serviceWorkerSource, /hz-translator-v50/);
-  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=50/);
-  assert.match(serviceWorkerSource, /code6\.css\?v=50/);
+  assert.match(serviceWorkerSource, /hz-translator-v51/);
+  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=51/);
+  assert.match(serviceWorkerSource, /code6\.css\?v=51/);
   assert.doesNotMatch(serviceWorkerSource, /hz-translator-v46|app\.js\?v=46|workspace\.css\?v=46/);
   assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
   assert.match(appSource, /Number\.isSafeInteger\(m\.reservation_id\)/);

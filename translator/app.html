@@ -8,7 +8,7 @@
 <title>میزکار مترجم | همراه</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="vendor/fonts.css">
-<link rel="stylesheet" href="code6-utilities.css?v=50">
+<link rel="stylesheet" href="code6-utilities.css?v=51">
 <link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="">
 <style>
 :root {
@@ -102,7 +102,7 @@
       border-radius: 4px;
     }
 </style>
-<link rel="stylesheet" href="code6.css?v=50">
+<link rel="stylesheet" href="code6.css?v=51">
 </head>
 <body class="w-full h-full relative bg-[#EDF2F7] text-[#171c21] overflow-hidden font-sans">
 <main id="view-workspace" class="relative w-full h-full overflow-hidden">
@@ -216,6 +216,10 @@
           <span class="text-[10px] font-bold text-on-surface">برنامهٔ مأموریت‌ها</span>
           <button type="button" class="neu-flat px-3 py-2 rounded-xl text-[10px] font-bold" data-target="schedule" aria-controls="view-schedule" onclick="switchView('schedule')">بازکردن برنامه</button>
         </section>
+        <section class="neu-flat-sm p-3 rounded-xl flex items-center justify-between gap-2">
+          <span class="text-[10px] font-bold text-on-surface">تنظیمات دریافت درخواست</span>
+          <button type="button" class="neu-flat px-3 py-2 rounded-xl text-[10px] font-bold" data-target="settings" aria-controls="view-settings" onclick="switchView('settings')">تنظیمات</button>
+        </section>
         <section class="neu-flat-sm p-3 rounded-xl">
           <button id="notifications-btn" class="flex items-center gap-2 text-[10px] font-bold text-on-surface" type="button" aria-controls="inline-notifications-panel" aria-expanded="false" onclick="toggleInlinePanel('notifications')">
             <span class="material-symbols-outlined text-primary" aria-hidden="true">notifications</span>اعلان‌های حساب
@@ -280,6 +284,22 @@
     <button type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
   </div>
 </section>
+<section id="view-settings" class="translator-alt-view hidden" aria-labelledby="settings-heading">
+  <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
+    <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">tune</span><h1 id="settings-heading" class="text-[15px] font-black">تنظیمات دریافت درخواست</h1></div>
+    <p class="text-[10px] text-on-surface-variant mt-2">جنسیت مسافرانی را انتخاب کنید که درخواست‌های جدیدشان برای شما فرستاده شود. این تنظیم با ترجیح مسافر دربارهٔ جنسیت مترجم فرق دارد.</p>
+    <label for="translator-traveler-gender-pref" class="block text-[11px] font-bold mt-4 mb-2">چه کسانی بتوانند برای شما درخواست بفرستند؟</label>
+    <select id="translator-traveler-gender-pref" class="w-full neu-pressed px-3 py-3 rounded-xl text-[12px] font-bold text-on-surface" disabled>
+      <option value="any">فرقی نمی‌کند؛ مرد یا زن</option>
+      <option value="male">فقط مسافران مرد</option>
+      <option value="female">فقط مسافران زن</option>
+    </select>
+    <p class="text-[9.5px] text-on-surface-variant mt-2">اگر جنسیت مسافر در رزرو ثبت نشده باشد، درخواست با انتخاب محدودِ مرد یا زن تطبیق داده نمی‌شود. تغییر فقط روی پیشنهادهای جدید اعمال می‌شود؛ پیشنهادهای قبلی باقی می‌مانند.</p>
+    <p id="translator-gender-pref-status" class="text-[10px] text-on-surface-variant mt-3" role="status" aria-live="polite">در حال دریافت تنظیم از سرور…</p>
+    <button id="translator-gender-pref-save" type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" disabled>ذخیرهٔ تنظیم</button>
+    <button type="button" class="translator-alt-back neu-flat-sm px-4 py-2 rounded-xl mt-2 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
+  </div>
+</section>
 <section id="inline-profile-panel" class="neu-flat p-4 rounded-2xl fixed z-50 top-24 right-3 left-3 hidden code6-overlay-card" aria-labelledby="profile-title">
   <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">person</span><h2 id="profile-title" class="text-[12px] font-black">نمایهٔ مترجم</h2></div>
   <p class="text-[12px] mt-2"><strong data-tr-name>مترجم</strong></p>
@@ -341,11 +361,12 @@
     if (sheet) { sheet.classList.remove('sheet-collapsed'); sheet.classList.add('sheet-expanded'); }
   }
   function switchView(target) {
-    ['workspace', 'schedule', 'earnings', 'credentials'].forEach(function (name) {
+    ['workspace', 'schedule', 'earnings', 'credentials', 'settings'].forEach(function (name) {
       var panel = document.getElementById(name === 'workspace' ? 'view-workspace' : 'view-' + name);
       if (panel) panel.classList.toggle('hidden', name !== target);
     });
     if (target === 'workspace' && window.HZ_TRANSLATOR_MAP) requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
+    if (target === 'settings' && window.HZ_TRANSLATOR_SETTINGS) window.HZ_TRANSLATOR_SETTINGS.refresh();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function toggleSosInline() { if (window.HZ_TRANSLATOR_SUPPORT) window.HZ_TRANSLATOR_SUPPORT.toggle(); }
@@ -361,13 +382,14 @@
   }
 </script>
 <script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
-<script src="mission-map.js?v=50"></script>
-<script src="ui.js?v=50"></script>
-<script src="mission-actions.js?v=50"></script>
-<script src="presence.js?v=50"></script>
-<script src="support.js?v=50"></script>
-<script src="notifications.js?v=50"></script>
-<script src="app.js?v=50"></script>
-<script src="config-features.js?v=50"></script>
+<script src="mission-map.js?v=51"></script>
+<script src="ui.js?v=51"></script>
+<script src="mission-actions.js?v=51"></script>
+<script src="presence.js?v=51"></script>
+<script src="support.js?v=51"></script>
+<script src="notifications.js?v=51"></script>
+<script src="settings.js?v=51"></script>
+<script src="app.js?v=51"></script>
+<script src="config-features.js?v=51"></script>
 </body>
 </html>

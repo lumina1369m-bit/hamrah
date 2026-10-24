@@ -115,6 +115,7 @@ for (const sql of [
   "ALTER TABLE translators ADD COLUMN langs TEXT NOT NULL DEFAULT '[\"fa\",\"ar\",\"en\"]'",
   "ALTER TABLE translators ADD COLUMN gender TEXT",
   "ALTER TABLE translators ADD COLUMN accept_any INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE translators ADD COLUMN traveler_gender_pref TEXT NOT NULL DEFAULT 'any'",
   "ALTER TABLE translators ADD COLUMN score INTEGER NOT NULL DEFAULT 100",
 ]) { try { db.exec(sql); } catch (e) { /* ستون از قبل وجود دارد */ } }
 db.exec(`
@@ -1016,7 +1017,8 @@ route('POST', '/api/admin/translators/:id/interview', async (req, res, url, para
 
 const LANGS = new Set(LANG_CODES);
 const FIELDS = new Set(['general', 'medical', 'legal', 'business']);
-const GENDER_PREF = new Set(['any', 'female', 'male']); // ترجیح جنسیت مترجم (دکمه‌های اپ مسافر)
+const GENDER_PREF = new Set(['any', 'female', 'male']); // ترجیح مسافر دربارهٔ جنسیت مترجم
+const TRAVELER_GENDER_PREF = new Set(['any', 'female', 'male']); // جنسیت مسافرانی که مترجم می‌پذیرد
 const SEARCHABLE = ['searching', 'matching'];
 const CANCELLABLE = ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match'];
 
@@ -1024,13 +1026,16 @@ const setStatus = (id, status) => db.prepare('UPDATE reservations SET status = ?
 const closeOffers = (rid, status = 'withdrawn') =>
   db.prepare("UPDATE offers SET status = ?, decided_at = ? WHERE reservation_id = ? AND status = 'pending'").run(status, now(), rid);
 
-// مترجم‌های آنلاین، فعال، با هر دو زبان؛ کسی که قبلاً پیشنهاد گرفته یا پیشنهاد باز دارد، دوباره نمی‌گیرد
-// ترجیح مسافر: «خانم/آقا» یعنی فقط مترجم همان جنسیت؛ «فرقی‌ندارد» یعنی هم‌جنس مسافر، یا مترجمی که پذیرش هر جنسیت را دارد
+// مترجم‌های آنلاین، فعال، با هر دو زبان؛ کسی که قبلاً پیشنهاد گرفته یا پیشنهاد باز دارد، دوباره نمی‌گیرد.
+// ابتدا محدودیت مترجم دربارهٔ جنسیت مسافر بررسی می‌شود؛ سپس ترجیح مسافر دربارهٔ جنسیت مترجم.
 function genderOk(r, t) {
+  const acceptedTravelerGender = TRAVELER_GENDER_PREF.has(t.traveler_gender_pref) ? t.traveler_gender_pref : 'any';
+  if (acceptedTravelerGender !== 'any' && r.traveler_gender !== acceptedTravelerGender) return false;
   if (r.gender_pref === 'female' || r.gender_pref === 'male') return t.gender === r.gender_pref;
-  if (!r.traveler_gender) return true;
-  const same = t.gender && t.gender === r.traveler_gender;
-  return !!same || !!t.accept_any;
+  // Preserve the passenger's legacy same-gender fallback only while the translator has no restrictive setting.
+  if (acceptedTravelerGender !== 'any' || !r.traveler_gender) return true;
+  const sameGender = t.gender && t.gender === r.traveler_gender;
+  return !!sameGender || !!t.accept_any;
 }
 // مترجم در بازه‌ی ±۲ ساعت ماموریت دیگری ندارد
 function busyAt(translatorId, startMs, exceptId) {
@@ -1054,7 +1059,7 @@ function carReady(t, party) {
 
 function eligibleTranslators(r) {
   if (!featureOn('translator_online')) return [];
-  const rows = db.prepare(`SELECT t.user_id, t.langs, t.fields, t.profile, t.gender, t.accept_any FROM translators t
+  const rows = db.prepare(`SELECT t.user_id, t.langs, t.fields, t.profile, t.gender, t.accept_any, t.traveler_gender_pref FROM translators t
     JOIN cities c ON c.id = t.city_id AND c.translator_enabled = 1
     WHERE t.city_id = ? AND t.online = 1 AND t.status LIKE 'active_%' AND t.interview = 'pass'
       AND NOT EXISTS (SELECT 1 FROM offers o WHERE o.translator_id = t.user_id AND o.status = 'pending')
@@ -1588,6 +1593,28 @@ route('GET', '/api/translator/documents', async (req, res) => {
     expires_at: r.expires_at ? new Date(r.expires_at).toISOString() : null,
     expired: !!r.expires_at && r.expires_at < t,
     expiring_soon: !!r.expires_at && r.expires_at >= t && r.expires_at - t <= 30 * DAY_MS })) });
+});
+
+// ---------- تنظیم پذیرش جنسیت مسافر ----------
+route('GET', '/api/translator/preferences', async (req, res) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const t = db.prepare('SELECT traveler_gender_pref FROM translators WHERE user_id = ?').get(u.id);
+  const preference = t && TRAVELER_GENDER_PREF.has(t.traveler_gender_pref) ? t.traveler_gender_pref : 'any';
+  send(res, 200, { traveler_gender_pref: preference });
+});
+
+route('PATCH', '/api/translator/preferences', async (req, res) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const b = await readJson(req);
+  if (!b || !TRAVELER_GENDER_PREF.has(b.traveler_gender_pref)) return send(res, 400, { error: 'invalid_traveler_gender_pref' });
+  const acceptsAny = b.traveler_gender_pref === 'any' ? 1 : 0;
+  db.prepare('UPDATE translators SET traveler_gender_pref = ?, accept_any = ?, updated_at = ? WHERE user_id = ?')
+    .run(b.traveler_gender_pref, acceptsAny, now(), u.id);
+  // Re-run matching for waiting requests; already-issued offers remain unchanged.
+  sweep();
+  send(res, 200, { ok: true, traveler_gender_pref: b.traveler_gender_pref });
 });
 
 // ---------- مترجم: پیشنهادها و آنلاین ----------

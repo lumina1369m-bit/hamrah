@@ -49,9 +49,9 @@ test('translator service-worker cache and entry script use the bumped version', 
   const entry = read('translator/index.html');
   const workspace = read('translator/app.html');
   const serviceWorker = read('translator/sw.js');
-  assert.match(entry, /<script src="ui\.js\?v=50"><\/script>/);
-  assert.match(workspace, /<script src="ui\.js\?v=50"><\/script>/);
-  assert.match(serviceWorker, /hz-translator-v50/);
-  assert.match(serviceWorker, /ui\.js\?v=50/);
+  assert.match(entry, /<script src="ui\.js\?v=51"><\/script>/);
+  assert.match(workspace, /<script src="ui\.js\?v=51"><\/script>/);
+  assert.match(serviceWorker, /hz-translator-v51/);
+  assert.match(serviceWorker, /ui\.js\?v=51/);
   assert.doesNotMatch(workspace + serviceWorker, /\?v=49|hz-translator-v49/);
 });
