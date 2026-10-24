@@ -23,6 +23,16 @@ SMS_OFF = {
     'en': 'SMS sending is not available right now. Try again later.',
     'ar': 'إرسال الرسائل النصية غير متاح حالياً. حاول لاحقاً.',
 }
+OTP_HEADER = {
+    'fa': 'تأیید شماره همراه',
+    'en': 'Mobile number verification',
+    'ar': 'التحقق من رقم الجوال',
+}
+UNSUPPORTED_OTP_HEADERS = (
+    'تأیید شماره و احراز هویت',
+    'Identity & Code Verification',
+    'تأكيد الرقم والتحقق من الهوية',
+)
 
 
 async def scenario(browser, lang):
@@ -90,6 +100,10 @@ async def scenario(browser, lang):
         assert len(requests) == 1
         request_release.set()
         await expect(page.locator('#step-otp')).to_be_visible()
+        await expect(page.locator('#step-otp [data-i18n="otp_header"]')).to_have_text(OTP_HEADER[lang])
+        otp_step_text = await page.locator('#step-otp').inner_text()
+        for unsupported_header in UNSUPPORTED_OTP_HEADERS:
+            assert unsupported_header not in otp_step_text, f'OTP screen overstates identity verification in {lang}: {unsupported_header}'
         async with page.expect_response(lambda r: r.url.endswith('/api/auth/verify')) as rejected:
             for i, digit in enumerate('000000'):
                 await page.locator('.otp-box').nth(i).fill(digit)
@@ -148,7 +162,7 @@ async def scenario(browser, lang):
         assert await page.evaluate("() => localStorage.getItem('hamzaban.token.v1')") is None
         await api(ctx.request, 'GET', '/auth/me', token, status=401)
         assert not errors, errors
-        print(f'PASS [{lang}]: delivery error stays retryable; single request/verify; real session, account-bound profile and revocation')
+        print(f'PASS [{lang}]: phone-only OTP wording; delivery retry, single request/verify, account-bound profile and revocation')
     except Exception:
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
         print('JavaScript errors:', errors)
