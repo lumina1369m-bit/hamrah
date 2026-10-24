@@ -25,6 +25,11 @@ TIME_SLOT_WINDOW_COPY = {
     'en': 'Listed time slots: 8:00 AM–9:00 PM',
     'ar': 'الأوقات المدرجة: ٨:٠٠ صباحاً–٩:٠٠ مساءً',
 }
+TIME_SLOT_STEP_COPY = {
+    'fa': 'انتخاب زمان با گام‌های ۳۰ دقیقه‌ای',
+    'en': 'Select a time in 30-minute increments',
+    'ar': 'اختر الوقت بفواصل ٣٠ دقيقة',
+}
 TIME_SLOT_FIRST_COPY = {'fa': '۰۸:۰۰ صبح', 'en': '8:00 AM', 'ar': '٨:٠٠ صباحاً'}
 TIME_SLOT_LAST_COPY = {'fa': '۲۱:۰۰ شب', 'en': '9:00 PM', 'ar': '٩:٠٠ مساءً'}
 INSTANT_MODE_COPY = {
@@ -113,6 +118,7 @@ async def scenario(browser, kind, preference, lang):
             await expect(page.locator('#scheduled-search-policy')).to_have_text(SCHEDULE_SEARCH_COPY[lang])
             await page.locator('#btn-open-timepicker').click()
             await expect(page.locator('#modal-timepicker')).to_be_visible()
+            await expect(page.locator('#time-slot-step-policy')).to_have_text(TIME_SLOT_STEP_COPY[lang])
             await expect(page.locator('#time-selection-window-label')).to_have_text(TIME_SLOT_WINDOW_COPY[lang])
             slots = await page.locator('#time-slots-container button').all_text_contents()
             assert len(slots) == 27, (label, len(slots), slots)
