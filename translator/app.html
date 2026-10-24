@@ -11,98 +11,29 @@
         padding: 0;
         font-family: 'Vazirmatn', 'Plus Jakarta Sans', sans-serif;
       }
-      body {
-        overscroll-behavior: none;
-        background-color: #f7f9ff;
-      }
+      body { overscroll-behavior: none; background-color: #edf2f7; }
       .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
       .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
     }
     ::-webkit-scrollbar { display: none; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Neumorphic Shadows */
-    .neu-raised {
-      box-shadow: -5px -5px 14px rgba(255, 255, 255, 0.95), 5px 5px 14px rgba(163, 180, 204, 0.42);
-    }
-    .neu-card {
-      box-shadow: -6px -6px 16px rgba(255, 255, 255, 0.95), 6px 6px 16px rgba(163, 180, 204, 0.42);
-    }
-    .neu-pressed {
-      box-shadow: inset 2px 2px 5px rgba(163, 180, 204, 0.5), inset -2px -2px 5px rgba(255, 255, 255, 0.95);
-    }
-    .neu-tab-active {
-      color: #005182 !important;
-      font-weight: 700 !important;
-      box-shadow: inset 2px 2px 6px rgba(163, 180, 204, 0.55), inset -2px -2px 6px rgba(255, 255, 255, 0.95) !important;
-      background-color: rgba(232, 238, 247, 0.9) !important;
-      border-radius: 0.75rem !important;
-    }
-    .badge-pressed {
-      box-shadow: inset 2px 2px 5px rgba(163, 180, 204, 0.6), inset -2px -2px 5px rgba(255, 255, 255, 0.95) !important;
-      background-color: #e2eaf5 !important;
-    }
   </style>
 <link href="vendor/fonts.css" rel="stylesheet"/>
 <link href="vendor/tailwind.css" rel="stylesheet"/>
 <link href="vendor/theme.css" rel="stylesheet"/>
+<link crossorigin="" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" rel="stylesheet"/>
+<link href="workspace.css" rel="stylesheet"/>
 <style>/* برچسب‌ها در تبلت نشکنند */
 #desktop-nav button, #desktop-nav span, #header-shift-text, #header-shift-text * { white-space: nowrap; }
 #header-shift-text { display: inline-block; }
 </style>
 </head>
-<body class="bg-background text-on-surface font-body-md flex flex-col min-h-screen selection:bg-primary selection:text-on-primary">
+<body class="bg-background text-on-surface font-body-md flex flex-col min-h-screen selection:bg-primary selection:text-on-primary workspace-sheet-expanded">
 <!-- ========================================== -->
 <!-- HEADER -->
 <!-- ========================================== -->
-<header class="fixed top-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-xl pt-safe shadow-[0_4px_20px_rgba(163,180,204,0.22)] border-b border-surface-variant/30">
-<div class="h-20 px-4 md:px-8 max-w-7xl mx-auto flex items-center justify-between w-full">
-<!-- User Profile Identity Trigger -->
-<button aria-label="مشاهده پروفایل مترجم" class="flex items-center gap-3 text-right group focus:outline-none cursor-pointer p-1 rounded-2xl transition-all" id="header-profile-btn" onclick="toggleInlinePanel('profile')" type="button">
-<div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center shadow-[-2px_-2px_6px_rgba(255,255,255,0.9),2px_2px_6px_rgba(163,180,204,0.5)] group-hover:scale-105 transition-transform flex-shrink-0">
-<span class="material-symbols-outlined text-on-primary text-[22px]">person</span>
-</div>
-<div class="flex flex-col text-right">
-<div class="flex items-center gap-1.5">
-<span class="font-bold text-[16px] text-on-surface leading-tight group-hover:text-primary transition-colors">Workspace</span>
-<span class="material-symbols-outlined text-primary text-[18px]">translate</span>
-</div>
-<span class="text-[11px] text-on-surface-variant font-medium leading-tight">مترجم همراه تشریفات • <span data-tr-name>مترجم</span></span>
-</div>
-</button>
-<!-- Desktop Navigation Bar (Direct Live Switching) -->
-<nav class="hidden md:flex items-center gap-1.5 bg-surface-container/60 p-1.5 rounded-2xl shadow-[inset_2px_2px_4px_rgba(163,180,204,0.4),inset_-2px_-2px_4px_rgba(255,255,255,0.9)]" id="desktop-nav">
-<button class="px-4 py-2 rounded-xl flex items-center gap-2 text-[14px] transition-all nav-tab-btn text-on-surface-variant" data-target="workspace" onclick="switchView('workspace')" type="button">
-<span class="material-symbols-outlined text-[19px]">dashboard</span>
-<span class="">میز کار</span>
-</button>
-<button class="px-4 py-2 rounded-xl hover:text-primary flex items-center gap-2 text-[14px] transition-all nav-tab-btn text-primary font-bold bg-surface shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.95)]" data-target="schedule" onclick="switchView('schedule')" type="button">
-<span class="material-symbols-outlined text-[19px]">calendar_month</span>
-<span class="">تقویم</span>
-</button>
-<button class="px-4 py-2 rounded-xl text-on-surface-variant hover:text-primary flex items-center gap-2 text-[14px] transition-all nav-tab-btn" data-target="earnings" onclick="switchView('earnings')" type="button">
-<span class="material-symbols-outlined text-[19px]">account_balance_wallet</span>
-<span class="">درآمد</span>
-</button>
-<button class="px-4 py-2 rounded-xl text-on-surface-variant hover:text-primary flex items-center gap-2 text-[14px] transition-all nav-tab-btn" data-target="credentials" onclick="switchView('credentials')" type="button">
-<span class="material-symbols-outlined text-[19px]">badge</span>
-<span class="">مدارک</span>
-</button>
-</nav>
-<!-- Quick Actions & Shift Badge -->
-<div class="flex items-center gap-2.5 sm:gap-3">
-<button aria-label="تغییر وضعیت شیفت" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.9)] cursor-pointer active:scale-95 transition-all" id="header-shift-badge" onclick="toggleShift()" type="button">
-<span class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,106,97,0.7)] animate-pulse" id="header-shift-pulse"></span>
-<span class="text-[11px] text-secondary font-bold" id="header-shift-text">وضعیت نامشخص</span>
-</button>
-<button aria-label="اعلان‌ها" class="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary transition-all shadow-[-3px_-3px_8px_rgba(255,255,255,0.9),3px_3px_8px_rgba(163,180,204,0.5)] active:shadow-[inset_2px_2px_5px_rgba(163,180,204,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] relative cursor-pointer" aria-controls="inline-notifications-panel" aria-expanded="false" id="notifications-btn" onclick="toggleInlinePanel('notifications')" type="button">
-<span class="material-symbols-outlined text-[20px]">notifications</span>
 
-</button>
-</div>
-</div>
-</header>
 <!-- ========================================== -->
 <!-- MAIN CONTAINER -->
 <!-- ========================================== -->
@@ -145,113 +76,132 @@
 <button class="mt-3 px-3 py-2 rounded-xl bg-surface-container text-primary text-[12px] font-bold cursor-pointer" id="notifications-retry" type="button">دریافت دوبارهٔ اعلان‌ها</button>
 </section>
 <!-- ======================================================== -->
-<!-- TAB VIEW 1: WORKSPACE / MEIZ KAR (DEFAULT ACTIVE TAB) -->
-<!-- ======================================================== -->
-<div class="tab-view-content flex flex-col w-full space-y-6 hidden" id="view-workspace">
-<!-- Qualification shortcut: detailed statuses are shown only in the server-backed credentials view. -->
-<section aria-label="مدارک و صلاحیت" class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl bg-surface p-4 sm:p-5 neu-card border border-primary/20" id="qualification-shortcut">
-<div>
-<h2 class="font-bold text-[16px] text-on-surface">مدارک و صلاحیت</h2>
-<p class="mt-1 text-[12px] leading-5 text-on-surface-variant">برای دیدن وضعیت ثبت‌شدهٔ مدارک و صلاحیت، بخش مدارک را باز کنید. نشان تأیید یا سطح زبانیِ نمونه نمایش داده نمی‌شود.</p>
+<!-- TAB VIEW 1: WORKSPACE / REAL MISSION MAP -->
+<div class="tab-view-content translator-workspace-view" id="view-workspace">
+  <div aria-label="نقشهٔ محل ملاقات مأموریت" class="translator-map-stage" id="translator-map-stage" role="region">
+    <div aria-label="نقشهٔ واقعی OpenStreetMap" class="translator-map-canvas" id="translator-map"></div>
+    <div aria-live="polite" class="translator-map-placeholder" id="translator-map-placeholder" role="status">
+      <span aria-hidden="true" class="translator-map-placeholder-icon material-symbols-outlined">location_on</span>
+      <strong id="translator-map-placeholder-title">نقشهٔ محل ملاقات</strong>
+      <p id="translator-map-placeholder-note">پس از پذیرش مأموریت، اگر مختصات واقعی محل در سرور ثبت شده باشد، اینجا نمایش داده می‌شود.</p>
+    </div>
+    <div aria-label="کنترل‌های نقشه" class="translator-map-controls" id="translator-map-controls">
+      <div class="translator-map-zoom-group neu-flat">
+        <button aria-label="بزرگ‌نمایی نقشه" class="translator-map-control neu-flat-sm" disabled id="translator-map-zoom-in" onclick="window.HZ_TRANSLATOR_MAP && HZ_TRANSLATOR_MAP.zoom(1)" title="بزرگ‌نمایی" type="button">
+          <span aria-hidden="true" class="material-symbols-outlined">add</span>
+        </button>
+        <button aria-label="کوچک‌نمایی نقشه" class="translator-map-control neu-flat-sm" disabled id="translator-map-zoom-out" onclick="window.HZ_TRANSLATOR_MAP && HZ_TRANSLATOR_MAP.zoom(-1)" title="کوچک‌نمایی" type="button">
+          <span aria-hidden="true" class="material-symbols-outlined">remove</span>
+        </button>
+      </div>
+      <button aria-label="مرکز کردن نقشه روی محل ملاقات" class="translator-map-control translator-map-recenter neu-flat" disabled id="translator-map-recenter" onclick="window.HZ_TRANSLATOR_MAP && HZ_TRANSLATOR_MAP.reset()" title="مرکز محل ملاقات" type="button">
+        <span aria-hidden="true" class="material-symbols-outlined">center_focus_strong</span>
+      </button>
+    </div>
+    <div class="translator-map-location" hidden id="translator-map-location">
+      <span aria-hidden="true" class="material-symbols-outlined">place</span>
+      <span class="translator-map-location-text" id="translator-map-label"></span>
+      <a class="translator-map-open" hidden id="translator-map-open" rel="noopener" target="_blank">نمایش در OpenStreetMap</a>
+    </div>
+  </div>
+
+<header class="translator-app-header pt-safe" id="translator-app-header">
+<div class="translator-header-frame">
+  <div class="translator-header-capsule neu-flat">
+    <div class="translator-header-account">
+      <button aria-label="مشاهده پروفایل مترجم" class="translator-header-profile" id="header-profile-btn" onclick="toggleInlinePanel('profile')" type="button">
+        <span aria-hidden="true" class="translator-header-avatar"><span class="material-symbols-outlined">person</span><span class="translator-header-avatar-status bg-outline" id="header-avatar-status"></span></span>
+        <span class="translator-header-profile-copy">
+          <strong data-tr-name>مترجم</strong>
+          <small>مترجم همراه تشریفات</small>
+        </span>
+      </button>
+      <button aria-label="اعلان‌ها" aria-controls="inline-notifications-panel" aria-expanded="false" class="translator-header-icon neu-flat-sm" id="notifications-btn" onclick="toggleInlinePanel('notifications')" type="button">
+        <span aria-hidden="true" class="material-symbols-outlined">notifications</span>
+      </button>
+    </div>
+    <nav class="translator-header-nav hidden md:flex" id="desktop-nav" aria-label="بخش‌های مترجم">
+      <button aria-current="page" class="translator-header-nav-button nav-tab-btn is-active" data-target="workspace" onclick="switchView('workspace')" type="button"><span class="material-symbols-outlined">dashboard</span><span>میز کار</span></button>
+      <button aria-current="false" class="translator-header-nav-button nav-tab-btn" data-target="schedule" onclick="switchView('schedule')" type="button"><span class="material-symbols-outlined">calendar_month</span><span>تقویم</span></button>
+      <button aria-current="false" class="translator-header-nav-button nav-tab-btn" data-target="earnings" onclick="switchView('earnings')" type="button"><span class="material-symbols-outlined">account_balance_wallet</span><span>درآمد</span></button>
+      <button aria-current="false" class="translator-header-nav-button nav-tab-btn" data-target="credentials" onclick="switchView('credentials')" type="button"><span class="material-symbols-outlined">badge</span><span>مدارک</span></button>
+    </nav>
+    <div class="translator-header-actions" id="header-quick-actions">
+      <button aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="mixed" class="translator-header-shift neu-flat-sm" data-presence-control disabled id="shift-toggle-btn" onclick="toggleShift()" type="button">
+        <span aria-hidden="true" class="translator-header-status-dot bg-outline" id="shift-beacon"></span>
+        <span id="header-shift-text">وضعیت نامشخص</span>
+      </button>
+      <span class="translator-presence-retry-slot" id="presence-retry-slot"></span>
+      <button aria-label="گزارش مالی؛ اطلاعات مالی از سرور دریافت نمی‌شود" class="translator-header-finance neu-flat-sm" id="header-financial-shortcut" onclick="switchView('earnings')" type="button">
+        <span aria-hidden="true" class="material-symbols-outlined">account_balance_wallet</span>
+        <span><small>گزارش مالی</small><strong>در دسترس نیست</strong></span>
+      </button>
+    </div>
+  </div>
 </div>
-<button aria-controls="view-credentials" class="shrink-0 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-[12px] font-bold cursor-pointer" onclick="switchView('credentials')" type="button">مشاهده وضعیت مدارک</button>
-</section>
-<!-- Main Responsive Grid -->
-<div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-start">
-<!-- Main Primary Column -->
-<div class="w-full flex flex-col space-y-6 md:col-span-6 lg:col-span-7 xl:col-span-7">
-<!-- Shift Paused Banner (Visible when offline) -->
-<div class="hidden rounded-2xl bg-surface-container p-5 text-center shadow-[inset_2px_2px_5px_rgba(163,180,204,0.5),inset_-2px_-2px_5px_rgba(255,255,255,0.95)] border border-surface-variant/40" id="shift-paused-notice">
-<div class="flex items-center justify-center gap-2 text-outline mb-1">
-<span class="material-symbols-outlined text-[24px]">bedtime</span>
-<span class="font-bold text-[15px] text-on-surface">شیفت شما غیرفعال و در حالت استراحت است</span>
+</header>
+
+  <aside aria-label="میز کار و کارت مأموریت" class="translator-workspace-sheet mission-sheet sheet-expanded neu-flat" id="mission-sheet">
+    <button aria-expanded="true" aria-label="جمع‌کردن پنل مأموریت" class="translator-sheet-handle sheet-handle" id="translator-sheet-toggle" onclick="toggleWorkspaceSheet()" type="button"><span></span></button>
+    <div class="translator-sheet-topline">
+      <span class="translator-sheet-state"><span aria-hidden="true" class="translator-sheet-state-dot" id="workspace-sheet-state-dot"></span><strong id="workspace-sheet-state">در حال دریافت درخواست‌ها</strong></span>
+      <span aria-live="off" class="translator-sheet-meta neu-pressed" id="workspace-sheet-meta">اطلاعات واقعی پس از دریافت از سرور</span>
+    </div>
+    <div class="translator-sheet-scroll" id="sheet-scroll-area">
+      <!-- جزئیات وضعیت زنده برای فناوری‌های کمکی؛ کنترل اصلی در کپسول بالای نقشه است. -->
+      <div aria-live="polite" class="sr-only" role="status">
+        <span id="shift-status-title">وضعیت آمادگی مشخص نیست</span>
+        <span id="shift-status-desc">در حال دریافت وضعیت سرور…</span>
+      </div>
+
+      <section aria-labelledby="calendar-title" class="translator-mission-section" id="calendar-section">
+        <h2 class="sr-only" id="calendar-title">درخواست‌ها و مأموریت‌ها</h2>
+        <div class="flex flex-col gap-3 w-full" id="offers-box"></div>
+        <div class="flex flex-col gap-3 w-full" id="missions-list"></div>
+      </section>
+
+      <div class="translator-workspace-more-content">
+        <section aria-label="مدارک و صلاحیت" class="translator-qualification-shortcut" id="qualification-shortcut">
+          <div>
+            <h2>مدارک و صلاحیت</h2>
+            <p>وضعیت ثبت‌شدهٔ مدارک را در بخش مدارک ببینید؛ نشان تأیید یا سطح زبانیِ نمونه نمایش داده نمی‌شود.</p>
+          </div>
+          <button aria-controls="view-credentials" onclick="switchView('credentials')" type="button">مشاهدهٔ مدارک</button>
+        </section>
+        <section aria-label="راهنمای تماس" class="translator-support-section">
+          <button aria-controls="inline-sos-panel" aria-expanded="false" class="translator-support-trigger" id="sos-btn" onclick="toggleSosInline()" type="button">
+            <span class="translator-support-icon material-symbols-outlined">health_and_safety</span>
+            <span class="translator-support-copy">
+              <strong>پشتیبانی و راهنمای ایمنی</strong>
+              <small>این بخش هشدار اضطراری یا موقعیت شما را ارسال نمی‌کند.</small>
+            </span>
+            <span aria-hidden="true" class="material-symbols-outlined" id="sos-chevron">expand_more</span>
+          </button>
+          <div class="hidden translator-support-panel" id="inline-sos-panel">
+            <div class="translator-support-panel-heading">
+              <h3>پشتیبانی و راهنمای ایمنی</h3>
+              <button id="translator-support-close" onclick="toggleSosInline()" type="button">بستن</button>
+            </div>
+            <p class="translator-safety-note" id="translator-support-safety-note">این بخش هشدار اضطراری ارسال نمی‌کند و موقعیت شما را به کسی نمی‌فرستد. در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
+            <p id="translator-support-unavailable">اعزام نیرو، تماس خودکار و ردیابی زنده در این برنامه فعال نیستند.</p>
+            <button aria-describedby="translator-support-unavailable" disabled id="translator-support-escort" type="button">اعزام تیم پشتیبانی میدانی — فعال نیست</button>
+            <p aria-live="polite" id="translator-support-status" role="status"></p>
+            <a class="hidden" id="translator-support-call">باز کردن شماره‌گیر پشتیبانی: <bdi id="translator-support-phone"></bdi></a>
+            <p>انتخاب این پیوند فقط شماره‌گیر دستگاه را باز می‌کند؛ اتصال تماس یا پاسخ‌گویی تضمین نمی‌شود.</p>
+            <button id="translator-support-retry" type="button">دریافت دوبارهٔ شمارهٔ پشتیبانی</button>
+          </div>
+        </section>
+        <div aria-labelledby="workspace-metrics-title" class="translator-metrics-note" id="workspace-metrics-note" role="note">
+          <h3 id="workspace-metrics-title">خلاصهٔ عملکرد</h3>
+          <p>درآمد روزانه، ساعات همراهی، امتیاز رضایت و تعداد مأموریت در این خلاصه از سرور دریافت نمی‌شوند؛ بنابراین عدد نمونه نمایش داده نمی‌شود.</p>
+        </div>
+      </div>
+    </div>
+  </aside>
 </div>
-<p class="text-[12px] text-on-surface-variant">برای دریافت پیشنهادهای تازهٔ ثبت‌شده در سامانه، وضعیت آمادگی را فعال کنید.</p>
-<button class="mt-3 px-5 py-2.5 rounded-xl bg-secondary text-on-secondary text-[13px] font-bold shadow-md hover:bg-secondary/90 transition-all cursor-pointer inline-flex items-center gap-2" data-presence-control disabled onclick="setShiftState(true)" type="button">
-<span class="material-symbols-outlined text-[18px]">check_circle</span>
-<span class="">فعال‌سازی وضعیت آمادگی</span>
-</button>
-</div>
-<!-- Safety guidance: opening this panel never sends an alert or location. -->
-<section class="w-full">
-<div class="w-full flex flex-col">
-<button aria-controls="inline-sos-panel" aria-expanded="false" class="p-5 rounded-2xl bg-surface flex flex-col justify-between text-right neu-raised hover:scale-[1.01] transition-all cursor-pointer w-full" id="sos-btn" onclick="toggleSosInline()" type="button">
-<div class="flex items-center justify-between w-full">
-<span class="material-symbols-outlined text-error text-[22px]">health_and_safety</span>
-<span class="text-[11px] text-error font-bold">راهنمای تماس</span>
-</div>
-<div class="mt-4 text-right w-full">
-<span class="font-bold text-[18px] text-on-surface">پشتیبانی و راهنمای ایمنی</span>
-<span class="text-[11px] text-on-surface-variant block mt-1">این بخش هشدار اضطراری یا موقعیت شما را ارسال نمی‌کند.</span>
-</div>
-<div class="mt-2 flex items-center justify-between text-error text-[12px] font-bold">
-<span>مشاهده راهنما و شمارهٔ پشتیبانی</span>
-<span class="material-symbols-outlined text-[18px] transition-transform duration-200" id="sos-chevron">expand_more</span>
-</div>
-</button>
-<div class="hidden mt-3 rounded-2xl bg-error-container/20 p-4 border border-error/30 shadow-inner space-y-3" id="inline-sos-panel">
-<div class="flex items-center justify-between pb-2 border-b border-error/20">
-<h3 class="text-error font-bold text-[13px]">پشتیبانی و راهنمای ایمنی</h3>
-<button class="text-on-surface-variant text-[12px] font-semibold cursor-pointer" id="translator-support-close" onclick="toggleSosInline()" type="button">بستن</button>
-</div>
-<p class="text-[12px] text-error font-bold" id="translator-support-safety-note">این بخش هشدار اضطراری ارسال نمی‌کند و موقعیت شما را به کسی نمی‌فرستد. در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
-<p class="text-[12px] text-on-surface-variant" id="translator-support-unavailable">اعزام نیرو، تماس خودکار و ردیابی زنده در این برنامه فعال نیستند.</p>
-<button aria-describedby="translator-support-unavailable" class="w-full py-2.5 px-3 rounded-xl text-[12px] opacity-60 cursor-not-allowed" disabled id="translator-support-escort" type="button">اعزام تیم پشتیبانی میدانی — فعال نیست</button>
-<p aria-live="polite" class="text-[12px] text-on-surface-variant" id="translator-support-status" role="status"></p>
-<a class="hidden block py-2.5 px-3 rounded-xl bg-surface text-primary text-[12px] font-bold" id="translator-support-call">باز کردن شماره‌گیر پشتیبانی: <bdi id="translator-support-phone"></bdi></a>
-<p class="text-[11px] text-on-surface-variant">انتخاب این پیوند فقط شماره‌گیر دستگاه را باز می‌کند؛ اتصال تماس یا پاسخ‌گویی تضمین نمی‌شود.</p>
-<button class="py-2 px-3 rounded-xl bg-surface text-primary text-[12px] font-bold cursor-pointer" id="translator-support-retry" type="button">دریافت دوبارهٔ شمارهٔ پشتیبانی</button>
-</div>
-</div>
-</section>
-</div>
-<!-- Left / Secondary Column (Shift Switch, Performance Summary, Upcoming Bookings Preview) -->
-<div class="w-full flex flex-col space-y-6 md:col-span-6 lg:col-span-5 xl:col-span-5">
-<!-- Shift status and a truthful summary; account metrics are not available here. -->
-<section aria-label="آمادگی و خلاصه عملکرد" class="w-full rounded-2xl bg-surface p-5 sm:p-6 neu-card space-y-5">
-<!-- Interactive Neumorphic Shift Toggle Switch -->
-<div class="flex items-center justify-between bg-surface-container/60 p-3 sm:p-3.5 rounded-xl shadow-[inset_3px_3px_6px_rgba(163,180,204,0.5),inset_-3px_-3px_6px_rgba(255,255,255,0.9)]">
-<div class="flex items-center gap-3 pr-1">
-<div class="w-3.5 h-3.5 rounded-full bg-secondary shadow-[0_0_10px_rgba(0,106,97,0.7)] animate-pulse" id="shift-beacon"></div>
-<div class="flex flex-col">
-<span class="text-[14px] text-on-surface font-bold" id="shift-status-title">وضعیت آمادگی مشخص نیست</span>
-<span class="text-[11px] text-on-surface-variant" id="shift-status-desc">در حال دریافت وضعیت سرور…</span>
-</div>
-</div>
-<!-- Tactile Toggle Button -->
-<button aria-label="تغییر وضعیت آماده به خدمت" aria-pressed="mixed" class="relative w-16 h-9 rounded-full bg-surface p-1 transition-all duration-300 shadow-[-3px_-3px_6px_rgba(255,255,255,0.9),3px_3px_6px_rgba(163,180,204,0.6)] focus:outline-none flex-shrink-0 cursor-pointer" data-presence-control disabled id="shift-toggle-btn" onclick="toggleShift()" type="button">
-<span class="block w-7 h-7 rounded-full bg-gradient-to-tr from-secondary to-secondary-fixed shadow-[0_2px_5px_rgba(0,106,97,0.5)] transform -translate-x-7 transition-transform duration-300 flex items-center justify-center" id="shift-knob">
-<span class="material-symbols-outlined text-[16px] text-on-secondary" id="shift-knob-icon">check</span>
-</span>
-</button>
-</div>
-<!-- Do not invent financial, time or satisfaction metrics when the account report is unavailable. -->
-<div aria-labelledby="workspace-metrics-title" class="p-3.5 rounded-xl bg-surface-container-low text-right" id="workspace-metrics-note" role="note">
-<h3 class="font-bold text-[13px] text-on-surface" id="workspace-metrics-title">خلاصهٔ عملکرد</h3>
-<p class="mt-1 text-[12px] leading-5 text-on-surface-variant">درآمد روزانه، ساعات همراهی، امتیاز رضایت و تعداد مأموریت در این خلاصه از سرور دریافت نمی‌شوند؛ بنابراین عدد نمونه نمایش داده نمی‌شود.</p>
-</div>
-</section>
-<!-- Scheduled Future Bookings Preview -->
-<section class="space-y-4 w-full" id="calendar-section">
-<div class="flex items-center justify-between px-1">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-[22px]">calendar_clock</span>
-<h2 class="font-bold text-[18px] text-on-surface">ماموریت‌های من</h2>
-</div>
-<button class="text-[12px] text-primary hover:underline font-semibold cursor-pointer" onclick="switchView('schedule')" type="button">مشاهده همه تقویم</button>
-</div>
-<!-- درخواست‌های جدید از سرور (مهلت پذیرش ۶۰ ثانیه) -->
-<div class="flex flex-col gap-3 w-full" id="offers-box"></div>
-<!-- ماموریت‌های واقعی: پذیرفته‌شده و آینده (سند) -->
-<div class="flex flex-col gap-3 w-full" id="missions-list"></div>
-</section>
-</div>
-</div>
-</div>
-<!-- ======================================================== -->
 <!-- TAB VIEW 2: SCHEDULE / CALENDAR (INLINE VIEW SWITCH) -->
 <!-- ======================================================== -->
-<div class="tab-view-content flex flex-col w-full space-y-6" id="view-schedule">
+<div class="tab-view-content flex flex-col w-full space-y-6 hidden" id="view-schedule">
 <div class="flex items-center justify-between pb-3 border-b border-surface-variant/40">
 <div class="flex items-center gap-3 text-primary">
 <div class="w-10 h-10 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary shadow-inner">
@@ -331,16 +281,16 @@
 <!-- ========================================== -->
 <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(163,180,204,0.3)] border-t border-surface-variant/30" id="mobile-nav">
 <div class="flex justify-around items-center h-20 px-3 max-w-lg mx-auto">
-<button aria-current="page" class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 transition-all duration-200 nav-tab-btn cursor-pointer text-on-surface-variant" data-target="workspace" onclick="switchView('workspace')" type="button">
+<button aria-current="page" class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 transition-all duration-200 nav-tab-btn cursor-pointer is-active" data-target="workspace" onclick="switchView('workspace')" type="button">
 <span class="material-symbols-outlined text-[24px]">dashboard</span>
 <span class="text-[11px]">میز کار</span>
 </button>
 
-<button class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 text-on-surface-variant hover:text-primary transition-all duration-200 nav-tab-btn cursor-pointer" data-target="earnings" onclick="switchView('earnings')" type="button">
+<button aria-current="false" class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 text-on-surface-variant hover:text-primary transition-all duration-200 nav-tab-btn cursor-pointer" data-target="earnings" onclick="switchView('earnings')" type="button">
 <span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
 <span class="text-[11px]">درآمد</span>
 </button>
-<button class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 text-on-surface-variant hover:text-primary transition-all duration-200 nav-tab-btn cursor-pointer" data-target="credentials" onclick="switchView('credentials')" type="button">
+<button aria-current="false" class="flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[48px] h-14 w-16 text-on-surface-variant hover:text-primary transition-all duration-200 nav-tab-btn cursor-pointer" data-target="credentials" onclick="switchView('credentials')" type="button">
 <span class="material-symbols-outlined text-[24px]">badge</span>
 <span class="text-[11px]">مدارک</span>
 </button>
@@ -388,31 +338,45 @@
         }
       });
 
-      // Update Mobile Nav styling
-      document.querySelectorAll('#mobile-nav .nav-tab-btn').forEach(function (btn) {
-        var t = btn.getAttribute('data-target');
-        if (t === target) {
-          btn.classList.add('neu-tab-active');
-          btn.classList.remove('text-on-surface-variant');
-        } else {
-          btn.classList.remove('neu-tab-active');
-          btn.classList.add('text-on-surface-variant');
-        }
+      // Keep both navigation variants on the sample's same recessed/extruded controls.
+      document.querySelectorAll('#mobile-nav .nav-tab-btn, #desktop-nav .nav-tab-btn').forEach(function (btn) {
+        var selected = btn.getAttribute('data-target') === target;
+        btn.setAttribute('aria-current', selected ? 'page' : 'false');
+        btn.classList.toggle('is-active', selected);
       });
 
-      // Update Desktop Nav styling
-      document.querySelectorAll('#desktop-nav .nav-tab-btn').forEach(function (btn) {
-        var t = btn.getAttribute('data-target');
-        if (t === target) {
-          btn.classList.add('text-primary', 'font-bold', 'bg-surface', 'shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.95)]');
-          btn.classList.remove('text-on-surface-variant');
-        } else {
-          btn.classList.remove('text-primary', 'font-bold', 'bg-surface', 'shadow-[inset_2px_2px_4px_rgba(163,180,204,0.5),inset_-2px_-2px_4px_rgba(255,255,255,0.95)]');
-          btn.classList.add('text-on-surface-variant');
-        }
-      });
-
+      var workspaceSheet = document.getElementById('mission-sheet');
+      var workspaceExpanded = target === 'workspace' && workspaceSheet && !workspaceSheet.classList.contains('sheet-collapsed');
+      document.body.classList.toggle('workspace-sheet-expanded', !!workspaceExpanded);
+      if (target === 'workspace' && window.HZ_TRANSLATOR_MAP) {
+        window.requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleWorkspaceSheet() {
+      var sheet = document.getElementById('mission-sheet');
+      var handle = document.getElementById('translator-sheet-toggle');
+      if (!sheet || !handle) return;
+      var collapsed = sheet.classList.toggle('sheet-collapsed');
+      sheet.classList.toggle('sheet-expanded', !collapsed);
+      document.body.classList.toggle('workspace-sheet-expanded', !collapsed && !document.getElementById('view-workspace').classList.contains('hidden'));
+      handle.setAttribute('aria-expanded', String(!collapsed));
+      handle.setAttribute('aria-label', collapsed ? 'بازکردن پنل مأموریت' : 'جمع‌کردن پنل مأموریت');
+      if (!collapsed && window.HZ_TRANSLATOR_MAP) {
+        window.requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
+      }
+    }
+
+    function expandWorkspaceSheet() {
+      var sheet = document.getElementById('mission-sheet');
+      var handle = document.getElementById('translator-sheet-toggle');
+      if (!sheet || !handle) return;
+      sheet.classList.remove('sheet-collapsed');
+      sheet.classList.add('sheet-expanded');
+      document.body.classList.toggle('workspace-sheet-expanded', !document.getElementById('view-workspace').classList.contains('hidden'));
+      handle.setAttribute('aria-expanded', 'true');
+      handle.setAttribute('aria-label', 'جمع‌کردن پنل مأموریت');
     }
 
     // 3. Shift State Manager
@@ -429,6 +393,7 @@
       var desc = document.getElementById('shift-status-desc');
       var headerText = document.getElementById('header-shift-text');
       var headerPulse = document.getElementById('header-shift-pulse');
+      var avatarStatus = document.getElementById('header-avatar-status');
       var shiftNotice = document.getElementById('shift-paused-notice');
 
       if (isShiftActive) {
@@ -443,10 +408,11 @@
           beacon.classList.remove('bg-outline', 'animate-none');
           beacon.classList.add('bg-secondary', 'animate-pulse');
         }
+        if (avatarStatus) { avatarStatus.classList.remove('bg-outline'); avatarStatus.classList.add('bg-secondary'); }
         if (title) title.textContent = 'آمادهٔ دریافت پیشنهاد';
         if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: آمادهٔ دریافت پیشنهاد';
         if (headerText) {
-          headerText.textContent = 'شیفت فعال';
+          headerText.textContent = 'آماده به خدمت';
           headerText.classList.remove('text-outline');
           headerText.classList.add('text-secondary');
         }
@@ -467,6 +433,7 @@
           beacon.classList.remove('bg-secondary', 'animate-pulse');
           beacon.classList.add('bg-outline');
         }
+        if (avatarStatus) { avatarStatus.classList.remove('bg-secondary'); avatarStatus.classList.add('bg-outline'); }
         if (title) title.textContent = 'شیفت غیرفعال (در حال استراحت)';
         if (desc) desc.textContent = 'آخرین وضعیت تأییدشدهٔ سرور: غیرفعال';
         if (headerText) {
@@ -489,22 +456,6 @@
     // Safety guidance only; support.js owns fresh configuration and cancellation.
     function toggleSosInline() { window.HZ_TRANSLATOR_SUPPORT.toggle(); }
 
-    // Booking Details & Actions
-    function toggleBookingDetail(bookingId) {
-      var detail = document.getElementById('inline-details-' + bookingId);
-      if (detail) {
-        detail.classList.toggle('hidden');
-      }
-    }
-
-    function handleBookingCall(contact) {
-      showToast('برقراری تماس مستقیم با ' + contact, 'call');
-    }
-
-    function handleBookingConfirm(bkgId) {
-      showToast('آمادگی شما برای رزرو ' + bkgId + ' در سامانه ثبت گردید.', 'event_available');
-    }
-
     // Notifications have their own account-bound read controller.
     function toggleInlinePanel(type) {
       var profilePanel = document.getElementById('inline-profile-panel');
@@ -526,6 +477,8 @@
 
 
 
+<script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
+<script src="mission-map.js"></script>
 <script src="ui.js"></script>
 <script src="mission-actions.js"></script>
 <script src="presence.js"></script>
@@ -572,6 +525,53 @@
   var MISSIONS = [];
   var missionsState = 'loading'; // loading | ok | error | nosession
   var missionRead = 0;
+  var selectedMapMissionKey = null;
+  function hasMissionCoordinates(m) {
+    return !!m && typeof m.lat === 'number' && Number.isFinite(m.lat) && m.lat >= -90 && m.lat <= 90 &&
+      typeof m.lng === 'number' && Number.isFinite(m.lng) && m.lng >= -180 && m.lng <= 180;
+  }
+  function missionMapKey(m) { return String(m && (m.reservation_id || m.id) || ''); }
+  function updateTranslatorMap(forceCenter) {
+    if (!window.HZ_TRANSLATOR_MAP) return;
+    var mapped = MISSIONS.filter(hasMissionCoordinates);
+    var selected = mapped.find(function (m) { return missionMapKey(m) === selectedMapMissionKey; }) || mapped[0];
+    if (selected) {
+      selectedMapMissionKey = missionMapKey(selected);
+      window.HZ_TRANSLATOR_MAP.setMission(selected, { center: !!forceCenter });
+      return;
+    }
+    var title = 'نقشهٔ محل ملاقات';
+    var note = 'پس از پذیرش مأموریت، اگر مختصات واقعی محل در سرور ثبت شده باشد، اینجا نمایش داده می‌شود.';
+    var offers = typeof lastOffers !== 'undefined' && Array.isArray(lastOffers) ? lastOffers : [];
+    if (MISSIONS.length) {
+      title = 'مختصات در دسترس نیست';
+      note = 'برای این مأموریت مختصات محل از سرور ارائه نشده است؛ نشانی ثبت‌شده در کارت مأموریت قابل مشاهده است.';
+    } else if (offers.length) {
+      title = 'پیشنهاد مأموریت';
+      note = 'برای حفظ حریم خصوصی، نقطهٔ دقیق پیش از پذیرش روی نقشه نمی‌آید. پس از پذیرش، مختصات ثبت‌شدهٔ سرور نمایش داده می‌شود.';
+    } else if (typeof offersState !== 'undefined' && offersState === 'error') {
+      title = 'پیشنهادها دریافت نشدند';
+      note = 'دوباره تلاش کنید؛ نقشهٔ پیش‌فرض یا موقعیت ساختگی نمایش داده نمی‌شود.';
+    } else if (missionsState === 'loading') {
+      title = 'در حال بررسی مأموریت‌ها';
+      note = 'موقعیت ساختگی یا نقشهٔ پیش‌فرض نمایش داده نمی‌شود.';
+    } else if (missionsState === 'error') {
+      title = 'نقشه فعلاً در دسترس نیست';
+      note = 'دریافت مأموریت‌ها انجام نشد؛ پس از برقراری ارتباط دوباره تلاش می‌شود.';
+    } else if (missionsState === 'nosession') {
+      title = 'نشست نیاز به ورود دوباره دارد';
+      note = 'برای دریافت اطلاعات واقعی مأموریت، دوباره وارد حساب مترجم شوید.';
+    }
+    selectedMapMissionKey = null;
+    window.HZ_TRANSLATOR_MAP.setPlaceholder(title, note);
+  }
+  function focusMissionOnMap(m) {
+    if (!hasMissionCoordinates(m)) return;
+    selectedMapMissionKey = missionMapKey(m);
+    updateTranslatorMap(true);
+    expandWorkspaceSheet();
+    switchView('workspace');
+  }
   function loadMissions() {
     var st = HZ.load(), read = ++missionRead;
     if (!st.token) { MISSIONS = []; missionsState = 'nosession'; renderMissions(); return; }
@@ -613,8 +613,13 @@
     box.innerHTML = '';
     if (sc) sc.innerHTML = '';
     if (!list.length) {
-      box.appendChild(el('div', 'rounded-2xl bg-surface p-5 neu-raised text-center text-[13px] text-on-surface-variant', emptyTxt));
+      var hasPendingWork = lastOffers.length || lastChanges.length || lastExtensions.length;
+      if (missionsState !== 'ok' || !hasPendingWork) {
+        box.appendChild(el('div', 'translator-empty-missions', emptyTxt));
+      }
       if (sc) sc.appendChild(el('div', 'rounded-2xl bg-surface p-5 neu-raised text-center text-[13px] text-on-surface-variant md:col-span-3', emptyTxt));
+      updateTranslatorMap();
+      updateWorkspaceSheetSummary();
       return;
     }
     list.forEach(function (m) { box.appendChild(missionCard(m)); });
@@ -622,11 +627,13 @@
       if (!dayList.length) sc.appendChild(el('div', 'rounded-2xl bg-surface p-5 neu-raised text-center text-[13px] text-on-surface-variant md:col-span-3', 'در این روز ماموریتی ندارید.'));
       dayList.forEach(function (m) { sc.appendChild(missionCard(m)); });
     }
+    updateTranslatorMap();
+    updateWorkspaceSheetSummary();
   }
   function missionCard(m) {
     var actor = tok();
-    var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3');
-    var head = el('div', 'flex items-start justify-between gap-2');
+    var card = el('div', 'translator-mission-card rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3');
+    var head = el('div', 'translator-mission-heading flex items-start justify-between gap-2');
     // سرور کد زمینه (general/medical/…) می‌فرستد؛ عنوان فارسی نمایش داده می‌شود
     var FIELD_FA = { general: 'عمومی', medical: 'پزشکی', legal: 'حقوقی', business: 'تجاری' };
     head.appendChild(el('span', 'text-[14px] text-on-surface font-bold', FIELD_FA[m.purpose] || m.purpose || 'ماموریت'));
@@ -635,23 +642,26 @@
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (m.travelerName || '—')));
     var when = new Date(m.startAt);
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant', (m.place || '') + ' • ' + HZ.jDate(when) + ' ' + HZ.clock(when)));
-    // اگر مختصات محل همراه رزرو آمده باشد، مترجم می‌تواند نقطه را روی نقشه ببیند و مسیریابی کند
-    if (m.lat != null && m.lng != null) {
-      var navLink = el('a', 'self-start text-[11px] font-bold text-primary underline', 'مشاهده‌ی محل روی نقشه');
-      navLink.href = 'https://www.openstreetmap.org/?mlat=' + m.lat + '&mlon=' + m.lng + '#map=16/' + m.lat + '/' + m.lng;
-      navLink.target = '_blank';
-      navLink.rel = 'noopener';
-      card.appendChild(navLink);
+    // نقشه فقط از مختصات واقعی مأموریت پذیرفته‌شده استفاده می‌کند؛ مسیر و ETA ساخته نمی‌شود.
+    if (hasMissionCoordinates(m)) {
+      var mapButton = el('button', 'translator-map-focus', 'نمایش محل ملاقات روی نقشه');
+      mapButton.type = 'button';
+      mapButton.addEventListener('click', function () { focusMissionOnMap(m); });
+      card.appendChild(mapButton);
     }
-    var money = el('div', 'flex items-center justify-between pt-2 border-t border-surface-variant/40 text-[12px]');
-    money.appendChild(el('span', 'text-on-surface-variant', 'مبلغ کل: ' + HZ.money(m.total || 0)));
-    money.appendChild(el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(m.net || 0)));
+    var money = el('div', 'translator-mission-money flex items-center justify-between pt-2 border-t border-surface-variant/40 text-[12px]');
+    var total = el('span', 'text-on-surface-variant', 'مبلغ کل');
+    total.appendChild(el('b', '', HZ.money(m.total || 0)));
+    var net = el('span', 'font-bold text-secondary', 'سهم شما');
+    net.appendChild(el('b', '', HZ.money(m.net || 0)));
+    money.appendChild(total); money.appendChild(net);
     card.appendChild(money);
     // شروع خدمت فقط با کد امنیتی‌ای که مسافر اعلام می‌کند؛ تا پیش از آن پایان خدمت ممکن نیست
     if (m.reservation_id && !m.started) {
-      var codeRow = el('div', 'flex items-center gap-2');
+      var codeRow = el('div', 'translator-service-code-row flex items-center gap-2');
       var codeInp = document.createElement('input');
-      codeInp.type = 'text'; codeInp.inputMode = 'numeric'; codeInp.maxLength = 5; codeInp.placeholder = 'کد امنیتی مسافر';
+      codeInp.type = 'text'; codeInp.inputMode = 'numeric'; codeInp.maxLength = 5; codeInp.placeholder = 'کد اعلام‌شده توسط مسافر';
+      codeInp.setAttribute('aria-label', 'کد پنج‌رقمی شروع خدمت که مسافر اعلام می‌کند');
       codeInp.className = 'w-32 px-3 py-1.5 rounded-xl neu-inset-shallow bg-surface-container text-center text-[13px] font-bold tracking-widest';
       var codeBtn = el('button', 'px-3 py-1.5 rounded-xl bg-[#006a61] text-white text-[11px] font-bold cursor-pointer', 'ثبت کد و شروع خدمت');
       codeBtn.type = 'button';
@@ -733,7 +743,7 @@
   }
   function paymentCard(p) {
     var actor = tok();
-    var card = el('div', 'rounded-2xl bg-surface p-4 neu-raised flex flex-col gap-2');
+    var card = el('div', 'translator-payment-card rounded-2xl bg-surface p-4 neu-raised flex flex-col gap-2');
     card.setAttribute('data-payment-reservation', p.reservation_id);
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', p.place || 'ماموریت'));
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (p.travelerName || '—')));
@@ -897,10 +907,67 @@
   var lastOffers = [];
   var lastChanges = [];
   var lastExtensions = [];
+  function updateWorkspaceSheetSummary() {
+    var label = document.getElementById('workspace-sheet-state');
+    var meta = document.getElementById('workspace-sheet-meta');
+    var dot = document.getElementById('workspace-sheet-state-dot');
+    if (!label || !meta || !dot) return;
+
+    var stateText = 'در انتظار درخواست تازه';
+    var metaText = 'فاصله و زمان مسیر نمایش داده نمی‌شود';
+    var tone = 'is-idle';
+    var offer = Array.isArray(lastOffers) && lastOffers.length ? lastOffers[0] : null;
+    var extension = Array.isArray(lastExtensions) && lastExtensions.length ? lastExtensions[0] : null;
+    var change = Array.isArray(lastChanges) && lastChanges.length ? lastChanges[0] : null;
+    var pendingResponse = offer || extension || change;
+    if (pendingResponse) {
+      stateText = offer ? (offer.kind === 'scheduled' ? 'پیشنهاد زمان‌دار' : 'پیشنهاد فوری')
+        : extension ? 'درخواست تمدید خدمت' : 'درخواست تغییر مأموریت';
+      metaText = 'فرصت پاسخ: ' + HZ.toFa(Math.max(0, Math.ceil((Date.parse(pendingResponse.expires_at) - Date.now()) / 1000))) + ' ثانیه';
+      tone = 'is-offer';
+      meta.setAttribute('data-exp', pendingResponse.expires_at);
+      meta.setAttribute('data-offer-timer', '1');
+    } else {
+      meta.removeAttribute('data-exp');
+      meta.removeAttribute('data-offer-timer');
+      if (MISSIONS.length) {
+        var mappedMission = MISSIONS.find(hasMissionCoordinates);
+        stateText = 'مأموریت پذیرفته‌شده';
+        metaText = mappedMission ? 'نقطهٔ ملاقات ثبت‌شده روی نقشه' : 'مختصات واقعی از سرور موجود نیست';
+        tone = 'is-accepted';
+      } else if (missionsState === 'nosession') {
+        stateText = 'ورود به حساب لازم است';
+        metaText = 'اطلاعات مأموریت از سرور دریافت نمی‌شود';
+        tone = 'is-error';
+      } else if (offersState === 'error' || missionsState === 'error') {
+        stateText = 'درخواست‌ها دریافت نشدند';
+        metaText = 'برای تلاش دوباره، دریافت را بررسی کنید';
+        tone = 'is-error';
+      } else if (offersState === 'loading' || missionsState === 'loading') {
+        stateText = 'در حال بررسی درخواست‌ها';
+        metaText = 'وضعیت واقعی از سرور دریافت می‌شود';
+        tone = 'is-loading';
+      }
+    }
+    label.textContent = stateText;
+    meta.textContent = metaText;
+    dot.className = 'translator-sheet-state-dot ' + tone;
+  }
+  function syncWorkspaceEmptyMissions() {
+    var box = document.getElementById('missions-list');
+    if (!box || MISSIONS.length || missionsState !== 'ok') return;
+    var pending = lastOffers.length || lastChanges.length || lastExtensions.length;
+    var emptyCard = box.querySelector('.translator-empty-missions');
+    if (pending && emptyCard) emptyCard.remove();
+    if (!pending && !emptyCard) {
+      box.innerHTML = '';
+      box.appendChild(el('div', 'translator-empty-missions', 'فعلاً مأموریت پذیرفته‌شده‌ای ندارید. درخواست‌های جدید بعد از تأیید پذیرفته می‌شوند.'));
+    }
+  }
   var CHANGE_LABEL = { notes: 'یادداشت', scheduled_at: 'زمان', place: 'محل ملاقات', origin_lang: 'زبان مبدأ', dest_lang: 'زبان مقصد', field: 'حوزه', hours: 'مدت', car: 'خودرو', party: 'تعداد همراه', gender_pref: 'ترجیح جنسیت' };
   function renderChange(c) {
     var actor = tok();
-    var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-secondary/40');
+    var card = el('div', 'translator-change-card rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-secondary/40');
     card.setAttribute('data-change-id', c.id);
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تغییر ماموریت'));
     var parts = Object.keys(c.changes).filter(function (k) { return CHANGE_LABEL[k]; }).map(function (k) {
@@ -932,7 +999,7 @@
   }
   function renderExtension(e) {
     var actor = tok();
-    var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-amber-500/50');
+    var card = el('div', 'translator-extension-card rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-amber-500/50');
     card.appendChild(el('span', 'text-[13px] font-bold text-on-surface', 'درخواست تمدید خدمت'));
     card.appendChild(el('span', 'text-[11px] text-on-surface-variant',
       'مسافر: ' + (e.traveler_name || '—') + ' • ' + (e.place || '') + ' • تمدید ' + HZ.toFa(e.extra_hours || 1) + ' ساعت • سهم شما پس از تمدید: ' + HZ.money(e.new_net || 0)));
@@ -953,34 +1020,110 @@
     card.appendChild(row);
     return card;
   }
+  var FIELD_LABEL_FA = { general: 'عمومی', medical: 'پزشکی', legal: 'حقوقی', business: 'تجاری' };
+  var LANGUAGE_LABEL_FA = { fa: 'فارسی', ar: 'عربی', en: 'انگلیسی', tr: 'ترکی', fr: 'فرانسوی', ru: 'روسی', zh: 'چینی' };
   function renderOffers() {
     if (!offersBox) return;
     offersBox.innerHTML = '';
     if (offersState === 'error') {
-      offersBox.appendChild(el('span', 'text-[12px] text-error', 'دریافت درخواست‌ها انجام نشد؛ دوباره بررسی کنید.'));
-      var retry = el('button', 'text-[12px] font-bold text-primary', 'دریافت دوبارهٔ درخواست‌ها');
-      retry.type = 'button'; retry.onclick = function () { refreshOffers(true); }; offersBox.appendChild(retry);
+      var errorCard = el('div', 'translator-offer-card translator-request-error');
+      var errorPrimary = el('div', 'translator-offer-primary');
+      var errorSummary = el('div', 'translator-offer-summary');
+      errorSummary.appendChild(el('strong', 'translator-offer-traveler', 'دریافت درخواست‌ها انجام نشد'));
+      var errorState = el('div', 'translator-offer-state-line');
+      errorState.appendChild(el('span', 'translator-offer-state-title', 'اتصال به سرور را بررسی کنید'));
+      errorSummary.appendChild(errorState);
+      errorPrimary.appendChild(errorSummary);
+      var errorIcon = el('div', 'translator-offer-countdown translator-offer-error-icon');
+      errorIcon.appendChild(el('span', 'material-symbols-outlined', 'sync_problem'));
+      errorPrimary.appendChild(errorIcon);
+      errorCard.appendChild(errorPrimary);
+      var errorNote = el('div', 'translator-offer-notes');
+      errorNote.appendChild(el('span', 'material-symbols-outlined translator-offer-note-icon', 'info'));
+      errorNote.appendChild(el('strong', 'translator-offer-error-copy', 'برای دریافت دوباره تلاش کنید. دادهٔ مأموریت یا محل ساختگی نمایش داده نمی‌شود.'));
+      errorCard.appendChild(errorNote);
+      var retry = el('button', 'translator-offer-retry neu-flat', 'تلاش دوباره');
+      retry.type = 'button'; retry.onclick = function () { refreshOffers(true); }; errorCard.appendChild(retry);
+      offersBox.appendChild(errorCard);
+      updateTranslatorMap();
+      updateWorkspaceSheetSummary();
+      syncWorkspaceEmptyMissions();
       return;
     }
-    if (!lastOffers.length && !lastChanges.length && !lastExtensions.length) return;
     lastExtensions.forEach(function (e) { offersBox.appendChild(renderExtension(e)); });
     lastChanges.forEach(function (c) { offersBox.appendChild(renderChange(c)); });
-    offersBox.appendChild(el('span', 'text-[12px] font-bold text-on-surface-variant px-1', 'درخواست‌های جدید'));
     lastOffers.forEach(function (o) {
-      var card = el('div', 'rounded-2xl bg-surface p-4 sm:p-5 neu-raised flex flex-col gap-3 border border-primary/30');
+      var card = el('div', 'translator-offer-card');
       var actor = tok();
       card.setAttribute('data-offer-id', o.id);
-      card.appendChild(el('span', 'text-[14px] font-bold text-on-surface', (o.place || 'محل ملاقات نامشخص')));
-      var meta = o.kind === 'scheduled' && o.scheduled_at ? HZ.jDate(new Date(o.scheduled_at)) + ' ' + HZ.clock(new Date(o.scheduled_at)) : 'فوری';
-      card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'مسافر: ' + (o.traveler_name || '—') + ' • ' + meta));
-      if (o.notes) card.appendChild(el('span', 'text-[11px] text-on-surface-variant', 'یادداشت: ' + o.notes));
-      var row = el('div', 'flex items-center justify-between gap-2 pt-2 border-t border-surface-variant/40 text-[12px]');
-      var left = Math.max(0, Math.ceil((Date.parse(o.expires_at) - Date.now()) / 1000));
-      var timer = el('span', 'font-bold text-secondary', 'سهم شما: ' + HZ.money(o.net || 0) + ' • ' + HZ.toFa(left) + ' ثانیه');
-      timer.setAttribute('data-exp', o.expires_at);
-      row.appendChild(timer);
-      var btns = el('div', 'flex gap-2');
-      var no = el('button', 'px-4 py-2 rounded-xl neu-raised text-[12px] font-bold text-on-surface cursor-pointer', 'رد');
+
+      var kind = o.kind === 'scheduled' ? 'درخواست زمان‌دار' : 'درخواست فوری';
+      var primary = el('div', 'translator-offer-primary');
+      var summary = el('div', 'translator-offer-summary');
+      summary.appendChild(el('strong', 'translator-offer-traveler', o.traveler_name || 'نام مسافر اعلام نشده'));
+      var stateLine = el('div', 'translator-offer-state-line');
+      stateLine.appendChild(el('span', 'translator-offer-state-title', 'پیشنهاد جدید منتظر بررسی'));
+      stateLine.appendChild(el('span', 'translator-offer-state-dot'));
+      stateLine.appendChild(el('span', 'translator-offer-kind', kind));
+      summary.appendChild(stateLine);
+      primary.appendChild(summary);
+
+      var remaining = Math.max(0, Math.ceil((Date.parse(o.expires_at) - Date.now()) / 1000));
+      var timer = el('div', 'translator-offer-countdown');
+      timer.setAttribute('role', 'timer');
+      timer.setAttribute('aria-label', 'فرصت پاسخ به پیشنهاد');
+      var ring = el('span', 'translator-offer-countdown-ring');
+      var count = el('span', 'translator-offer-countdown-value', HZ.toFa(remaining));
+      count.setAttribute('data-exp', o.expires_at);
+      count.setAttribute('data-countdown-ring', '1');
+      ring.appendChild(count);
+      timer.appendChild(ring);
+      primary.appendChild(timer);
+
+      var compensation = el('div', 'translator-offer-compensation');
+      compensation.appendChild(el('small', '', 'سهم مترجم'));
+      compensation.appendChild(el('strong', '', HZ.money(o.net || 0)));
+      compensation.appendChild(el('small', 'translator-offer-currency', 'تومان'));
+      primary.appendChild(compensation);
+      card.appendChild(primary);
+
+      var facts = el('div', 'translator-offer-facts');
+      function offerFact(icon, label, value, extraClass) {
+        if (!value) return;
+        var fact = el('div', 'translator-offer-fact');
+        fact.appendChild(el('span', 'material-symbols-outlined translator-offer-fact-icon', icon));
+        var copy = el('div', 'translator-offer-fact-copy');
+        copy.appendChild(el('small', '', label));
+        copy.appendChild(el('strong', extraClass || '', value));
+        fact.appendChild(copy);
+        facts.appendChild(fact);
+      }
+      if (o.origin_lang && o.dest_lang) {
+        offerFact('translate', 'خدمت زبانی',
+          (LANGUAGE_LABEL_FA[o.origin_lang] || o.origin_lang) + ' ← ' + (LANGUAGE_LABEL_FA[o.dest_lang] || o.dest_lang));
+      }
+      if (o.field) offerFact('work', 'حوزهٔ خدمت', FIELD_LABEL_FA[o.field] || o.field);
+      offerFact('place', 'محل ملاقات', o.place || 'نشانی در درخواست ثبت نشده');
+      if (o.kind === 'scheduled' && o.scheduled_at) {
+        var scheduled = new Date(o.scheduled_at);
+        offerFact('calendar_month', 'زمان قرار', HZ.jDate(scheduled) + '، ساعت ' + HZ.clock(scheduled));
+      } else {
+        offerFact('bolt', 'زمان درخواست', 'فوری');
+      }
+      card.appendChild(facts);
+
+      if (o.notes) {
+        var note = el('div', 'translator-offer-notes');
+        note.appendChild(el('span', 'material-symbols-outlined translator-offer-note-icon', 'format_quote'));
+        var noteCopy = el('div', 'translator-offer-note-copy');
+        noteCopy.appendChild(el('small', '', 'یادداشت مسافر'));
+        noteCopy.appendChild(el('strong', '', '«' + o.notes + '»'));
+        note.appendChild(noteCopy);
+        card.appendChild(note);
+      }
+
+      var btns = el('div', 'translator-offer-actions');
+      var no = el('button', 'translator-offer-reject', 'رد');
       no.type = 'button';
       HZ_MISSION_ACTION.bind(no, o.reservation_id);
       function decideOffer(action) {
@@ -988,14 +1131,18 @@
           refresh: function () { loadMissions(); refreshOffers(true); } });
       }
       no.onclick = function () { decideOffer('offer-decline'); };
-      var yes = el('button', 'px-4 py-2 rounded-xl bg-[#006a61] text-white text-[12px] font-bold cursor-pointer', 'پذیرش');
+      var yes = el('button', 'translator-offer-accept', 'پذیرش');
       yes.type = 'button';
       HZ_MISSION_ACTION.bind(yes, o.reservation_id);
       yes.onclick = function () { decideOffer('offer-accept'); };
-      btns.appendChild(no); btns.appendChild(yes); row.appendChild(btns);
-      card.appendChild(row);
+      btns.appendChild(no);
+      btns.appendChild(yes);
+      card.appendChild(btns);
       offersBox.appendChild(card);
     });
+    updateTranslatorMap();
+    updateWorkspaceSheetSummary();
+    syncWorkspaceEmptyMissions();
   }
   var offersSig = '', offersState = 'loading';
   var offerRead = 0, offerApplied = 0, offerRevision = 0;
@@ -1030,7 +1177,9 @@
   setInterval(function () {
     document.querySelectorAll('[data-exp]').forEach(function (t) {
       var left = Math.max(0, Math.ceil((Date.parse(t.getAttribute('data-exp')) - Date.now()) / 1000));
-      if (t.getAttribute('data-pure')) t.textContent = HZ.toFa(left) + ' ثانیه';
+      if (t.getAttribute('data-countdown-ring')) t.textContent = HZ.toFa(left);
+      else if (t.getAttribute('data-pure')) t.textContent = HZ.toFa(left) + ' ثانیه';
+      else if (t.getAttribute('data-offer-timer')) t.textContent = 'فرصت پاسخ: ' + HZ.toFa(left) + ' ثانیه';
       else t.textContent = t.textContent.replace(/• .*ثانیه$/, '• ' + HZ.toFa(left) + ' ثانیه');
     });
   }, 1000);

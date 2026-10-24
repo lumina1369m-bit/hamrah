@@ -1,12 +1,12 @@
 // مترجم همراه: کش پوسته‌ی برنامه برای کار آفلاین و نصب PWA
-const CACHE = 'hz-translator-v36';
-const SHELL = ['./', 'index.html', 'app.html', 'ui.css', 'ui.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'manifest.webmanifest', 'icon.svg', 'vendor/tailwind.css', 'vendor/theme.css', 'vendor/fonts.css', 'vendor/fonts/f1-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yyygA.woff2', 'vendor/fonts/f2-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yyygA.woff2', 'vendor/fonts/f3-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yyygA.woff2', 'vendor/fonts/f4-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2', 'vendor/fonts/f5-Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2', 'vendor/fonts/f6-Dxxo8j6PP2D_kU2muijlE8WWMmk.woff2', 'vendor/fonts/f7-Dxxo8j6PP2D_kU2muijlHcWW.woff2', 'vendor/fonts/f8-kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2'];
+const CACHE = 'hz-translator-v43';
+const SHELL = ['./', 'index.html', 'app.html', 'ui.css', 'ui.js', 'workspace.css', 'mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'manifest.webmanifest', 'icon.svg', 'vendor/tailwind.css', 'vendor/theme.css', 'vendor/fonts.css', '/traveler/vendor/leaflet/leaflet.css', '/traveler/vendor/leaflet/leaflet.js', '/traveler/vendor/leaflet/images/marker-icon.png', '/traveler/vendor/leaflet/images/marker-icon-2x.png', '/traveler/vendor/leaflet/images/marker-shadow.png', 'vendor/fonts/f1-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yyygA.woff2', 'vendor/fonts/f2-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yyygA.woff2', 'vendor/fonts/f3-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yyygA.woff2', 'vendor/fonts/f4-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2', 'vendor/fonts/f5-Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2', 'vendor/fonts/f6-Dxxo8j6PP2D_kU2muijlE8WWMmk.woff2', 'vendor/fonts/f7-Dxxo8j6PP2D_kU2muijlHcWW.woff2', 'vendor/fonts/f8-kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('hz-translator-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
