@@ -43,7 +43,6 @@ async def scenario(browser):
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
-            await page.locator('#mobile-nav [data-target=workspace]').click()
             await expect(button('accept')).to_be_visible()
             await page.evaluate('''()=>{window.offerToasts=[]; const toast=HZ.toast;
                 HZ.toast=(s)=>{offerToasts.push(s);toast(s)}}''')

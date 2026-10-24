@@ -27,7 +27,6 @@ async def scenario(browser):
         patches = []
         page.on('request', lambda r: patches.append(r.post_data_json) if r.method == 'PATCH' and r.url.endswith('/translator/online') else None)
         await page.goto(BASE + '/translator/app.html')
-        await page.locator('#mobile-nav [data-target=workspace]').click()
         await expect(toggle).to_have_attribute('aria-pressed', 'false')
         assert not patches
         assert await page.evaluate('()=>HZ.load().shift') is False

@@ -31,8 +31,7 @@ async def scenario(browser, width):
         token = await page.evaluate(LOGIN_JS, phone)
         assert token, 'translator session was not established'
         await page.goto(BASE + '/translator/app.html')
-        nav = '#mobile-nav' if width < 768 else '#desktop-nav'
-        await page.locator(nav + ' [data-target="earnings"]').click()
+        await page.locator('#header-financial-shortcut').click()
         view = page.locator('#view-earnings')
         note = page.locator('#earnings-data-note')
         await expect(view).to_be_visible()
@@ -47,7 +46,7 @@ async def scenario(browser, width):
         buttons = await view.locator('button').all_text_contents()
         assert len(buttons) == 1 and 'بازگشت به میز کار' in buttons[0], buttons
         assert not payment_posts, f'opening the report must not initiate payment: {payment_posts}'
-        await page.locator(nav + ' [data-target="workspace"]').click()
+        await page.locator('#view-earnings .translator-alt-back').click()
         await expect(page.locator('#view-workspace')).to_be_visible()
         await expect(page.locator('#payments-box')).to_be_attached()
         assert not errors, errors

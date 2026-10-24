@@ -6,9 +6,12 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 
-const source = fs.readFileSync(path.join(__dirname, '../translator/mission-map.js'), 'utf8');
-const workspaceHTML = fs.readFileSync(path.join(__dirname, '../translator/app.html'), 'utf8');
-const serverSource = fs.readFileSync(path.join(__dirname, '../server/server.js'), 'utf8');
+const root = path.join(__dirname, '..');
+const source = fs.readFileSync(path.join(root, 'translator/mission-map.js'), 'utf8');
+const workspaceHTML = fs.readFileSync(path.join(root, 'translator/app.html'), 'utf8');
+const appSource = fs.readFileSync(path.join(root, 'translator/app.js'), 'utf8');
+const styleSource = fs.readFileSync(path.join(root, 'translator/workspace.css'), 'utf8');
+const serverSource = fs.readFileSync(path.join(root, 'server/server.js'), 'utf8');
 
 function createFixture(origin = 'https://preview.example') {
   const elements = {
@@ -113,27 +116,31 @@ test('clears a previous pin and refuses invalid coordinates instead of leaving s
   assert.equal(f.elements['translator-map-recenter'].disabled, true);
 });
 
-test('workspace follows the reference sheet while live panels use server-backed data', () => {
-  assert.match(workspaceHTML, /<div class="translator-workspace-more-content">/);
-  assert.doesNotMatch(workspaceHTML, /<details class="translator-workspace-more-content"/);
-  for (const id of ['qualification-shortcut', 'sos-btn', 'workspace-metrics-note']) {
+test('the signed-in workspace uses the reference drawer, local assets and server-backed cards', () => {
+  for (const id of ['translator-map-stage', 'mission-sheet', 'translator-sheet-toggle', 'sheet-scroll-area',
+    'workspace-sheet-state', 'workspace-sheet-meta', 'offers-box', 'missions-list', 'payments-box',
+    'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut']) {
     assert.match(workspaceHTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
-  for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'notifications.js', 'support.js']) {
-    assert.ok(workspaceHTML.includes(`src="${asset}"`), `missing ${asset}`);
-  }
-  assert.match(workspaceHTML, /class="[^"]*translator-header-capsule/);
-  assert.match(workspaceHTML, /id="mission-sheet"/);
+  assert.match(workspaceHTML, /class="translator-workspace-sheet sheet-expanded"/);
+  assert.match(workspaceHTML, /class="translator-header-capsule"/);
   assert.match(workspaceHTML, /class="translator-sheet-topline"/);
-  assert.match(workspaceHTML, /id="sheet-scroll-area"/);
-  assert.match(workspaceHTML, /sheet-expanded/);
-  assert.match(workspaceHTML, /translator-offer-primary/);
-  assert.match(workspaceHTML, /اطلاعات مالی از سرور دریافت نمی‌شود/);
-  assert.match(workspaceHTML, /data-service-clock/);
-  assert.match(workspaceHTML, /serverClockOffset/);
-  assert.match(workspaceHTML, /setInterval\(loadMissions, 5000\)/);
-  assert.match(workspaceHTML, /این درخواست خدمت را پایان نمی‌دهد/);
-  assert.doesNotMatch(workspaceHTML, /service_code|سارا رادمنش|جناب المنصور|LD-84920|INV-9284|۱۱٬۶۰۰٬۰۰۰|۳,۲۰۰,۰۰۰|۳۵\.۶۹۹۷/);
+  assert.match(workspaceHTML, /translator-map-grid/);
+  assert.match(workspaceHTML, /<main id="view-workspace" class="translator-workspace-view">/);
+  assert.doesNotMatch(workspaceHTML, /id="mobile-nav"|id="desktop-nav"/);
+  assert.doesNotMatch(workspaceHTML, /https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
+  for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'notifications.js', 'support.js', 'app.js', 'config-features.js']) {
+    assert.ok(workspaceHTML.includes(`src="${asset}?v=46"`), `missing versioned local script ${asset}`);
+  }
+  assert.match(styleSource, /\.translator-map-grid/);
+  assert.match(styleSource, /\.translator-workspace-sheet/);
+  assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
+  assert.match(appSource, /window\.HZ_TRANSLATOR_MAP\.setMission\(selected/);
+  assert.match(appSource, /data-service-clock/);
+  assert.match(appSource, /serverClockOffset/);
+  assert.match(appSource, /setInterval\(loadMissions, 5000\)/);
+  assert.match(appSource, /این درخواست خدمت را پایان نمی‌دهد/);
+  assert.doesNotMatch(workspaceHTML + appSource, /الشيخ|احمد المنصور|اسپیناس|۳,۲۰۰,۰۰۰|۴,۸۰۰,۰۰۰|سارا رادمنش|M-1001|MAT-030|service_code/);
   assert.match(serverSource, /OR service_started_at IS NOT NULL/);
   assert.match(serverSource, /server_time: new Date\(serverTime\)/);
 });

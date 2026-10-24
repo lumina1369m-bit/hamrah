@@ -24,8 +24,6 @@ async def scenario(browser, width):
         token = await page.evaluate(LOGIN_JS, phone)
         assert token, 'translator session was not established'
         await page.goto(BASE + '/translator/app.html')
-        nav = '#mobile-nav' if width < 768 else '#desktop-nav'
-        await page.locator(nav + ' [data-target="workspace"]').click()
         shortcut = page.locator('#qualification-shortcut')
         await expect(shortcut).to_be_visible()
         await expect(shortcut.locator('button')).to_have_attribute('aria-controls', 'view-credentials')

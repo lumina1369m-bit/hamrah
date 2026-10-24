@@ -53,7 +53,6 @@ async def scenario(browser):
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
-            await page.locator('#mobile-nav [data-target=workspace]').click()
             await expect(button('cash-confirm')).to_be_visible()
             await page.evaluate('''() => {window.cashToasts=[]; const toast=HZ.toast;
                 HZ.toast=(s)=>{cashToasts.push(s);toast(s)};}''')

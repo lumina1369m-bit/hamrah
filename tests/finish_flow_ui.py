@@ -104,9 +104,7 @@ async def scenario(browser, own_finish):
 
         async def request_finish():
             await translator.goto(BASE + '/translator/app.html')
-            # The initial translator tab is the calendar; use the visible mobile
-            # navigation before interacting with workspace-only mission controls.
-            await translator.locator('#mobile-nav [data-target=workspace]').click()
+            # The signed-in landing view is the mission map and its bottom sheet.
             await expect(translator.locator('#missions-list').get_by_role('button', name='لغو ماموریت', exact=True)).to_have_count(0)
             button = translator.locator('#missions-list').get_by_role('button', name='درخواست پایان خدمت', exact=True)
             async with translator.expect_response(lambda r: r.url.endswith(f'/missions/{bid}/finish')

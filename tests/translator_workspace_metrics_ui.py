@@ -24,8 +24,6 @@ async def scenario(browser, width):
         token = await page.evaluate(LOGIN_JS, phone)
         assert token, 'translator session was not established'
         await page.goto(BASE + '/translator/app.html')
-        nav = '#mobile-nav' if width < 768 else '#desktop-nav'
-        await page.locator(nav + ' [data-target="workspace"]').click()
         workspace = page.locator('#view-workspace')
         await expect(workspace).to_be_visible()
         note = page.locator('#workspace-metrics-note')
