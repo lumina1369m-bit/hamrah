@@ -1,4 +1,4 @@
-"""Unsupported account features must not invent saved cards or identity review.
+"""Unsupported account features must not invent saved cards, identity review, or reminders.
 
 Uses real traveler sessions. Historical local pending/verified/card flags must
 not produce server-backed claims. Covers fa/en/ar, disabled request controls,
@@ -23,6 +23,8 @@ COPY = {
         'local': 'نام و عکس پروفایل فقط در همین مرورگر ذخیره می‌شوند.',
         'gender': 'تغییر جنسیت از این صفحه هنوز فعال نیست؛ درخواستی برای پشتیبانی ثبت نمی‌شود.',
         'contact': 'تغییر شمارهٔ ورود از این صفحه هنوز فعال نیست.',
+        'reminders_status': 'در این نسخه در دسترس نیست',
+        'reminders_note': 'در این نسخه اعلان خودکار برای یادآوری رزروها ارسال نمی‌شود.',
     },
     'en': {
         'passport': 'Passport review is not available yet; no document is submitted for review from this page.',
@@ -32,6 +34,8 @@ COPY = {
         'local': 'Your profile name and photo are saved only in this browser.',
         'gender': 'Gender changes are not available here yet; no request is sent to support.',
         'contact': 'Changing your sign-in phone number is not available here yet.',
+        'reminders_status': 'Not available in this version',
+        'reminders_note': 'This version does not send automatic booking reminder notifications.',
     },
     'ar': {
         'passport': 'مراجعة جواز السفر غير متاحة حالياً؛ لا تُرسل أي وثيقة للمراجعة من هذه الصفحة.',
@@ -41,6 +45,8 @@ COPY = {
         'local': 'يُحفظ اسم ملفك الشخصي وصورتك في هذا المتصفح فقط.',
         'gender': 'تغيير الجنس غير متاح هنا حالياً؛ لا يُرسل أي طلب إلى الدعم.',
         'contact': 'تغيير رقم هاتف الدخول غير متاح هنا حالياً.',
+        'reminders_status': 'غير متاحة في هذا الإصدار',
+        'reminders_note': 'لا يرسل هذا الإصدار إشعارات تلقائية لتذكيرك بالحجوزات.',
     },
 }
 
@@ -49,7 +55,8 @@ async def check_copy(page, lang):
     texts = COPY[lang]
     for selector, key in [('#ac-passport-box', 'passport'), ('#ac-cards', 'cards'),
                           ('#ac-cards-note', 'cards_note'), ('#ac-profile-local-note', 'local'),
-                          ('#ac-gender-note', 'gender'), ('#ac-contact-note', 'contact')]:
+                          ('#ac-gender-note', 'gender'), ('#ac-contact-note', 'contact'),
+                          ('#ac-reminders-status', 'reminders_status'), ('#ac-reminders-note', 'reminders_note')]:
         await expect(page.locator(selector)).to_have_text(texts[key])
     for selector, note in [('#ac-gender-btn', 'ac-gender-note'), ('#ac-contact-btn', 'ac-contact-note')]:
         await expect(page.locator(selector)).to_be_disabled()
@@ -106,7 +113,7 @@ async def scenario(browser, lang):
         assert writes == [], writes
         await api(setup.request, 'GET', '/auth/me', session['token'])
         assert not errors, errors
-        print(f'PASS [{lang}]: local passport flags cannot create verification/review; no demo cards or fake support requests; local edits and language switching work')
+        print(f'PASS [{lang}]: local passport flags cannot create verification/review; no demo cards, fake support requests, or always-on reminder claim; local edits and language switching work')
     except Exception:
         print('JavaScript errors:', errors)
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
