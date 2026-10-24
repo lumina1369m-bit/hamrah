@@ -20,6 +20,16 @@ SCHEDULE_SEARCH_COPY = {
     'en': 'For a scheduled booking, interpreter search starts one hour before the selected time. If no interpreter has accepted by the 15-minute mark, the app updates the booking status.',
     'ar': 'في الحجز المجدول، يبدأ البحث عن مترجم قبل الموعد المحدد بساعة. إذا لم يقبل أي مترجم قبل ۱۵ دقيقة من الموعد، يحدّث التطبيق حالة الحجز.',
 }
+INSTANT_MODE_COPY = {
+    'fa': 'درخواست مترجم (اکنون)',
+    'en': 'Request an interpreter now',
+    'ar': 'طلب مترجم الآن',
+}
+INSTANT_SUBMIT_COPY = {
+    'fa': 'ثبت درخواست مترجم',
+    'en': 'Submit interpreter request',
+    'ar': 'إرسال طلب مترجم',
+}
 
 
 async def login(request, role):
@@ -75,6 +85,8 @@ async def scenario(browser, kind, preference, lang):
         await expect(page.locator('#match-chance')).to_have_count(0)
         await page.locator('#confirm-location-btn').click()
         await expect(page.locator('#bottom-sheet')).to_be_visible()
+        await expect(page.locator('#btn-mode-instant > span:last-child')).to_have_text(INSTANT_MODE_COPY[lang])
+        await expect(page.locator('#txt-main-submit')).to_have_text(INSTANT_SUBMIT_COPY[lang])
         await page.locator('.cat-chip[data-cat=business]').click()
         await page.locator('#btn-inc-hours').click()  # 2 -> 3 hours
         await page.locator('#btn-inc-pax').click()  # 1 -> 2 passengers
@@ -89,6 +101,12 @@ async def scenario(browser, kind, preference, lang):
         notes = f'گزینه‌های رزرو {label}'
         await page.locator('#notes-input').fill(notes)
         if kind == 'scheduled':
+            await page.locator('#btn-mode-scheduled').click()
+            await expect(page.locator('#scheduled-panel')).to_be_visible()
+            await expect(page.locator('#scheduled-search-policy')).to_have_text(SCHEDULE_SEARCH_COPY[lang])
+            await page.locator('#btn-mode-instant').click()
+            await expect(page.locator('#scheduled-panel')).to_be_hidden()
+            await expect(page.locator('#txt-main-submit')).to_have_text(INSTANT_SUBMIT_COPY[lang])
             await page.locator('#btn-mode-scheduled').click()
             await expect(page.locator('#scheduled-panel')).to_be_visible()
             await expect(page.locator('#scheduled-search-policy')).to_have_text(SCHEDULE_SEARCH_COPY[lang])
