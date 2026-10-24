@@ -22,6 +22,11 @@ NOT_STARTED = {
     'en': 'The service has not started with the security code on the server yet.',
     'ar': 'لم تبدأ الخدمة برمز الأمان على الخادم بعد.',
 }
+START_CHECK_LABEL = {
+    'fa': 'بررسی وضعیت شروع خدمت',
+    'en': 'Check service start status',
+    'ar': 'تحقّق من حالة بدء الخدمة',
+}
 REQUIRED = {
     'fa': 'برای این کار، ورود و رزرو معتبر سروری لازم است.',
     'en': 'This action requires sign-in and a valid server booking.',
@@ -115,6 +120,8 @@ async def scenario(browser, lang):
         await expect(page.locator('#stage-4')).to_be_hidden()
         await page.locator('#btn-arrived').click()
         await expect(page.locator('#stage-4')).to_be_visible()
+        await expect(page.locator('#btn-confirm-start > span:last-child')).to_have_text(START_CHECK_LABEL[lang])
+        await expect(page.locator('#btn-confirm-start .material-symbols-outlined')).to_have_text('sync')
         code = (await page.locator('#security-code').inner_text()).translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹','0123456789'))
         assert code == created['service_code'], (code,created)
         count = len(posts)
