@@ -33,6 +33,25 @@ UNSUPPORTED_OTP_HEADERS = (
     'Identity & Code Verification',
     'تأكيد الرقم والتحقق من الهوية',
 )
+PROFILE_COPY = {
+    'fa': {
+        'title': 'اطلاعات شخصی',
+        'note': 'نام و نام خانوادگی را وارد کنید؛ این اطلاعات از روی گذرنامه بررسی نمی‌شود.',
+    },
+    'en': {
+        'title': 'Personal details',
+        'note': 'Enter your first and last name. These details are not checked against a passport.',
+    },
+    'ar': {
+        'title': 'البيانات الشخصية',
+        'note': 'أدخل اسمك واسم عائلتك؛ لا تُفحَص هذه البيانات بمقارنتها بجواز السفر.',
+    },
+}
+UNSUPPORTED_PASSPORT_MATCH_COPY = (
+    'نام و نام خانوادگی باید دقیقاً مطابق گذرنامه باشد.',
+    'First and last name must exactly match your passport.',
+    'يجب أن يطابق الاسم واسم العائلة جواز سفرك تماماً.',
+)
 
 
 async def scenario(browser, lang):
@@ -122,6 +141,11 @@ async def scenario(browser, lang):
         verify_release.set()
         await expect(page.locator('#step-identity')).to_be_visible()
         await expect(page.locator('#step-identifier')).to_be_hidden()
+        await expect(page.locator('#step-identity [data-i18n="id_title"]')).to_have_text(PROFILE_COPY[lang]['title'])
+        await expect(page.locator('#step-identity [data-i18n="id_note"]')).to_have_text(PROFILE_COPY[lang]['note'])
+        profile_step_text = await page.locator('#step-identity').inner_text()
+        for unsupported_copy in UNSUPPORTED_PASSPORT_MATCH_COPY:
+            assert unsupported_copy not in profile_step_text, f'profile step implies passport matching in {lang}: {unsupported_copy}'
         await page.locator('#id-name').fill('Ali')
         await page.locator('#id-last').fill('Rezaei')
         await page.locator('.id-gender').nth(1).click()
@@ -162,7 +186,7 @@ async def scenario(browser, lang):
         assert await page.evaluate("() => localStorage.getItem('hamzaban.token.v1')") is None
         await api(ctx.request, 'GET', '/auth/me', token, status=401)
         assert not errors, errors
-        print(f'PASS [{lang}]: phone-only OTP wording; delivery retry, single request/verify, account-bound profile and revocation')
+        print(f'PASS [{lang}]: phone-only OTP and self-reported profile wording; delivery retry, single request/verify, account-bound profile and revocation')
     except Exception:
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
         print('JavaScript errors:', errors)
