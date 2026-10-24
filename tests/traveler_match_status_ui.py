@@ -9,6 +9,23 @@ from finish_flow_ui import BASE, api, booking
 from logout_sessions_ui import sign_in
 
 ARTIFACTS = Path(__file__).parent / 'assets' / 'last_traveler_match_status'
+LEGACY_RADIUS_COPY = (
+    'تلاش دوباره از شعاع اولیه آغاز شد',
+    'جستجو با شعاع اولیه دوباره شروع شد',
+    'Retrying from the initial radius',
+    'Search restarted with the initial radius',
+    'بدأت المحاولة من جديد ضمن النطاق الأولي',
+    'أُعيد البحث ضمن النطاق الأولي',
+)
+
+
+def assert_no_legacy_radius_translations():
+    catalog = Path(__file__).resolve().parents[1] / 'traveler' / 'i18n.js'
+    source = catalog.read_text(encoding='utf-8')
+    found = [text for text in LEGACY_RADIUS_COPY if text in source]
+    assert not found, f'obsolete radius-search translations remain in {catalog}: {found}'
+
+
 SEARCH_COPY = {
     'fa': {
         'pill': 'در حال جست‌وجو',
@@ -183,6 +200,7 @@ async def scenario(browser, width):
 
 
 async def main():
+    assert_no_legacy_radius_translations()
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(args=['--no-sandbox'])
         try:
