@@ -27,8 +27,6 @@ async def scenario(browser, setup, admin, width):
         await page.evaluate(LOGIN_JS, '9' + str(secrets.randbelow(900000000) + 100000000))
         page.on('request', lambda r: mutations.append(r.url) if '/api/' in r.url and r.method in ['POST', 'PUT', 'PATCH', 'DELETE'] else None)
         await page.goto(BASE + '/translator/app.html')
-        nav = '#mobile-nav' if width < 768 else '#desktop-nav'
-        await page.locator(nav + ' [data-target=workspace]').click()
         await page.evaluate('''()=>{
             window.supportToasts=[];window.supportGeo=[];window.supportWindows=[];
             window.showToast=(s)=>supportToasts.push(s);HZ.toast=(s)=>supportToasts.push(s);
@@ -160,11 +158,11 @@ async def scenario(browser, setup, admin, width):
         await check_status(READY)
         await expect(call).to_have_attribute('href', 'tel:+12125550123')
 
-        await page.locator(nav + ' [data-target=earnings]').click()
+        await page.locator('#header-financial-shortcut').click()
         await expect(panel).to_be_hidden()
         await no_call()
         await settings('02177776666')
-        await page.locator(nav + ' [data-target=workspace]').click()
+        await page.locator('#view-earnings .translator-alt-back').click()
         await page.locator('#sos-btn').click()
         await check_status(READY)
         await expect(call).to_have_attribute('href', 'tel:02177776666')

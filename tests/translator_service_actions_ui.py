@@ -35,7 +35,6 @@ async def scenario(browser):
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
-            await page.locator('#mobile-nav [data-target=workspace]').click()
             await expect(page.locator('#missions-list')).to_contain_text('آزمون کنترل واقعی مترجم')
             await page.evaluate('''() => { window.actionToasts=[];
                 const toast=HZ.toast; HZ.toast=(s)=>{actionToasts.push(s);toast(s)}; }''')

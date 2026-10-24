@@ -19,7 +19,8 @@
     document.getElementById('shift-status-desc').textContent = ERROR;
     document.getElementById('header-shift-text').textContent = 'وضعیت نامشخص';
     document.getElementById('shift-toggle-btn').setAttribute('aria-pressed', 'mixed');
-    document.getElementById('shift-paused-notice').classList.add('hidden');
+    var notice = document.getElementById('shift-paused-notice');
+    if (notice) notice.classList.add('hidden');
     var state = HZ.load(); state.shift = null; HZ.save(state); controls();
   }
   function apply(data, actor) {
@@ -74,8 +75,10 @@
   window.HZ_PRESENCE = { set: function (on) { return run(on, true); }, refresh: function () { return run(undefined, true); } };
   var retry = document.createElement('button'); retry.id = 'presence-retry'; retry.type = 'button';
   retry.className = 'text-[12px] font-bold text-primary'; retry.textContent = 'بررسی دوبارهٔ آمادگی';
+  retry.setAttribute('aria-label', retry.textContent);
   retry.onclick = function () { return run(undefined, true); };
-  document.getElementById('shift-status-desc').parentNode.appendChild(retry);
+  var retrySlot = document.getElementById('presence-retry-slot');
+  (retrySlot || document.getElementById('shift-status-desc').parentNode).appendChild(retry);
   unknown();
   window.addEventListener('DOMContentLoaded', function () { run(undefined, false); });
   window.addEventListener('focus', function () { run(undefined, false); });

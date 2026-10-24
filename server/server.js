@@ -1721,19 +1721,24 @@ route('POST', '/api/translator/missions/:id/cancel', async (req, res, url, param
 route('GET', '/api/translator/missions', async (req, res) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
-  const from = now() - 3600 * 1000;
+  const serverTime = now();
+  const from = serverTime - 3600 * 1000;
+  // Keep an in-progress service visible even when its scheduled/matched time is over an hour old.
   const fromReservations = db.prepare(`SELECT * FROM reservations WHERE translator_id = ? AND status = 'matched'
-      AND COALESCE(scheduled_at, matched_at) > ? ORDER BY COALESCE(scheduled_at, matched_at)`).all(u.id, from)
+      AND (COALESCE(scheduled_at, matched_at) > ? OR service_started_at IS NOT NULL)
+      ORDER BY COALESCE(scheduled_at, matched_at)`).all(u.id, from)
     .map((r) => ({ id: 'R' + r.id, reservation_id: r.id, code: 'R-' + r.id, purpose: r.field, travelerName: r.traveler_name, place: r.place,
       lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
-      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at, finish_requested: !!r.finish_requested_at }));
+      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at,
+      service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null, hours: r.hours,
+      finish_requested: !!r.finish_requested_at }));
   // ماموریت‌های آزمایشی تزریقی (فقط حالت توسعه)
   const fromDev = db.prepare(`SELECT id, code, purpose, traveler_name, place, start_at, total, net, status FROM missions
       WHERE translator_id = ? AND status = 'accepted' AND start_at > ?`).all(u.id, from)
     .map((m) => ({ id: m.id, code: m.code, purpose: m.purpose, travelerName: m.traveler_name, place: m.place,
       startAt: new Date(m.start_at).toISOString(), total: m.total, net: m.net, status: m.status }));
   const all = fromReservations.concat(fromDev).sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
-  send(res, 200, { missions: all });
+  send(res, 200, { server_time: new Date(serverTime).toISOString(), missions: all });
 });
 
 // ---------- تغییر رزرو پس از پذیرش ----------

@@ -1,35 +1,35 @@
-import asyncio, re, json, datetime
+# No calendar day/status may be inferred from development fixtures; only real reservations produce this schedule.
+import asyncio, random
 from playwright.async_api import async_playwright
 from hz_api import LOGIN_JS, SEED_JS
-def iso(days, h=10):
-    d = datetime.datetime.now().replace(hour=h, minute=0, second=0, microsecond=0) + datetime.timedelta(days=days)
-    return d.strftime('%Y-%m-%dT%H:%M:00')
-M = [
-  {'code':'M-1','purpose':'امروز','travelerName':'A','place':'x','startAt':iso(0,15),'total':100,'net':80,'status':'accepted'},
-  {'code':'M-2','purpose':'دو روز بعد','travelerName':'B','place':'y','startAt':iso(2,9),'total':200,'net':160,'status':'accepted'},
-  {'code':'M-3','purpose':'دو روز بعد عصر','travelerName':'C','place':'z','startAt':iso(2,18),'total':300,'net':240,'status':'accepted'},
-  {'code':'M-4','purpose':'در انتظار','travelerName':'D','place':'w','startAt':iso(1,9),'total':50,'net':40,'status':'pending_invite'},
+
+FIXTURES = [
+  {'code': 'M-1', 'purpose': 'fixture', 'travelerName': 'Fixture Day A', 'place': 'Fixture Place A', 'startAt': '2026-11-01T15:00:00.000Z', 'total': 100, 'net': 80, 'status': 'accepted'},
+  {'code': 'M-2', 'purpose': 'fixture', 'travelerName': 'Fixture Day B', 'place': 'Fixture Place B', 'startAt': '2026-11-03T09:00:00.000Z', 'total': 200, 'net': 160, 'status': 'accepted'},
 ]
+
 async def main():
     async with async_playwright() as p:
-        b = await p.chromium.launch(args=['--no-sandbox'])
-        ctx = await b.new_context(viewport={'width': 390, 'height': 900})
-        await ctx.route(re.compile(r'https://(unpkg\.com|cdn\.|fonts\.).*'), lambda r: r.abort())
-        pg = await ctx.new_page(); errs = []
-        pg.on('pageerror', lambda e: errs.append(str(e)[:140]))
-        await pg.goto('http://127.0.0.1:8081/translator/index.html'); await pg.wait_for_timeout(600)
-        import random
-        token = await pg.evaluate(LOGIN_JS, '9' + str(random.randint(100000000, 999999999)))
-        await pg.evaluate(SEED_JS, [token, M])
-        await pg.goto('http://127.0.0.1:8081/translator/app.html'); await pg.wait_for_timeout(1400)
-        bar = await pg.evaluate("()=>[...document.querySelectorAll('#day-bar button')].map(b=>b.textContent.replace(/\\s+/g,' ').trim())")
-        print('bar:', json.dumps(bar, ensure_ascii=False))
-        for idx in (0, 2, 1, 3):
-            await pg.evaluate("i=>document.querySelectorAll('#day-bar button')[i].click()", idx)
-            await pg.wait_for_timeout(200)
-            cards = await pg.evaluate("()=>[...document.getElementById('schedule-list').children].map(c=>c.textContent.slice(0,20))")
-            print(f'day {idx}:', json.dumps(cards, ensure_ascii=False))
-        print('pressed:', await pg.evaluate("()=>[...document.querySelectorAll('#day-bar button')].map(b=>b.getAttribute('aria-pressed'))"))
-        print('errors:', errs or 'none')
-        await b.close()
+        browser = await p.chromium.launch(args=['--no-sandbox'])
+        context = await browser.new_context(viewport={'width': 390, 'height': 900}, service_workers='block')
+        page = await context.new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        await page.goto('http://127.0.0.1:8081/translator/index.html')
+        token = await page.evaluate(LOGIN_JS, '9' + str(random.randint(100000000, 999999999)))
+        assert token
+        await page.evaluate(SEED_JS, [token, FIXTURES])
+        await page.goto('http://127.0.0.1:8081/translator/app.html')
+        await page.wait_for_function("() => document.querySelector('#missions-list .translator-empty-missions')")
+        buttons = await page.locator('#day-bar button').all_text_contents()
+        assert buttons == [], buttons
+        assert await page.locator('#day-bar').is_hidden()
+        mission_text = await page.locator('#missions-list').inner_text()
+        schedule_text = await page.locator('#schedule-list').inner_text()
+        assert 'Fixture Day' not in mission_text + schedule_text
+        assert not errors, errors
+        print('PASS: the schedule stays empty until reservation-backed server missions exist')
+        await context.close()
+        await browser.close()
+
 asyncio.run(main())
