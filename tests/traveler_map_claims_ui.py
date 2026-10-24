@@ -35,6 +35,10 @@ async def scenario(browser, width):
     context = await browser.new_context(
         viewport={'width': width, 'height': 900}, service_workers='block'
     )
+    await context.add_init_script(
+        'localStorage.setItem("hamzaban.user.v1", JSON.stringify({name:"Ali", last:"Rezaei", gender:"مرد", verified:false})); '
+        'localStorage.setItem("hamzaban_lang", "fa");'
+    )
     await context.route(
         'https://nominatim.openstreetmap.org/**',
         lambda route: route.fulfill(json={'display_name': 'Test meeting point'}),
