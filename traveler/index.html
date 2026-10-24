@@ -1,0 +1,1082 @@
+<!DOCTYPE html><html dir="rtl" lang="fa"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>ورود مسافر - هم‌زبان (همراه)</title>
+<style>
+    :root {
+      --neu-base: #eef4fd;
+      --neu-light: #ffffff;
+      --neu-dark: #c5d3e6;
+    }
+    body {
+      background-color: var(--neu-base);
+      font-family: 'Vazirmatn', 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    html[lang="en"] body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .neu-raised {
+      background: var(--neu-base);
+      box-shadow: 8px 8px 18px rgba(182, 198, 220, 0.65), -8px -8px 18px rgba(255, 255, 255, 0.95);
+    }
+    .neu-raised-sm {
+      background: var(--neu-base);
+      box-shadow: 4px 4px 10px rgba(182, 198, 220, 0.55), -4px -4px 10px rgba(255, 255, 255, 0.95);
+    }
+    .neu-raised-lg {
+      background: var(--neu-base);
+      box-shadow: 12px 12px 28px rgba(182, 198, 220, 0.6), -12px -12px 28px rgba(255, 255, 255, 0.95);
+    }
+    .neu-inset {
+      background: var(--neu-base);
+      box-shadow: inset 3px 3px 6px rgba(180, 196, 218, 0.7), inset -3px -3px 6px rgba(255, 255, 255, 0.95);
+    }
+    .neu-inset-deep {
+      background: var(--neu-base);
+      box-shadow: inset 4px 4px 8px rgba(175, 192, 215, 0.75), inset -4px -4px 8px rgba(255, 255, 255, 0.95);
+    }
+    .neu-btn-teal {
+      background: #006a61;
+      box-shadow: 5px 5px 14px rgba(0, 106, 97, 0.38), -3px -3px 9px rgba(255, 255, 255, 0.6);
+    }
+    .neu-btn-teal:active {
+      transform: scale(0.985);
+      box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.35);
+    }
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 16px);
+    }
+    select {
+      background-image: none !important;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    /* Dynamic arrow flipping based on direction */
+    html[dir="rtl"] .dir-flip {
+      transform: rotate(180deg);
+    }
+    html[dir="ltr"] .dir-flip {
+      transform: rotate(0deg);
+    }
+    html[dir="rtl"] .dir-back-icon {
+      transform: rotate(0deg);
+    }
+    html[dir="ltr"] .dir-back-icon {
+      transform: rotate(180deg);
+    }
+    /* Dropdown positioning */
+    html[dir="rtl"] #lang-menu {
+      left: 0;
+      right: auto;
+    }
+    html[dir="ltr"] #lang-menu {
+      right: 0;
+      left: auto;
+    }
+  .neu-btn-teal{background:#006a61;box-shadow:inset 1px 1px 3px rgba(255,255,255,.35),0 4px 12px rgba(0,106,97,.35)}.dir-ltr{direction:ltr !important}
+  
+    /* دسترس‌پذیری ورود: هدف لمسی حداقل ۴۴ پیکسل و فوکوس قابل دیدن */
+    #tab-phone,#tab-email,.id-gender{min-height:44px;}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #026AA7;outline-offset:2px;}
+  </style>
+<link href="vendor/fonts.css" rel="stylesheet"/>
+<link href="vendor/tailwind.css" rel="stylesheet"/>
+<link href="vendor/theme.css" rel="stylesheet"/>
+</head>
+<body class="min-h-screen text-text-main flex flex-col justify-between selection:bg-sky-200">
+<div id="travTermsModal" role="dialog" aria-modal="true" aria-labelledby="travTermsTitle" onclick="if(event.target===this)closeTravTerms()" style="display:none;position:fixed;inset:0;background:rgba(22,28,35,.45);z-index:1000;align-items:center;justify-content:center;padding:16px">
+<div style="direction:rtl;background:#f4f6f8;color:#161c23;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;border-radius:20px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><h3 id="travTermsTitle" style="font-size:16px;font-weight:800;margin:0">قوانین و ضوابط همراهی تشریفاتی</h3><button type="button" onclick="closeTravTerms()" style="padding:6px 14px;border-radius:12px;background:#006a61;color:#fff;font-weight:700;font-size:12px;border:0;cursor:pointer">بستن</button></div>
+<div id="travTermsBody" style="white-space:pre-wrap;overflow-y:auto;font-size:13px;line-height:1.9;color:#404750;background:#e6ebf1;border-radius:14px;padding:14px"></div>
+</div></div>
+<script>
+(function () {
+  var termsText = '';
+  fetch('/api/config').then(function (r) { return r.json(); }).then(function (d) { termsText = (d && d.traveler_terms_text) || ''; }).catch(function () {});
+  window.closeTravTerms = function () { document.getElementById('travTermsModal').style.display = 'none'; };
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[data-open-terms]');
+    if (!a) return;
+    ev.preventDefault(); ev.stopPropagation();
+    document.getElementById('travTermsBody').textContent = termsText.trim() || 'متن قوانین و ضوابط همراهی تشریفاتی هنوز در پنل مدیریت ثبت نشده است.';
+    document.getElementById('travTermsModal').style.display = 'flex';
+  }, true);
+})();
+</script>
+<!-- Top App Bar / Header -->
+<header class="sticky top-0 z-40 w-full pt-safe bg-[#eef4fd]/90 backdrop-blur-md transition-all border-b border-[#cbd6e4]/30">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+<!-- Brand & Title -->
+<div class="flex items-center gap-3 sm:gap-4">
+<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-raised flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined text-[24px] sm:text-[28px]">translate</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-extrabold text-base sm:text-xl tracking-tight text-primary" data-i18n="brand_name">هم‌زبان</span>
+<span class="text-[10px] sm:text-[11px] bg-sky-100 text-primary font-bold px-2 py-0.5 rounded-full border border-sky-200" data-i18n="brand_badge">مسافر و همراه</span>
+</div>
+<span class="text-[11px] sm:text-xs text-text-muted leading-tight" data-i18n="brand_tagline">ثبت درخواست و رزرو مترجم حضوری</span>
+</div>
+</div>
+<!-- Header Right Actions: Live Status & Language Selector -->
+<div class="flex items-center gap-2 sm:gap-4">
+<!-- Language Selector Dropdown -->
+<div class="relative">
+<button aria-expanded="false" aria-haspopup="true" class="h-9 sm:h-10 px-3 sm:px-4 rounded-xl neu-raised-sm flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-main active:neu-inset transition-all" id="lang-btn" onclick="toggleLangMenu(event)" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary">language</span>
+<span class="" id="current-lang-text">فارسی</span>
+<span class="material-symbols-outlined text-[16px] text-text-muted transition-transform duration-200" id="lang-arrow" style="transform: rotate(0deg);">expand_more</span>
+</button>
+<!-- Dropdown Menu -->
+<div class="absolute mt-2 w-44 rounded-2xl neu-raised bg-[#eef4fd] p-1.5 flex-col gap-1 z-50 text-xs shadow-2xl border border-white/60 backdrop-blur-md hidden" id="lang-menu">
+<button class="w-full text-start px-3 py-2.5 rounded-xl hover:bg-white/70 transition-all flex items-center justify-between group font-semibold text-primary" id="opt-fa" onclick="setLang('fa', 'فارسی'); try{localStorage.setItem('hamzaban_lang', 'fa');}catch(e){}">
+<span class="flex items-center gap-2"><span class="">🇮🇷</span><span class="">فارسی</span></span>
+<span class="material-symbols-outlined text-[16px] text-primary check-icon">check</span>
+</button>
+<button class="w-full text-start px-3 py-2.5 rounded-xl hover:bg-white/70 transition-all flex items-center justify-between group text-text-main font-medium" id="opt-en" onclick="setLang('en', 'English'); try{localStorage.setItem('hamzaban_lang', 'en');}catch(e){}">
+<span class="flex items-center gap-2"><span class="">🇬🇧</span><span class="">English</span></span>
+<span class="material-symbols-outlined text-[16px] text-primary check-icon hidden">check</span>
+</button>
+<button class="w-full text-start px-3 py-2.5 rounded-xl hover:bg-white/70 transition-all flex items-center justify-between group text-text-main font-medium" id="opt-ar" onclick="setLang('ar', 'العربية'); try{localStorage.setItem('hamzaban_lang', 'ar');}catch(e){}">
+<span class="flex items-center gap-2"><span class="">🇦🇪</span><span class="">العربية</span></span>
+<span class="material-symbols-outlined text-[16px] text-primary check-icon hidden">check</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Responsive Workspace -->
+<main class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-10 flex-1 flex flex-col justify-center">
+<!-- Multi-Platform Grid: 1 Column on Mobile, 2 Balanced Columns on lg/xl Screens -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+<!-- VISUAL FEATURE SHOWCASE & TRUST PILLAR (Desktop/Tablet) -->
+<div class="order-2 lg:order-1 lg:col-span-6 xl:col-span-7 flex flex-col gap-6">
+<!-- Desktop / Tablet Hero Banner -->
+<div class="neu-raised-lg rounded-3xl p-6 sm:p-8 relative overflow-hidden hidden md:block">
+<div class="absolute -top-16 -left-16 w-44 h-44 bg-sky-200/50 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-16 -right-16 w-44 h-44 bg-teal-100/40 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex items-center gap-3 mb-4">
+<div class="w-12 h-12 rounded-2xl neu-inset flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">flight_takeoff</span>
+</div>
+<div>
+<span class="text-xs font-bold text-secondary uppercase tracking-wider block" data-i18n="hero_eyebrow">درخواست مترجم برای سفر و کار</span>
+<h2 class="text-xl lg:text-2xl font-black text-text-main tracking-tight" data-i18n="hero_title">ثبت درخواست مترجم حضوری</h2>
+</div>
+</div>
+<p class="text-sm text-text-muted leading-relaxed mb-6" data-i18n="hero_desc">زبان‌ها، نوع خدمت و محل ملاقات را مشخص کنید و درخواست فوری یا رزرو زمان‌دار ثبت کنید. پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.</p>
+<!-- Feature Badges Grid on Desktop -->
+<div class="grid grid-cols-2 gap-3.5 pt-2 border-t border-[#cbd6e4]/40">
+<div class="neu-inset rounded-2xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0">pin_drop</span>
+<div>
+<h4 class="text-xs font-bold text-text-main" data-i18n="f1_title">انتخاب محل ملاقات</h4>
+<p class="text-[11px] text-text-muted mt-0.5" data-i18n="f1_desc">محل ملاقات را روی نقشه انتخاب و تأیید کنید.</p>
+</div>
+</div>
+<div class="neu-inset rounded-2xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[22px] shrink-0">language</span>
+<div>
+<h4 class="text-xs font-bold text-text-main" data-i18n="f2_title">انتخاب زبان‌ها</h4>
+<p class="text-[11px] text-text-muted mt-0.5" data-i18n="f2_desc">زبان مبدأ و مقصد را هنگام ثبت درخواست انتخاب کنید.</p>
+</div>
+</div>
+<div class="neu-inset rounded-2xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-amber-700 text-[22px] shrink-0">person_search</span>
+<div>
+<h4 class="text-xs font-bold text-text-main" data-i18n="f3_title">معرفی مترجم پس از پذیرش</h4>
+<p class="text-[11px] text-text-muted mt-0.5" data-i18n="f3_desc">مشخصات مترجم پس از پذیرش درخواست نمایش داده می‌شود.</p>
+</div>
+</div>
+<div class="neu-inset rounded-2xl p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-sky-700 text-[22px] shrink-0">headset_mic</span>
+<div>
+<h4 class="text-xs font-bold text-text-main" data-i18n="f4_title">راه تماس پشتیبانی</h4>
+<p class="text-[11px] text-text-muted mt-0.5" data-i18n="f4_desc">اگر شماره‌ای در سامانه ثبت شده باشد، برنامه شماره‌گیر دستگاه را باز می‌کند؛ تماس یا پاسخ‌گویی تضمین نمی‌شود.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Security & Trust Badges: Responsive 3 Columns Grid -->
+<div class="grid grid-cols-3 gap-2.5 sm:gap-4">
+<div class="p-3.5 sm:p-4 rounded-2xl neu-raised-sm flex flex-col items-center text-center gap-1.5 transition-transform hover:-translate-y-0.5">
+<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl neu-inset flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px] sm:text-[22px]">tune</span>
+</div>
+<span class="text-xs sm:text-sm font-bold text-text-main leading-tight" data-i18n="trust_verified">تطبیق بر اساس درخواست</span>
+<span class="text-[10px] sm:text-xs text-text-muted leading-tight" data-i18n="trust_verified_sub">زبان‌ها و نوع خدمت را مشخص کنید</span>
+</div>
+<div class="p-3.5 sm:p-4 rounded-2xl neu-raised-sm flex flex-col items-center text-center gap-1.5 transition-transform hover:-translate-y-0.5">
+<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl neu-inset flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px] sm:text-[22px]">calendar_month</span>
+</div>
+<span class="text-xs sm:text-sm font-bold text-text-main leading-tight" data-i18n="trust_nda">رزرو زمان‌دار</span>
+<span class="text-[10px] sm:text-xs text-text-muted leading-tight" data-i18n="trust_nda_sub">زمان آینده را برای درخواست انتخاب کنید</span>
+</div>
+<div class="p-3.5 sm:p-4 rounded-2xl neu-raised-sm flex flex-col items-center text-center gap-1.5 transition-transform hover:-translate-y-0.5">
+<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl neu-inset flex items-center justify-center text-amber-700">
+<span class="material-symbols-outlined text-[20px] sm:text-[22px]">support_agent</span>
+</div>
+<span class="text-xs sm:text-sm font-bold text-text-main leading-tight" data-i18n="trust_support">راه تماس تنظیم‌شده</span>
+<span class="text-[10px] sm:text-xs text-text-muted leading-tight" data-i18n="trust_support_sub">در صورت ثبت شماره در سامانه</span>
+</div>
+</div>
+</div>
+<!-- MAIN INTERACTIVE AUTH & VERIFICATION CARD -->
+<div class="order-1 lg:order-2 lg:col-span-6 xl:col-span-5 w-full max-w-xl mx-auto lg:max-w-none">
+<!-- Mobile Only Mini Hero Header -->
+<div class="neu-raised rounded-3xl p-5 mb-4 flex flex-col items-center text-center relative overflow-hidden md:hidden">
+<div class="absolute -top-10 -left-10 w-28 h-28 bg-sky-200/50 rounded-full blur-2xl pointer-events-none"></div>
+<div class="relative w-12 h-12 rounded-2xl neu-inset flex items-center justify-center text-primary mb-2.5">
+<span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+
+</div>
+<h1 class="text-lg font-black text-text-main tracking-tight mb-1" data-i18n="mobile_card_title">ورود به سامانه مسافران</h1>
+<p class="text-xs text-text-muted leading-relaxed max-w-xs" data-i18n="mobile_card_desc">درخواست فوری یا زمان‌دار ثبت کنید؛ پذیرش به در دسترس بودن مترجم بستگی دارد.</p>
+<div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full neu-inset text-[11px] font-semibold text-secondary">
+<span class="material-symbols-outlined text-[15px]">bolt</span>
+<span data-i18n="otp_pill" class="">ورود بدون رمز عبور با کد یک‌بارمصرف (OTP)</span>
+</div>
+</div>
+<!-- Main Auth Container Card -->
+<div class="neu-raised-lg rounded-3xl p-6 sm:p-8 relative">
+<!-- Desktop Header inside card for clear focus -->
+<div class="hidden md:flex flex-col items-center text-center pb-5 mb-5 border-b border-[#cbd6e4]/40">
+<div class="relative w-14 h-14 rounded-2xl neu-inset flex items-center justify-center text-primary mb-2.5">
+<span class="material-symbols-outlined text-[30px]" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+
+</div>
+<h1 class="text-xl lg:text-2xl font-black text-text-main tracking-tight" data-i18n="card_title">ورود مسافر</h1>
+<p class="text-xs text-text-muted mt-1" data-i18n="card_desc">برای ثبت درخواست مترجم حضوری، با شماره همراه وارد شوید.</p>
+<div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full neu-inset text-xs font-semibold text-secondary">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+<span data-i18n="otp_pill" class="">ورود بدون رمز عبور با کد یک‌بارمصرف (OTP)</span>
+</div>
+</div>
+<!-- STEP 1: Identification (Phone / Email) -->
+<div class="flex flex-col gap-4 sm:gap-5" id="step-identifier">
+<!-- Toggle Tabs -->
+<div>
+<label class="block text-xs sm:text-sm font-bold text-text-muted mb-2" data-i18n="tab_label">روش دریافت کد تأیید</label>
+<div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl neu-inset">
+<button class="py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all neu-raised text-primary" id="tab-phone" onclick="selectTab('phone')" type="button">
+<span class="material-symbols-outlined text-[18px] sm:text-[20px]">smartphone</span>
+<span data-i18n="tab_phone" class="">شماره موبایل</span>
+</button>
+<button class="py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all text-text-muted hover:text-primary" id="tab-email" onclick="selectTab('email')" type="button">
+<span class="material-symbols-outlined text-[18px] sm:text-[20px]">mail</span>
+<span data-i18n="tab_email" class="">ایمیل (غیرفعال)</span>
+</button>
+</div>
+</div>
+<!-- Phone Input Group -->
+<div class="flex flex-col gap-1.5" id="phone-container">
+<label class="text-xs sm:text-sm font-bold text-text-main flex items-center justify-between">
+<span data-i18n="phone_label" class="">شماره همراه مسافر</span>
+<span class="text-[11px] sm:text-xs text-text-muted font-normal" data-i18n="phone_sublabel">خطوط ایران و بین‌الملل</span>
+</label>
+<!-- Unified Phone Input -->
+<div class="neu-inset-deep rounded-2xl p-1.5 sm:p-2 flex items-center dir-ltr">
+<div class="relative flex items-center pl-2 sm:pl-3 pr-1 sm:pr-2 border-r border-[#cbd6e4] shrink-0">
+<select class="bg-transparent border-0 text-xs sm:text-sm font-bold text-text-main pr-4 pl-0.5 py-1.5 focus:ring-0 cursor-pointer outline-none font-mono" id="country-select" onchange="updateCountryCode(this)">
+<option data-flag="🇮🇷" data-placeholder="912 345 6789" selected="" value="+98">IR +98</option>
+<option data-flag="🇮🇶" data-placeholder="770 123 4567" value="+964">IQ +964</option>
+<option data-flag="🇦🇪" data-placeholder="50 123 4567" value="+971">AE +971</option>
+<option data-flag="🇴🇲" data-placeholder="91 234 567" value="+968">OM +968</option>
+<option data-flag="🇹🇷" data-placeholder="532 123 4567" value="+90">TR +90</option>
+<option data-flag="🇬🇧" data-placeholder="7911 123456" value="+44">GB +44</option>
+<option data-flag="🇩🇪" data-placeholder="151 1234567" value="+49">DE +49</option>
+<option data-flag="🇷🇺" data-placeholder="912 345 6789" value="+7">RU +7</option>
+<option data-flag="🇨🇳" data-placeholder="138 0000 0000" value="+86">CN +86</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-text-muted absolute right-0 pointer-events-none">arrow_drop_down</span>
+</div>
+<input class="w-full bg-transparent border-0 px-3 py-2 text-base sm:text-lg font-bold text-text-main tracking-wider placeholder:text-text-muted/40 placeholder:font-normal focus:ring-0 outline-none text-left font-mono" id="phone-input" oninput="this.value=this.value.replace(/\D/g,'').slice(0,12); updateSendBtn()" inputmode="numeric" placeholder="912 345 6789" type="tel">
+</div>
+</div>
+<!-- Email Input Group (Swappable) -->
+<div class="flex-col gap-1.5 hidden" id="email-container">
+<label class="text-xs sm:text-sm font-bold text-text-main flex items-center justify-between">
+<span data-i18n="email_label" class="">آدرس ایمیل معتبر</span>
+<span class="text-[11px] sm:text-xs text-text-muted font-normal" data-i18n="email_sublabel">برای گردشگران خارجی بدون سیم‌کارت</span>
+</label>
+<div class="neu-inset-deep rounded-2xl px-3 py-2.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">alternate_email</span>
+<input class="w-full bg-transparent border-0 text-sm sm:text-base font-semibold text-text-main placeholder:text-text-muted/40 focus:ring-0 outline-none" dir="ltr" id="email-input" disabled oninput="updateSendBtn()" placeholder="guest@traveler.com" type="email">
+</div>
+</div>
+<!-- Checkboxes: Age & Terms -->
+<div class="flex flex-col gap-2.5 pt-2 border-t border-[#cbd6e4]/40 mt-1">
+<label class="flex items-start gap-2.5 cursor-pointer text-xs sm:text-sm select-none group">
+<input class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4 border-[#c5d3e6] bg-[#eef4fd]" id="check-age" onchange="updateSendBtn()" type="checkbox">
+<span class="text-text-main leading-tight group-hover:text-primary transition-colors" data-i18n="check_age" id="label-age">تأیید می‌کنم که حداقل دارای <strong>۱۸ سال تمام قانونی</strong> هستم.</span>
+</label>
+<label class="flex items-start gap-2.5 cursor-pointer text-xs sm:text-sm select-none group">
+<input class="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4 border-[#c5d3e6] bg-[#eef4fd]" id="check-terms" onchange="updateSendBtn()" type="checkbox">
+<span class="text-text-muted leading-tight group-hover:text-primary transition-colors" data-i18n="check_terms" id="label-terms"><a class="text-primary underline font-medium hover:text-primary-container" href="#" data-open-terms="1">قوانین و ضوابط همراهی تشریفاتی</a> و اصول حفظ حریم خصوصی را می‌پذیرم.</span>
+</label>
+</div>
+<p class="hidden text-xs text-center font-semibold text-red-600" id="ident-err" role="alert" aria-live="assertive"></p>
+<p id="ident-notice" role="status" class="hidden text-[12px] text-secondary"></p>
+<!-- Action Button -->
+<button class="w-full mt-2 py-3.5 sm:py-4 px-5 rounded-2xl neu-btn-teal text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 group transition-all" id="btn-request-otp" onclick="handleRequestOTP()" type="button">
+<span data-i18n="btn_request_otp" class="">دریافت کد تأیید یک‌بارمصرف</span>
+<span class="material-symbols-outlined text-[20px] sm:text-[22px] dir-flip group-hover:-translate-x-1.5 transition-transform">arrow_right_alt</span>
+</button>
+<p class="text-[11px] sm:text-xs text-center text-text-muted" data-i18n="otp_note">برای ورود با شماره همراه، کد یک‌بارمصرف لازم است؛ ورود با ایمیل فعلاً فعال نیست.</p>
+</div>
+<!-- STEP 3: Identity (only on first login) -->
+<div class="flex-col gap-4 sm:gap-5 hidden" id="step-identity">
+<div class="text-center">
+<h3 class="text-sm sm:text-base font-bold text-text-main" data-i18n="id_title">اطلاعات شخصی</h3>
+<p class="text-xs text-text-muted mt-1 leading-relaxed" data-i18n="id_note">نام و نام خانوادگی را وارد کنید؛ این اطلاعات از روی گذرنامه بررسی نمی‌شود.</p>
+</div>
+<label class="flex flex-col gap-1.5"><span class="text-xs sm:text-sm font-bold text-text-main"><span data-i18n="id_first">نام</span> <span class="text-red-600">*</span></span>
+<input class="neu-inset-deep rounded-2xl px-4 py-3 bg-transparent text-sm font-semibold text-text-main outline-none" id="id-name" maxlength="30" oninput="idValid()" type="text"></label>
+<label class="flex flex-col gap-1.5"><span class="text-xs sm:text-sm font-bold text-text-main"><span data-i18n="id_last">نام خانوادگی</span> <span class="text-red-600">*</span></span>
+<input class="neu-inset-deep rounded-2xl px-4 py-3 bg-transparent text-sm font-semibold text-text-main outline-none" id="id-last" maxlength="40" oninput="idValid()" type="text"></label>
+<div class="flex flex-col gap-1.5">
+<span class="text-xs sm:text-sm font-bold text-text-main"><span data-i18n="id_gender">جنسیت</span> <span class="text-red-600">*</span></span>
+<div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl neu-inset">
+<button class="id-gender py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-text-muted neu-raised" data-v="زن" onclick="pickGender(this)" type="button"><span data-i18n="id_female">زن</span></button>
+<button class="id-gender py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-text-muted neu-raised" data-v="مرد" onclick="pickGender(this)" type="button"><span data-i18n="id_male">مرد</span></button>
+</div>
+<p class="text-[11px] text-text-muted leading-relaxed" data-i18n="id_gender_note">جنسیت فقط برای تطبیق با مترجم استفاده می‌شود و هرگز به مترجم نمایش داده نمی‌شود.</p>
+</div>
+<div class="flex flex-col gap-1.5">
+<span class="text-xs sm:text-sm font-bold text-text-main" data-i18n="id_photo">عکس پروفایل (اختیاری)</span>
+<div class="flex items-center gap-3">
+<div id="id-photo-preview" class="w-12 h-12 rounded-full neu-pressed flex items-center justify-center text-primary font-extrabold overflow-hidden" aria-hidden="true"><span class="material-symbols-outlined">person</span></div>
+<label class="flex-1 cursor-pointer text-center py-2.5 rounded-xl neu-flat text-xs font-bold text-secondary"><span data-i18n="id_photo_pick">انتخاب عکس</span><input accept="image/jpeg,image/png" class="hidden" id="id-photo" type="file"></label>
+</div>
+<p class="text-[11px] text-text-muted leading-relaxed" data-i18n="id_photo_note">JPG یا PNG، حداکثر ۵ مگابایت. بدون عکس، تصویر پیش‌فرض نمایش داده می‌شود.</p>
+<p class="hidden text-xs font-semibold text-red-600" id="id-photo-err" role="alert"></p>
+</div>
+<button class="w-full mt-1 py-3.5 sm:py-4 px-5 rounded-2xl neu-btn-teal text-white font-bold text-sm sm:text-base transition-all" disabled id="id-save" onclick="saveIdentity()" type="button" data-i18n="id_save">ادامه</button>
+</div>
+<!-- STEP 2: OTP Verification State -->
+<div class="flex-col gap-4 sm:gap-5 hidden" id="step-otp">
+<!-- Top Bar with Back Button -->
+<div class="flex items-center justify-between pb-3 border-b border-[#cbd6e4]/50">
+<button class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl neu-raised-sm flex items-center justify-center text-text-muted hover:text-primary transition-all active:neu-inset" onclick="backToIdentifier()" data-title-key="title_back_edit" title="بازگشت و اصلاح شماره" type="button">
+<span class="material-symbols-outlined text-[20px] dir-back-icon">arrow_forward</span>
+</button>
+<div class="text-center">
+<h3 class="text-sm sm:text-base font-bold text-text-main" data-i18n="otp_header">تأیید شماره همراه</h3>
+<span class="text-xs sm:text-sm text-primary font-mono font-bold dir-ltr block mt-0.5" id="target-recipient">+98 912***89</span>
+</div>
+<button class="text-xs sm:text-sm font-semibold text-primary hover:underline px-2 py-1" data-i18n="otp_edit" onclick="backToIdentifier()" type="button">ویرایش</button>
+</div>
+<p class="text-xs sm:text-sm text-text-muted text-center leading-relaxed" data-i18n="otp_instruction">کد شش‌رقمی مرتبط با شماره بالا را وارد کنید:</p>
+<!-- 6 Responsive Distinct OTP Inputs -->
+<div class="flex justify-between items-center gap-1.5 sm:gap-2.5 dir-ltr py-1" id="otp-inputs-wrapper">
+<input class="otp-box w-11 h-14 sm:w-14 sm:h-16 rounded-2xl neu-inset text-center font-bold text-xl sm:text-2xl text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all font-mono" inputmode="numeric" maxlength="1" type="tel">
+<input class="otp-box w-11 h-14 sm:w-14 sm:h-16 rounded-2xl neu-inset text-center font-bold text-xl sm:text-2xl text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all font-mono" inputmode="numeric" maxlength="1" type="tel">
+<input class="otp-box w-11 h-14 sm:w-14 sm:h-16 rounded-2xl neu-inset text-center font-bold text-xl sm:text-2xl text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all font-mono" inputmode="numeric" maxlength="1" type="tel">
+<input class="otp-box w-11 h-14 sm:w-14 sm:h-16 rounded-2xl neu-inset text-center font-bold text-xl sm:text-2xl text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all font-mono" inputmode="numeric" maxlength="1" type="tel">
+<input class="otp-box w-11 h-14 sm:w-14 sm:h-16 rounded-2xl neu-inset text-center font-bold text-xl sm:text-2xl text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all font-mono" inputmode="numeric" maxlength="1" type="tel">
+<input class="otp-box w-11 h-14 sm:w-14 sm:h-16 rounded-2xl neu-inset text-center font-bold text-xl sm:text-2xl text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none transition-all font-mono" inputmode="numeric" maxlength="1" type="tel">
+</div>
+<p class="hidden text-xs text-center font-semibold text-red-600" id="otp-err" role="alert" aria-live="assertive"></p>
+<!-- Test Code Helper Button -->
+<div class="text-center">
+<button class="text-xs text-secondary font-bold hover:underline inline-flex items-center gap-1 p-1 rounded-lg" id="btn-test-code" hidden style="display:none" onclick="fillTestCode()" type="button">
+<span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+<span data-i18n="demo_code" class="">درج سریع کد تستی دمو (۱۲۳۴۵۶)</span>
+</button>
+</div>
+<!-- Countdown & Resend Code -->
+<div class="flex items-center justify-between text-xs sm:text-sm px-1 pt-1">
+<div class="flex items-center gap-1.5 text-text-muted">
+<span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
+<span data-i18n="resend_label" class="">ارسال مجدد کد در:</span>
+<span class="font-bold text-primary font-mono text-sm sm:text-base" id="countdown">00:00</span>
+</div>
+<button class="font-bold text-primary hover:underline cursor-pointer text-xs sm:text-sm transition-colors" data-i18n="btn_resend" id="btn-resend" onclick="handleResendCode()" type="button">ارسال دوباره کد</button>
+</div>
+<!-- Verify Button -->
+<button class="w-full mt-1 py-3.5 sm:py-4 px-5 rounded-2xl neu-btn-teal text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all" id="btn-verify" onclick="handleVerifyOTP()" type="button">
+<span data-i18n="btn_verify" class="">تأیید و ورود به هم‌زبان</span>
+<span class="material-symbols-outlined text-[20px] sm:text-[22px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</button>
+<!-- Dynamic Success / Redirect Banner -->
+<div class="hidden p-3.5 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs sm:text-sm font-semibold text-center items-center justify-center gap-2 shadow-sm animate-pulse" id="auth-alert">
+<span class="material-symbols-outlined text-[20px]">navigation</span>
+<span data-i18n="auth_success" class="">ورود موفق بود؛ صفحهٔ درخواست باز می‌شود.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Unified Clean Footer -->
+<footer class="w-full py-4 px-4 sm:px-6 text-center border-t border-[#cbd6e4]/30 pb-safe mt-6">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-text-muted text-[11px] sm:text-xs">
+<span data-i18n="footer_rights" class="">هم‌زبان • ثبت درخواست و رزرو مترجم حضوری</span>
+<div class="flex items-center gap-4">
+<a class="hover:text-primary transition-colors" data-i18n="footer_terms" href="javascript:void(0)">شرایط استفاده</a>
+<span class="text-gray-300">•</span>
+<a class="hover:text-primary transition-colors" data-i18n="footer_privacy" href="javascript:void(0)">حریم خصوصی</a>
+</div>
+</div>
+</footer>
+<!-- Interactive Script for Multi-Device OTP Flow & Dynamic Multi-Language Localization -->
+<script>
+    const translations = {
+      fa: {
+        page_title: "ورود مسافر - هم‌زبان (همراه)",
+        title_back_edit: "بازگشت و اصلاح شماره",
+        id_title: "اطلاعات شخصی",
+        id_note: "نام و نام خانوادگی را وارد کنید؛ این اطلاعات از روی گذرنامه بررسی نمی‌شود.",
+        id_first: "نام",
+        id_last: "نام خانوادگی",
+        id_gender: "جنسیت",
+        id_female: "زن",
+        id_male: "مرد",
+        id_gender_note: "جنسیت فقط برای تطبیق با مترجم استفاده می‌شود و هرگز به مترجم نمایش داده نمی‌شود.",
+        id_save: "ادامه",
+        id_photo: "عکس پروفایل (اختیاری)",
+        id_photo_pick: "انتخاب عکس",
+        id_photo_note: "JPG یا PNG، حداکثر ۵ مگابایت. بدون عکس، تصویر پیش‌فرض نمایش داده می‌شود.",
+        brand_name: "هم‌زبان",
+        brand_badge: "مسافر و همراه",
+        brand_tagline: "ثبت درخواست و رزرو مترجم حضوری",
+        hero_eyebrow: "درخواست مترجم برای سفر و کار",
+        hero_title: "ثبت درخواست مترجم حضوری",
+        hero_desc: "زبان‌ها، نوع خدمت و محل ملاقات را مشخص کنید و درخواست فوری یا رزرو زمان‌دار ثبت کنید. پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.",
+        f1_title: "انتخاب محل ملاقات",
+        f1_desc: "محل ملاقات را روی نقشه انتخاب و تأیید کنید.",
+        f2_title: "انتخاب زبان‌ها",
+        f2_desc: "زبان مبدأ و مقصد را هنگام ثبت درخواست انتخاب کنید.",
+        f3_title: "معرفی مترجم پس از پذیرش",
+        f3_desc: "مشخصات مترجم پس از پذیرش درخواست نمایش داده می‌شود.",
+        f4_title: "راه تماس پشتیبانی",
+        f4_desc: "اگر شماره‌ای در سامانه ثبت شده باشد، برنامه شماره‌گیر دستگاه را باز می‌کند؛ تماس یا پاسخ‌گویی تضمین نمی‌شود.",
+        trust_verified: "تطبیق بر اساس درخواست",
+        trust_verified_sub: "زبان‌ها و نوع خدمت را مشخص کنید",
+        trust_nda: "رزرو زمان‌دار",
+        trust_nda_sub: "زمان آینده را برای درخواست انتخاب کنید",
+        trust_support: "راه تماس تنظیم‌شده",
+        trust_support_sub: "در صورت ثبت شماره در سامانه",
+        mobile_card_title: "ورود به سامانه مسافران",
+        mobile_card_desc: "درخواست فوری یا زمان‌دار ثبت کنید؛ پذیرش به در دسترس بودن مترجم بستگی دارد.",
+        card_title: "ورود مسافر",
+        card_desc: "برای ثبت درخواست مترجم حضوری، با شماره همراه وارد شوید.",
+        otp_pill: "ورود بدون رمز عبور با کد یک‌بارمصرف (OTP)",
+        tab_label: "روش دریافت کد تأیید",
+        tab_phone: "شماره موبایل",
+        tab_email: "ایمیل (غیرفعال)",
+        phone_label: "شماره همراه مسافر",
+        phone_sublabel: "خطوط ایران و بین‌الملل",
+        email_label: "آدرس ایمیل معتبر",
+        email_sublabel: "برای گردشگران خارجی بدون سیم‌کارت",
+        check_age: 'تأیید می‌کنم که حداقل دارای <strong>۱۸ سال تمام قانونی</strong> هستم.',
+        check_terms: '<a class="text-primary underline font-medium hover:text-primary-container" href="#" data-open-terms="1">قوانین و ضوابط همراهی تشریفاتی</a> و اصول حفظ حریم خصوصی را می‌پذیرم.',
+        btn_request_otp: "دریافت کد تأیید یک‌بارمصرف",
+        otp_note: "برای ورود با شماره همراه، کد یک‌بارمصرف لازم است؛ ورود با ایمیل فعلاً فعال نیست.",
+        otp_header: "تأیید شماره همراه",
+        otp_edit: "ویرایش",
+        otp_instruction: "کد شش‌رقمی مرتبط با شماره بالا را وارد کنید:",
+        demo_code: "درج سریع کد تستی دمو (۱۲۳۴۵۶)",
+        resend_label: "ارسال مجدد کد در:",
+        btn_resend: "ارسال دوباره کد",
+        btn_verify: "تأیید و ورود به هم‌زبان",
+        auth_success: "ورود موفق بود؛ صفحهٔ درخواست باز می‌شود.",
+        footer_rights: "هم‌زبان • ثبت درخواست و رزرو مترجم حضوری",
+        footer_terms: "شرایط استفاده",
+        footer_privacy: "حریم خصوصی",
+        alert_terms_required: "لطفاً شرایط سنی و قوانین پلتفرم را تأیید فرمایید."
+      },
+      en: {
+        page_title: "Traveler Sign In - Hamzaban Companion",
+        title_back_edit: "Go back and correct the number",
+        id_title: "Personal details",
+        id_note: "Enter your first and last name. These details are not checked against a passport.",
+        id_first: "First name",
+        id_last: "Last name",
+        id_gender: "Gender",
+        id_female: "Female",
+        id_male: "Male",
+        id_gender_note: "Gender is used only to match you with a translator and is never shown to translators.",
+        id_save: "Continue",
+        id_photo: "Profile photo (optional)",
+        id_photo_pick: "Choose photo",
+        id_photo_note: "JPG or PNG, up to 5 MB. Without a photo, a default image is shown.",
+        brand_name: "Hamzaban",
+        brand_badge: "Traveler & Guide",
+        brand_tagline: "In-person interpreter requests and bookings",
+        hero_eyebrow: "For travel and work",
+        hero_title: "Request an in-person interpreter",
+        hero_desc: "Choose the languages, service type, and meeting point, then submit an instant request or a scheduled booking. Acceptance depends on interpreter availability.",
+        f1_title: "Meeting point on the map",
+        f1_desc: "Choose and confirm your meeting point on the map.",
+        f2_title: "Choose languages",
+        f2_desc: "Select the source and destination languages for your request.",
+        f3_title: "Interpreter details after acceptance",
+        f3_desc: "Interpreter details are shown after your request is accepted.",
+        f4_title: "Support contact option",
+        f4_desc: "If a number is configured, the app opens your dialer; a call or response is not guaranteed.",
+        trust_verified: "Matching based on your request",
+        trust_verified_sub: "Choose your languages and service type",
+        trust_nda: "Scheduled booking",
+        trust_nda_sub: "Choose a future time for your request",
+        trust_support: "Configured contact option",
+        trust_support_sub: "Shown only when a number is set",
+        mobile_card_title: "Sign in to Traveler Portal",
+        mobile_card_desc: "Submit an instant or scheduled request. Acceptance depends on interpreter availability.",
+        card_title: "Traveler Sign In",
+        card_desc: "Sign in with your mobile number to submit an interpreter request.",
+        otp_pill: "Passwordless One-Time Passcode (OTP)",
+        tab_label: "Verification delivery method",
+        tab_phone: "Mobile Number",
+        tab_email: "Email (unavailable)",
+        phone_label: "Traveler Mobile Phone",
+        phone_sublabel: "Domestic & International",
+        email_label: "Valid Email Address",
+        email_sublabel: "Recommended for tourists without a local SIM",
+        check_age: 'I confirm that I am at least <strong>18 years of age</strong>.',
+        check_terms: 'I agree to the <a class="text-primary underline font-medium hover:text-primary-container" href="javascript:void(0)">VIP Companion Terms of Service</a> and Privacy Policy.',
+        btn_request_otp: "Get Verification Code",
+        otp_note: "Phone sign-in requires a one-time code; email sign-in is not available yet.",
+        otp_header: "Mobile number verification",
+        otp_edit: "Edit",
+        otp_instruction: "Enter the six-digit code for the phone number above.",
+        demo_code: "Auto-fill demo test code (123456)",
+        resend_label: "Resend passcode in:",
+        btn_resend: "Resend Code",
+        btn_verify: "Confirm & Enter Hamzaban",
+        auth_success: "Sign-in successful. Opening the request page...",
+        footer_rights: "Hamzaban • In-person interpreter requests and bookings",
+        footer_terms: "Terms of Service",
+        footer_privacy: "Privacy Policy",
+        alert_terms_required: "Please confirm your age and accept the platform terms."
+      },
+      ar: {
+        page_title: "تسجيل دخول المسافر - هم‌زبان (المرافق)",
+        title_back_edit: "الرجوع وتصحيح الرقم",
+        id_title: "البيانات الشخصية",
+        id_note: "أدخل اسمك واسم عائلتك؛ لا تُفحَص هذه البيانات بمقارنتها بجواز السفر.",
+        id_first: "الاسم",
+        id_last: "اسم العائلة",
+        id_gender: "الجنس",
+        id_female: "أنثى",
+        id_male: "ذكر",
+        id_gender_note: "يُستخدم الجنس فقط لمطابقتك مع مترجم، ولا يُعرض على المترجمين أبداً.",
+        id_save: "متابعة",
+        id_photo: "الصورة الشخصية (اختيارية)",
+        id_photo_pick: "اختيار صورة",
+        id_photo_note: "JPG أو PNG، بحد أقصى ٥ ميغابايت. بدون صورة يُعرض صورة افتراضية.",
+        brand_name: "هم‌زبان",
+        brand_badge: "المسافر والمرافق",
+        brand_tagline: "طلبات وحجوزات المترجمين الحضوريين",
+        hero_eyebrow: "للسفر والعمل",
+        hero_title: "اطلب مترجماً حضورياً",
+        hero_desc: "حدّد اللغات ونوع الخدمة ونقطة اللقاء، ثم أرسل طلباً فورياً أو حجزاً مجدولاً. يعتمد قبول الطلب على توفر المترجم.",
+        f1_title: "اختيار نقطة اللقاء",
+        f1_desc: "اختر نقطة اللقاء على الخريطة وأكّدها.",
+        f2_title: "اختيار اللغات",
+        f2_desc: "حدّد لغتي المصدر والوجهة في طلبك.",
+        f3_title: "تفاصيل المترجم بعد القبول",
+        f3_desc: "تظهر تفاصيل المترجم بعد قبول طلبك.",
+        f4_title: "وسيلة الاتصال بالدعم",
+        f4_desc: "إذا تم إعداد رقم، يفتح التطبيق لوحة الاتصال؛ ولا يضمن إجراء المكالمة أو الرد.",
+        trust_verified: "المطابقة حسب الطلب",
+        trust_verified_sub: "حدّد اللغات ونوع الخدمة",
+        trust_nda: "حجز مجدول",
+        trust_nda_sub: "اختر وقتاً مستقبلياً لطلبك",
+        trust_support: "خيار اتصال عند الإعداد",
+        trust_support_sub: "يظهر فقط عند ضبط رقم",
+        mobile_card_title: "تسجيل الدخول للمسافرين",
+        mobile_card_desc: "قدّم طلباً فورياً أو حجزاً مجدولاً؛ يعتمد القبول على توفر المترجم.",
+        card_title: "دخول المسافر",
+        card_desc: "سجّل الدخول برقم هاتفك لتقديم طلب مترجم حضوري.",
+        otp_pill: "دخول بدون كلمة مرور عبر رمز مؤقت (OTP)",
+        tab_label: "طريقة استلام رمز التحقق",
+        tab_phone: "رقم الجوال",
+        tab_email: "البريد الإلكتروني (غير متاح)",
+        phone_label: "رقم جوال المسافر",
+        phone_sublabel: "الخطوط المحلية والدولية",
+        email_label: "عنوان البريد الإلكتروني",
+        email_sublabel: "مناسب للمسافرين دون شريحة محلية",
+        check_age: 'أؤكد أنني أتممت <strong>١٨ عاماً قانونياً</strong> على الأقل.',
+        check_terms: 'أوافق على <a class="text-primary underline font-medium hover:text-primary-container" href="javascript:void(0)">شروط الخدمة والمرافقة</a> وسياسة الخصوصية.',
+        btn_request_otp: "استلام رمز التحقق",
+        otp_note: "يتطلب تسجيل الدخول عبر الهاتف رمزاً لمرة واحدة؛ تسجيل الدخول بالبريد الإلكتروني غير متاح حالياً.",
+        otp_header: "التحقق من رقم الجوال",
+        otp_edit: "تعديل",
+        otp_instruction: "أدخل الرمز المكوّن من ۶ أرقام المرتبط بالرقم أعلاه.",
+        demo_code: "إدخال تجريبي فوري للرمز (١٢٣٤٥٦)",
+        resend_label: "إعادة إرسال الرمز خلال:",
+        btn_resend: "إعادة إرسال الرمز",
+        btn_verify: "تأكيد والدخول إلى هم‌زبان",
+        auth_success: "تم تسجيل الدخول بنجاح. جارٍ فتح صفحة الطلب...",
+        footer_rights: "هم‌زبان • طلبات وحجوزات مترجم حضوري",
+        footer_terms: "شروط الاستخدام",
+        footer_privacy: "سياسة الخصوصية",
+        alert_terms_required: "يرجى تأكيد السن القانوني والموافقة على الشروط للمتابعة."
+      }
+    };
+
+    let currentLang = 'fa';
+    let activeMethod = 'phone';
+    let countdownInterval = null;
+
+    function toggleLangMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('lang-menu');
+      const arrow = document.getElementById('lang-arrow');
+      const btn = document.getElementById('lang-btn');
+      const isHidden = menu.classList.contains('hidden');
+      
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        menu.classList.add('flex');
+        arrow.style.transform = 'rotate(180deg)';
+        btn.setAttribute('aria-expanded', 'true');
+      } else {
+        closeLangMenu();
+      }
+    }
+
+    function closeLangMenu() {
+      const menu = document.getElementById('lang-menu');
+      const arrow = document.getElementById('lang-arrow');
+      const btn = document.getElementById('lang-btn');
+      if (menu) {
+        menu.classList.add('hidden');
+        menu.classList.remove('flex');
+      }
+      if (arrow) arrow.style.transform = 'rotate(0deg)';
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function setLang(code, label) {
+      currentLang = code;
+      try { localStorage.setItem('hamzaban_lang', code); } catch (err) {}
+      const htmlEl = document.documentElement;
+      const isRTL = (code === 'fa' || code === 'ar');
+
+      // Update HTML Attributes
+      htmlEl.setAttribute('lang', code);
+      htmlEl.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+      document.title = translations[code].page_title;
+
+      // Update button label
+      document.getElementById('current-lang-text').textContent = label;
+
+      // Update menu checkmarks
+      ['fa', 'en', 'ar'].forEach(l => {
+        const item = document.getElementById('opt-' + l);
+        const check = item ? item.querySelector('.check-icon') : null;
+        if (item && check) {
+          if (l === code) {
+            check.classList.remove('hidden');
+            item.classList.add('font-semibold', 'text-primary');
+            item.classList.remove('text-text-main', 'font-medium');
+          } else {
+            check.classList.add('hidden');
+            item.classList.remove('font-semibold', 'text-primary');
+            item.classList.add('text-text-main', 'font-medium');
+          }
+        }
+      });
+
+      // Update all localized texts
+      const dict = translations[code];
+      for (const [key, val] of Object.entries(dict)) {
+        const els = document.querySelectorAll(`[data-i18n="${key}"]`);
+        els.forEach(el => {
+          if (key === 'check_age' || key === 'check_terms') {
+            el.innerHTML = val;
+          } else {
+            el.textContent = val;
+          }
+        });
+      }
+
+      document.querySelectorAll('[data-title-key]').forEach(el => { const k = el.getAttribute('data-title-key'); if (dict[k]) el.setAttribute('title', dict[k]); });
+      closeLangMenu();
+    }
+
+    // Close menu on click outside
+    document.addEventListener('click', function(e) {
+      const btn = document.getElementById('lang-btn');
+      const menu = document.getElementById('lang-menu');
+      if (menu && !menu.classList.contains('hidden')) {
+        if (!btn.contains(e.target) && !menu.contains(e.target)) {
+          closeLangMenu();
+        }
+      }
+    });
+
+    // ---------- ورود (سند): شماره یا ایمیل → کد ۶ رقمی → هویت (فقط نخستین ورود) ----------
+    // پیام‌های خطای ورود به زبان جاری (کلید = متن فارسی اصلی)
+    const ERR_MSG = {
+      fa: { account_deleted: "حذف حساب توسط سرور تأیید شد.", session_expired: "نشست شما پایان یافته است. لطفاً دوباره وارد شوید.", email_off: 'ورود با ایمیل فعلاً فعال نیست. لطفاً از شماره همراه استفاده کنید.', net_err: 'اتصال به سرور برقرار نیست. اینترنت خود را بررسی کنید.', otp_expired: 'کد منقضی شده است. کد جدید بگیرید.', resend_wait: 'ارسال مجدد کد زودتر از موعد است. کمی صبر کنید.', sms_off: 'ارسال پیامک فعلاً فعال نیست. بعداً دوباره تلاش کنید.', photo_type: 'فقط فایل JPG یا PNG مجاز است.', photo_size: 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.', success: 'ورود موفقیت‌آمیز بود.', lock: 'ورود به‌دلیل ۵ تلاش ناموفق، تا {t} دیگر قفل است.', consent: 'لطفاً شرایط سنی و قوانین پلتفرم را تأیید فرمایید.', phone_bad: 'شماره همراه معتبر نیست.', email_bad: 'ایمیل معتبر نیست.', wrong_code: 'کد اشتباه است. {n} تلاش دیگر باقی مانده است.' },
+      en: { account_deleted: "Account deletion was confirmed by the server.", session_expired: "Your session has ended. Please sign in again.", email_off: 'Email sign-in is not available. Please use a mobile number.', net_err: 'Cannot reach the server. Check your internet connection.', otp_expired: 'The code has expired. Request a new one.', resend_wait: 'Please wait before requesting another code.', sms_off: 'SMS sending is not available right now. Try again later.', photo_type: 'Only JPG or PNG files are allowed.', photo_size: 'The photo must be 5 MB or smaller.', success: 'Signed in successfully.', lock: 'Sign-in is locked after 5 failed attempts. Try again in {t}.', consent: 'Please confirm both items to continue.', phone_bad: 'The mobile number is not valid.', email_bad: 'The email address is not valid.', wrong_code: 'Wrong code. {n} attempts left.' },
+      ar: { account_deleted: "تم تأكيد حذف الحساب من الخادم.", session_expired: "انتهت جلستك. يرجى تسجيل الدخول مجدداً.", email_off: 'الدخول بالبريد الإلكتروني غير متاح حالياً. يرجى استخدام رقم الجوال.', net_err: 'تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت.', otp_expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', resend_wait: 'يرجى الانتظار قبل طلب رمز آخر.', sms_off: 'إرسال الرسائل النصية غير متاح حالياً. حاول لاحقاً.', photo_type: 'يُسمح بملفات JPG أو PNG فقط.', photo_size: 'يجب ألا يتجاوز حجم الصورة ٥ ميغابايت.', success: 'تم الدخول بنجاح.', lock: 'تم قفل الدخول بعد ٥ محاولات فاشلة. حاول مرة أخرى بعد {t}.', consent: 'يرجى تأكيد البندين للمتابعة.', phone_bad: 'رقم الجوال غير صالح.', email_bad: 'البريد الإلكتروني غير صالح.', wrong_code: 'الرمز غير صحيح. تبقّى {n} محاولات.' }
+    };
+    function msg(key, vars) {
+      const lang = (typeof currentLang !== 'undefined' && ERR_MSG[currentLang]) ? currentLang : 'fa';
+      let t = ERR_MSG[lang][key] || ERR_MSG.fa[key];
+      if (vars) Object.keys(vars).forEach(k => { t = t.split('{' + k + '}').join(String(vars[k])); });
+      return t;
+    }
+
+    // The fixed development code is never a local authentication decision.
+    let devLogin = false, requestPending = false, verifyPending = false;
+    let otpPhone = null, verifiedUser = null, signInStarted = false;
+    const KEY_TOKEN = 'hamzaban.token.v1';
+    const API = (method, path, body) => {
+      const headers = { 'Content-Type': 'application/json' };
+      const tk = (() => { try { return localStorage.getItem(KEY_TOKEN); } catch (e) { return null; } })();
+      if (tk) headers.Authorization = 'Bearer ' + tk;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      return fetch('/api' + path, { method, headers, cache: 'no-store', signal: controller.signal, body: body ? JSON.stringify(body) : undefined })
+        .then(r => r.json().catch(() => ({})).then(data => ({ status: r.status, data })))
+        .finally(() => clearTimeout(timeout));
+    };
+    // شماره‌ی کامل برای سرور: کد کشور + رقم‌ها بدون صفر ابتدایی
+    const fullPhone = () => $('country-select').value + normDigits($('phone-input').value).replace(/\D/g, '').replace(/^0+/, '');
+    const KEY_USER = 'hamzaban.user.v1';
+    let lockUntil = 0, endAt = 0, timerId = null, idGender = '';
+    const $ = (id) => document.getElementById(id);
+    const boxes = () => Array.from(document.querySelectorAll('.otp-box'));
+    const fmt = (s) => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    const locked = () => lockUntil > Date.now();
+    const loadUser = () => { try { return JSON.parse(localStorage.getItem(KEY_USER)); } catch (e) { return null; } };
+
+    function selectTab(type) {
+      activeMethod = type;
+      const on = 'py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all neu-raised text-primary';
+      const off = 'py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all text-text-muted hover:text-primary';
+      $('tab-phone').className = type === 'phone' ? on : off;
+      $('tab-email').className = type === 'email' ? on : off;
+      $('phone-container').classList.toggle('hidden', type !== 'phone');
+      $('email-container').classList.toggle('hidden', type !== 'email');
+      $('email-container').classList.toggle('flex', type === 'email');
+      updateSendBtn();
+    }
+
+    function updateCountryCode(select) {
+      const opt = select.options[select.selectedIndex];
+      $('phone-input').placeholder = opt.getAttribute('data-placeholder');
+      updateSendBtn();
+    }
+
+    function contactValid() {
+      if (activeMethod === 'phone') return normDigits($('phone-input').value).replace(/\D/g, '').length >= 7;
+      return false; // No email delivery or verification endpoint is configured.
+    }
+    function consentOk() { return $('check-age').checked && $('check-terms').checked; }
+
+    function updateSendBtn() {
+      const b = $('btn-request-otp');
+      b.disabled = requestPending || activeMethod !== 'phone' || !(consentOk() && contactValid());
+      b.classList.toggle('cursor-not-allowed', b.disabled);
+      // سند: اگر تأییدیه‌ها کامل نباشد، هشدار نمایش داده می‌شود
+      if (activeMethod !== 'phone') showErr('ident-err', msg('email_off'));
+      else if (contactValid() && !consentOk()) showErr('ident-err', msg('consent'));
+      else if (consentOk()) showErr('ident-err', '');
+    }
+
+    // ارقام فارسی و عربی به انگلیسی تبدیل می‌شوند (سند: نرمال‌سازی ورودی کد و شماره)
+    function normDigits(x) { return String(x).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)); }
+
+    function showErr(id, msg) { const e = $(id); e.textContent = msg || ''; e.classList.toggle('hidden', !msg); }
+
+    function setVerifyState() {
+      const b = $('btn-verify');
+      b.disabled = verifyPending || activeMethod !== 'phone' || !otpPhone || locked() || boxes().map(x => x.value).join('').length !== 6;
+    }
+
+    function tick() {
+      const now = Date.now();
+      if (locked()) {
+        const rem = Math.ceil((lockUntil - now) / 1000);
+        $('countdown').textContent = fmt(rem);
+        $('btn-resend').disabled = true;
+        showErr('otp-err', msg('lock', { t: fmt(rem) }));
+      } else {
+        if (lockUntil) { lockUntil = 0; showErr('otp-err', ''); }
+        const left = Math.max(0, Math.ceil((endAt - now) / 1000));
+        $('countdown').textContent = fmt(left);
+        $('btn-resend').disabled = left > 0;
+        $('btn-resend').className = left > 0
+          ? 'font-bold text-text-muted opacity-50 cursor-not-allowed text-xs sm:text-sm transition-colors'
+          : 'font-bold text-primary hover:underline cursor-pointer text-xs sm:text-sm transition-colors';
+      }
+      setVerifyState();
+    }
+
+    function startTimer(sec) {
+      endAt = Date.now() + sec * 1000;
+      if (!timerId) timerId = setInterval(tick, 500);
+      tick();
+    }
+
+    function handleRequestOTP() {
+      if (requestPending) return;
+      if (activeMethod !== 'phone') { showErr('ident-err', msg('email_off')); return; }
+      if (!consentOk()) { showErr('ident-err', msg('consent')); return; }
+      if (!contactValid()) { showErr('ident-err', msg('phone_bad')); return; }
+      if (locked()) { tick(); return; }
+      showErr('ident-err', '');
+      const phone = fullPhone();
+      const p = normDigits($('phone-input').value).replace(/\D/g, '');
+      const text = $('country-select').value + ' ' + p.slice(0, 3) + '***' + p.slice(-2);
+      requestPending = true; signInStarted = true;
+      otpPhone = null; verifiedUser = null;
+      updateSendBtn();
+      API('POST', '/auth/request-code', { phone, role: 'traveler' }).then(res => {
+        // An identifier edited while delivery was pending must not open a different challenge.
+        if (activeMethod !== 'phone' || fullPhone() !== phone) return;
+        if (res.status === 200 && res.data.ok === true) { otpPhone = phone; showOtpStep(text); return; }
+        if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; showErr('ident-err', msg('lock', { t: fmt(res.data.retry_after || 600) })); return; }
+        if (res.status === 429) { showErr('ident-err', msg('resend_wait')); return; }
+        if (res.status === 503) { showErr('ident-err', msg('sms_off')); return; }
+        showErr('ident-err', msg('phone_bad'));
+      }).catch(() => showErr('ident-err', msg('net_err'))).finally(() => {
+        requestPending = false;
+        // Preserve server errors rather than clearing them in updateSendBtn().
+        $('btn-request-otp').disabled = activeMethod !== 'phone' || !(consentOk() && contactValid());
+      });
+    }
+
+    function showOtpStep(text) {
+      showErr('otp-err', '');
+      $('target-recipient').textContent = text;
+      $('step-identifier').classList.add('hidden');
+      $('step-otp').classList.remove('hidden');
+      $('step-otp').classList.add('flex');
+      boxes().forEach(b => { b.value = ''; });
+      setupOtp();
+      startTimer(119); // اولین ارسال: ۱۱۹ ثانیه
+    }
+
+    function backToIdentifier() {
+      otpPhone = null; verifiedUser = null;
+      $('step-otp').classList.add('hidden');
+      $('step-otp').classList.remove('flex');
+      $('step-identifier').classList.remove('hidden');
+      showErr('otp-err', '');
+      updateSendBtn();
+    }
+
+    function handleResendCode() {
+      if (locked()) return;
+      if (activeMethod !== 'phone' || !otpPhone) { showErr('otp-err', msg('email_off')); return; }
+      API('POST', '/auth/request-code', { phone: otpPhone, role: 'traveler' }).then(res => {
+        if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; tick(); return; }
+        if (res.status !== 200 || !res.data.ok) { showErr('otp-err', msg('resend_wait')); return; }
+        boxes().forEach(b => { b.value = ''; });
+        boxes()[0].focus();
+        startTimer(120); // ارسال مجدد: ۱۲۰ ثانیه
+      }).catch(() => showErr('otp-err', msg('net_err')));
+    }
+
+    function setupOtp() {
+      const bs = boxes();
+      bs.forEach((box, i) => {
+        box.oninput = () => {
+          box.value = normDigits(box.value).replace(/\D/g, '').slice(-1);
+          if (box.value && i < bs.length - 1) bs[i + 1].focus();
+          setVerifyState();
+          if (bs.every(b => b.value)) handleVerifyOTP();
+        };
+        box.onkeydown = (e) => {
+          if (e.key === 'Backspace' && !box.value && i > 0) { bs[i - 1].value = ''; bs[i - 1].focus(); setVerifyState(); }
+        };
+        box.onpaste = (e) => {
+          const t = normDigits((e.clipboardData || window.clipboardData).getData('text')).replace(/\D/g, '').slice(0, 6);
+          if (!t) return;
+          e.preventDefault();
+          t.split('').forEach((c, k) => { bs[k].value = c; });
+          bs[Math.min(t.length, 5)].focus();
+          setVerifyState();
+          if (t.length === 6) handleVerifyOTP();
+        };
+      });
+      bs[0].focus();
+    }
+
+    function fillTestCode() {
+      if (!devLogin || activeMethod !== 'phone' || !otpPhone) return;
+      boxes().forEach((b, i) => { b.value = '123456'[i]; });
+      setVerifyState();
+      handleVerifyOTP();
+    }
+
+    function handleVerifyOTP() {
+      if (verifyPending || verifiedUser) return;
+      if (activeMethod !== 'phone' || !otpPhone) { showErr('otp-err', msg('email_off')); return; }
+      if (locked()) { tick(); return; }
+      const code = boxes().map(b => b.value).join('');
+      if (code.length !== 6) return;
+      const phone = otpPhone;
+      verifyPending = true;
+      setVerifyState();
+      API('POST', '/auth/verify', { phone, role: 'traveler', code }).then(res => {
+        if (activeMethod !== 'phone' || otpPhone !== phone) return;
+        const user = res.data.user;
+        if (res.status === 200 && typeof res.data.token === 'string' && res.data.token && user && user.role === 'traveler' && user.id && user.phone) {
+          // A local profile or the development code alone is not proof of sign-in.
+          localStorage.setItem(KEY_TOKEN, res.data.token);
+          verifiedUser = user;
+          showErr('otp-err', '');
+          proceedAfterOtp();
+          return;
+        }
+        boxes().forEach(b => { b.value = ''; });
+        boxes()[0].focus();
+        if (res.status === 423) { lockUntil = Date.now() + (res.data.retry_after || 600) * 1000; tick(); return; }
+        if (res.status === 410) { showErr('otp-err', msg('otp_expired')); return; }
+        if (res.status === 401) { showErr('otp-err', msg('wrong_code', { n: res.data.attempts_left })); return; }
+        showErr('otp-err', msg('net_err'));
+      }).catch(() => showErr('otp-err', msg('net_err'))).finally(() => {
+        verifyPending = false; setVerifyState();
+      });
+    }
+
+    function matchingProfile(u) {
+      return u && u.name && verifiedUser && u.authUserId === verifiedUser.id;
+    }
+
+    function proceedAfterOtp() {
+        if (!verifiedUser) return;
+        showErr('otp-err', '');
+        const u = loadUser();
+        if (matchingProfile(u)) { finishLogin(u); return; }
+        $('step-identifier').classList.add('hidden');
+        $('step-otp').classList.add('hidden');
+        $('step-otp').classList.remove('flex');
+        $('step-identity').classList.remove('hidden');
+        $('step-identity').classList.add('flex');
+        $('id-name').focus();
+    }
+
+    // هویت
+    function idValid() {
+      const reName = /^[\p{L} ]{2,30}$/u, reLast = /^[\p{L} ]{2,40}$/u;
+      const ok = reName.test($('id-name').value.trim()) && reLast.test($('id-last').value.trim()) && !!idGender;
+      $('id-save').disabled = !ok;
+    }
+    function pickGender(b) {
+      idGender = b.getAttribute('data-v');
+      document.querySelectorAll('.id-gender').forEach(x => {
+        const on = x === b;
+        x.classList.toggle('neu-inset', on);
+        x.classList.toggle('neu-raised', !on);
+        x.classList.toggle('text-primary', on);
+        x.classList.toggle('text-text-muted', !on);
+      });
+      idValid();
+    }
+    var idPhoto = null;
+    $('id-photo').addEventListener('change', function () {
+      var f = this.files && this.files[0]; if (!f) return;
+      var err = $('id-photo-err'); err.classList.add('hidden'); err.textContent = '';
+      if (!/^image\/(jpeg|png)$/.test(f.type)) { err.textContent = msg('photo_type'); err.classList.remove('hidden'); this.value = ''; return; }
+      if (f.size > 5 * 1024 * 1024) { err.textContent = msg('photo_size'); err.classList.remove('hidden'); this.value = ''; return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var side = 256, c = document.createElement('canvas'); c.width = side; c.height = side;
+          var k = Math.min(img.width, img.height), sx = (img.width - k) / 2, sy = (img.height - k) / 2;
+          c.getContext('2d').drawImage(img, sx, sy, k, k, 0, 0, side, side);
+          idPhoto = c.toDataURL('image/jpeg', 0.85);
+          var pv = $('id-photo-preview'); pv.innerHTML = ''; var im = document.createElement('img'); im.src = idPhoto; im.alt = ''; im.className = 'w-full h-full object-cover'; pv.appendChild(im);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(f);
+    });
+    function saveIdentity() {
+      if (!verifiedUser || $('id-save').disabled) return;
+      const contact = verifiedUser.phone.startsWith('+') ? verifiedUser.phone : '+98 ' + verifiedUser.phone;
+      finishLogin({ name: $('id-name').value.trim(), last: $('id-last').value.trim(), gender: idGender,
+        contact: contact, method: activeMethod, photo: idPhoto });
+    }
+    function finishLogin(u) {
+      if (!verifiedUser || !localStorage.getItem(KEY_TOKEN)) return;
+      u.authUserId = verifiedUser.id; u.phone = verifiedUser.phone; u.method = 'phone';
+      try { localStorage.setItem(KEY_USER, JSON.stringify(u)); } catch (err) { return; }
+      $('id-save').disabled = true;
+      $('id-save').textContent = msg('success');
+      setTimeout(() => { location.href = 'app.html'; }, 1200);
+    }
+
+    // راه‌اندازی
+    // زبان ذخیره‌شده‌ی قبلی (مشترک با اپ) هنگام ورود اعمال می‌شود
+    (function () {
+      var saved = null, names = { fa: 'فارسی', en: 'English', ar: 'العربية' };
+      try { saved = localStorage.getItem('hamzaban_lang'); } catch (err) {}
+      if (saved && names[saved] && saved !== 'fa') setLang(saved, names[saved]);
+    })();
+
+    selectTab('phone');
+    updateSendBtn();
+    setVerifyState();
+    try {
+      var notice = sessionStorage.getItem('hamzaban.auth.notice.v1');
+      if (notice === 'expired' || notice === 'deleted') {
+        sessionStorage.removeItem('hamzaban.auth.notice.v1');
+        if (notice === 'deleted') {
+          $('ident-notice').textContent = msg('account_deleted');
+          $('ident-notice').classList.remove('hidden');
+        } else showErr('ident-err', msg('session_expired'));
+      }
+    } catch (e) {}
+    // Only advertise the autofill helper after an explicit development config.
+    API('GET', '/config').then(res => {
+      devLogin = res.status === 200 && res.data.dev === true;
+      $('btn-test-code').hidden = !devLogin;
+      $('btn-test-code').style.display = devLogin ? '' : 'none';
+    }).catch(() => {});
+    // Old email/demo profiles must never skip server authentication.
+    if (localStorage.getItem(KEY_TOKEN)) {
+      const restoredToken = localStorage.getItem(KEY_TOKEN);
+      API('GET', '/auth/me').then(res => {
+        if (signInStarted || localStorage.getItem(KEY_TOKEN) !== restoredToken) return;
+        if (res.status === 200 && res.data.role === 'traveler' && res.data.id && res.data.phone) {
+          verifiedUser = res.data;
+          if (matchingProfile(loadUser())) location.replace('app.html');
+          else proceedAfterOtp();
+        } else if (res.status === 401 || res.status === 403 || (res.status === 200 && res.data.role !== 'traveler')) {
+          localStorage.removeItem(KEY_TOKEN);
+        }
+      }).catch(() => showErr('ident-err', msg('net_err')));
+    }
+
+
+  </script>
+<script>
+// دسترس‌پذیری ورود: وضعیت انتخاب روش ورود و جنسیت برای صفحه‌خوان
+(function () {
+  function sync() {
+    document.querySelectorAll('#tab-phone,#tab-email,.id-gender').forEach(function (el) {
+      var on = el.classList.contains('text-primary');
+      el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  var queued = false;
+  new MutationObserver(function () {
+    if (queued) return; queued = true;
+    requestAnimationFrame(function () { queued = false; sync(); });
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  sync();
+})();
+</script>
+</body>
+</html>

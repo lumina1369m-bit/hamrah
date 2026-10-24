@@ -8,7 +8,6 @@ const test = require('node:test');
 
 const source = fs.readFileSync(path.join(__dirname, '../translator/mission-map.js'), 'utf8');
 const workspaceHTML = fs.readFileSync(path.join(__dirname, '../translator/app.html'), 'utf8');
-const serverSource = fs.readFileSync(path.join(__dirname, '../server/server.js'), 'utf8');
 
 function createFixture(origin = 'https://preview.example') {
   const elements = {
@@ -127,14 +126,6 @@ test('workspace is based on the sample sheet and keeps server-backed panels avai
   assert.match(workspaceHTML, /sheet-expanded/);
   assert.match(workspaceHTML, /translator-offer-primary/);
   assert.match(workspaceHTML, /اطلاعات مالی از سرور دریافت نمی‌شود/);
-});
-
-test('removes the traveler PWA while keeping Leaflet assets with the translator app', () => {
-  assert.equal(fs.existsSync(path.join(__dirname, '../traveler')), false);
-  assert.equal(fs.existsSync(path.join(__dirname, '../translator/vendor/leaflet/leaflet.js')), true);
-  assert.match(workspaceHTML, /\/translator\/vendor\/leaflet\/leaflet\.css/);
-  assert.match(workspaceHTML, /\/translator\/vendor\/leaflet\/leaflet\.js/);
-  assert.doesNotMatch(serverSource, /href="\/traveler\/index\.html"/);
 });
 
 test('map controller contains no route drawing or device geolocation implementation', () => {

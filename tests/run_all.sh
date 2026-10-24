@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # اجرای همهٔ تست‌ها.
 # دو سرور همراه خودکار با پایگاه داده‌ی تازه بالا می‌آیند:
-#   ۸۰۸۱: اپ مترجم، پنل مدیر و API رزروها (حالت توسعه)
+#   ۸۰۸۱: زمان‌بندی واقعی، اپ‌ها و API (حالت توسعه)
 #   ۸۰۸۲: زمان‌بندی فشرده (HZ_TIME_SCALE=0.01) برای تست انقضا
-# رابط PWA مسافر حذف شده است؛ API رزروها روی همین سرور برای مترجم باقی است.
+# سرور مسافر جدا نیست؛ همه‌چیز از همان سرور سرو می‌شود.
 set -u
 cd "$(dirname "$0")"
 TESTS_DIR="$(pwd)"
@@ -31,12 +31,21 @@ run env BASE=http://127.0.0.1:8081 node "$SERVER_DIR/test/api.test.js"
 run env BASE=http://127.0.0.1:8081 node "$SERVER_DIR/test/features_cities_security.test.js"
 run node --test translator_mission_map.test.js
 run env BASE=http://127.0.0.1:8082 node "$SERVER_DIR/test/timing.test.js"
-# رابط PWA مسافر حذف شده؛ آزمون‌های مرورگری وابسته به آن در این اجرا نیستند. API رزرو برای آزمون‌های مترجم باقی است.
+run python3 traveler_convert_ui.py http://127.0.0.1:8082
+run python3 cross_app_e2e.py
+run python3 traveler_change_ui.py
+run python3 traveler_cancel_ui.py
+run python3 traveler_pay_ui.py
+run python3 traveler_settle_ui.py
+run python3 traveler_invoice_ui.py
+run python3 translator_pay_ui.py
 run python3 admin_ui.py
 run python3 admin_docs_ui.py
 run python3 admin_slots_ui.py
 run python3 admin_editors_ui.py
+run python3 tariff_browser_ui.py http://127.0.0.1:8081
 run python3 admin_system_ui.py http://127.0.0.1:8081
+run python3 features_ui.py http://127.0.0.1:8081 test-admin-pass
 run python3 translator_workspace_metrics_ui.py
 run python3 translator_earnings_truth_ui.py
 run python3 translator_dispatch_truth_ui.py
@@ -50,6 +59,25 @@ run python3 translator_offer_actions_ui.py
 run python3 translator_presence_ui.py
 run python3 translator_cash_actions_ui.py
 run python3 translator_service_actions_ui.py
+run python3 service_actions_ui.py
+run python3 booking_actions_ui.py
+run python3 account_delete_ui.py
+run python3 traveler_support_ui.py
+run python3 traveler_support_claims_ui.py
+run python3 traveler_landing_claims_ui.py
+run python3 traveler_location_claims_ui.py
+run python3 traveler_map_claims_ui.py
+run python3 traveler_match_status_ui.py
+run python3 traveler_translators_ui.py
+run python3 account_truth_ui.py
+run python3 logout_sessions_ui.py
+run python3 traveler_auth_ui.py
+run python3 login_flow.py fa
+run python3 login_flow.py en
+run python3 login_flow.py ar
+run python3 spec_audit.py
+run python3 bk_flow.py ar
+run python3 photo_flow.py fa
 run python3 tr_e2e_full.py 390
 run python3 tr_missions_ui.py
 run python3 tr_daybar.py
@@ -58,4 +86,13 @@ run python3 tr_docs_ui.py
 run python3 tr_live_docs_ui.py
 run python3 tr_docs_send_ui.py
 run python3 tr_interview_ui.py
+run python3 map_real.py
+run python3 map_search_ui.py
+run python3 no_sim_buttons.py
+run python3 extension_ui.py
+run python3 finish_flow_ui.py
+run python3 booking_options_ui.py
+run python3 service_clock_ui.py
+run python3 payment_methods_ui.py
+run python3 settlement_failure_ui.py
 exit $fail

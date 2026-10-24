@@ -1,0 +1,62 @@
+/* توکن‌های رنگ و سایه‌ی طراحی (از پیکربندی Tailwind در code.html) که در فایل فشرده‌ی tailwind.css نیستند */
+.bg-background { background-color: #e6ebf1; }
+.bg-error { background-color: #ba1a1a; }
+.bg-on-surface { background-color: #161c23; }
+.bg-outline { background-color: #717881; }
+.bg-outline-variant { background-color: #c0c7d1; }
+.bg-outline-variant\/30 { background-color: rgb(192 199 209 / 0.3); }
+.bg-outline-variant\/40 { background-color: rgb(192 199 209 / 0.4); }
+.bg-primary { background-color: #005182; }
+.bg-primary-container\/10 { background-color: rgb(2 106 167 / 0.1); }
+.bg-primary\/10 { background-color: rgb(0 81 130 / 0.1); }
+.bg-primary\/20 { background-color: rgb(0 81 130 / 0.2); }
+.bg-secondary { background-color: #006a61; }
+.bg-secondary-container { background-color: #86f2e4; }
+.bg-secondary-container\/40 { background-color: rgb(134 242 228 / 0.4); }
+.bg-secondary-container\/60 { background-color: rgb(134 242 228 / 0.6); }
+.bg-secondary\/15 { background-color: rgb(0 106 97 / 0.15); }
+.bg-surface { background-color: #e6ebf1; }
+.bg-surface-container { background-color: #dde5ef; }
+.bg-surface-container\/50 { background-color: rgb(221 229 239 / 0.5); }
+.bg-surface-container\/60 { background-color: rgb(221 229 239 / 0.6); }
+.bg-surface-variant { background-color: #dbe3ed; }
+.bg-surface\/90 { background-color: rgb(230 235 241 / 0.9); }
+.bg-surface\/95 { background-color: rgb(230 235 241 / 0.95); }
+.border-error\/20 { border-color: rgb(186 26 26 / 0.2); }
+.border-error\/30 { border-color: rgb(186 26 26 / 0.3); }
+.border-outline-variant { border-color: #c0c7d1; }
+.border-outline-variant\/30 { border-color: rgb(192 199 209 / 0.3); }
+.border-outline-variant\/40 { border-color: rgb(192 199 209 / 0.4); }
+.border-primary { border-color: #005182; }
+.border-primary\/20 { border-color: rgb(0 81 130 / 0.2); }
+.border-primary\/30 { border-color: rgb(0 81 130 / 0.3); }
+.border-secondary\/20 { border-color: rgb(0 106 97 / 0.2); }
+.border-secondary\/30 { border-color: rgb(0 106 97 / 0.3); }
+.border-secondary\/40 { border-color: rgb(0 106 97 / 0.4); }
+.border-secondary\/60 { border-color: rgb(0 106 97 / 0.6); }
+.border-surface-variant { border-color: #dbe3ed; }
+.border-surface-variant\/30 { border-color: rgb(219 227 237 / 0.3); }
+.border-surface-variant\/40 { border-color: rgb(219 227 237 / 0.4); }
+.border-tertiary\/30 { border-color: rgb(111 68 0 / 0.3); }
+.from-outline { --tw-gradient-from: #717881; }
+.from-secondary { --tw-gradient-from: #006a61; }
+.ring-surface { --tw-ring-color: #e6ebf1; }
+.shadow-neu-btn-primary { box-shadow: 0 8px 18px -4px rgba(0, 81, 130, 0.45), 4px 4px 10px #c2cee0, -4px -4px 10px #ffffff; }
+.shadow-neu-btn-secondary { box-shadow: 0 8px 18px -4px rgba(0, 106, 97, 0.45), 4px 4px 10px #c2cee0, -4px -4px 10px #ffffff; }
+.shadow-neu-inset { box-shadow: inset 3px 3px 6px #c0c9d5, inset -3px -3px 6px #ffffff; }
+.shadow-neu-raised { box-shadow: 7px 7px 16px #c4cdd8, -7px -7px 16px #ffffff; }
+.shadow-neu-raised-sm { box-shadow: 3px 3px 8px #c6cfda, -3px -3px 8px #ffffff; }
+.text-error { color: #ba1a1a; }
+.text-on-primary { color: #ffffff; }
+.text-on-secondary { color: #ffffff; }
+.text-on-surface { color: #161c23; }
+.text-on-surface-variant { color: #404750; }
+.text-outline { color: #717881; }
+.text-outline-variant { color: #c0c7d1; }
+.text-outline\/30 { color: rgb(113 120 129 / 0.3); }
+.text-outline\/40 { color: rgb(113 120 129 / 0.4); }
+.text-primary { color: #005182; }
+.text-secondary { color: #006a61; }
+.text-secondary-container { color: #86f2e4; }
+.text-tertiary { color: #6f4400; }
+.to-outline-variant { --tw-gradient-to: #c0c7d1; }

@@ -1,0 +1,3186 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="fa" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_tab" name="shell-type"/>
+<title>همراه - درخواست و رزرو مترجم</title>
+<meta name="theme-color" content="#E6ECF5"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="icon" href="icon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<!-- Google Fonts: Vazirmatn & Plus Jakarta Sans -->
+<!-- Tailwind CSS -->
+<style>
+    body {
+      font-family: 'Vazirmatn', 'Plus Jakarta Sans', sans-serif;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Neumorphic Soft System */
+    .neu-flat {
+      background: #e2e9f3;
+      box-shadow: -4px -4px 9px rgba(255, 255, 255, 0.9),
+                   4px 4px 9px rgba(162, 178, 198, 0.55);
+    }
+    .neu-card {
+      background: #e3ebf5;
+      box-shadow: -5px -5px 12px rgba(255, 255, 255, 0.95),
+                   5px 5px 12px rgba(158, 175, 196, 0.58);
+    }
+    .neu-pressed {
+      background: #e0e7f1;
+      box-shadow: inset 3px 3px 6px rgba(158, 175, 196, 0.65),
+                  inset -3px -3px 6px rgba(255, 255, 255, 0.95);
+    }
+    .neu-inset-shallow {
+      box-shadow: inset 2px 2px 4px rgba(158, 175, 196, 0.45),
+                  inset -2px -2px 4px rgba(255, 255, 255, 0.9);
+    }
+    .neu-btn-teal {
+      background: #006a61;
+      box-shadow: inset 1px 1px 3px rgba(255, 255, 255, 0.35),
+                  0 4px 12px rgba(0, 106, 97, 0.35);
+    }
+    
+    /* Bottom Sheet transition */
+    #bottom-sheet {
+      touch-action: none;
+      transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+    }
+    #bottom-sheet.is-dragging {
+      transition: none !important;
+    }
+    .sheet-scroll-area {
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    #location-picker-bar {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+  #bk-list>:only-child{grid-column:1/-1}
+  
+    /* ---- artful screens ---- */
+    #scr-bookings,#scr-translators,#scr-account{
+      background:
+        radial-gradient(900px 500px at 92% -10%, rgba(137,245,231,.45), transparent 60%),
+        radial-gradient(800px 500px at -10% 110%, rgba(2,106,167,.18), transparent 60%),
+        linear-gradient(180deg,#e6eef8 0%,#dbe4ef 100%) !important;
+    }
+    .scr-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;
+      padding:18px 20px;border-radius:26px;color:#fff;
+      background:linear-gradient(135deg,#005182 0%,#026aa7 55%,#006a61 120%);
+      box-shadow:0 18px 34px -14px rgba(0,81,130,.6), inset 1px 1px 2px rgba(255,255,255,.25);}
+    .scr-hero::after{content:"";position:absolute;inset:auto -40px -60px auto;width:180px;height:180px;
+      border-radius:50%;background:radial-gradient(circle,rgba(137,245,231,.55),transparent 65%);pointer-events:none;}
+    .scr-hero::before{content:"";position:absolute;top:-50px;left:-30px;width:120px;height:120px;border-radius:50%;
+      background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);pointer-events:none;}
+    .scr-hero-ico{width:52px;height:52px;flex:0 0 52px;display:flex;align-items:center;justify-content:center;
+      border-radius:18px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+      font-size:26px;backdrop-filter:blur(6px);}
+    .scr-title{font-size:21px;font-weight:800;line-height:1.3;color:#fff;}
+    .scr-sub{font-size:12px;color:rgba(255,255,255,.82);margin-top:3px;line-height:1.7;}
+    @media (min-width:768px){.scr-title{font-size:24px}.scr-hero{padding:24px 28px}}
+
+    /* bookings */
+    #bk-tabs{background:linear-gradient(180deg,#e9f0f9,#dfe8f4);box-shadow:inset 3px 3px 8px #c3cddb,inset -3px -3px 8px #fff;}
+    #bk-tabs button.neu-flat{background:linear-gradient(135deg,#fff,#eaf6f4) !important;color:#006a61 !important;
+      box-shadow:0 6px 14px -6px rgba(0,106,97,.45),inset 0 1px 0 #fff;}
+    #bk-list>.neu-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.75);
+      background:linear-gradient(160deg,#ffffff 0%,#eef4fd 100%) !important;
+      box-shadow:0 12px 26px -14px rgba(0,81,130,.35), inset 0 1px 0 #fff;}
+    #bk-list>.neu-card::before{content:"";position:absolute;right:0;top:14px;bottom:14px;width:4px;border-radius:4px;
+      background:linear-gradient(180deg,#006a61,#026aa7);}
+    #bk-list>.neu-card:only-child{padding:36px 24px;text-align:center;
+      background:radial-gradient(circle at 50% 0%,rgba(137,245,231,.35),transparent 60%),linear-gradient(160deg,#fff,#eef4fd) !important;}
+    #bk-list>.neu-card:only-child::before{display:none;}
+
+    /* bookings: larger, roomier cards on tablet and desktop */
+    @media (min-width:768px){
+      #bk-list>.neu-card{padding:20px 24px;gap:12px;font-size:14px;}
+      #bk-list>.neu-card .font-extrabold{font-size:17px;line-height:1.5;}
+      #bk-list>.neu-card .b-when,#bk-list>.neu-card .b-field,#bk-list>.neu-card .b-hours{font-size:13px;}
+      #bk-list>.neu-card .b-amt{font-size:15px;}
+      #bk-list>.neu-card .text-secondary{font-size:12px;}
+    }
+    #bk-list>.neu-card:only-child{max-width:none;}
+    #bk-list>.neu-card>div:first-child{gap:10px;}
+    #bk-list>.neu-card>div:first-child>span:first-child{min-width:0;}
+    #bk-list>.neu-card>div:first-child>span.text-secondary{white-space:nowrap;flex-shrink:0;}
+
+    /* translators */
+    .tr-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.8);
+      background:linear-gradient(150deg,#ffffff 0%,#e9f7f4 55%,#e6eef8 100%) !important;}
+    .tr-card::after{content:"";position:absolute;left:-60px;bottom:-80px;width:240px;height:240px;border-radius:50%;
+      background:radial-gradient(circle,rgba(0,106,97,.18),transparent 65%);pointer-events:none;}
+
+    /* account */
+    .ac-profile{position:relative;overflow:hidden;
+      background:linear-gradient(160deg,#ffffff 0%,#eef4fd 100%) !important;}
+    #ac-avatar{width:56px !important;height:56px !important;font-size:20px;color:#fff !important;
+      background:linear-gradient(135deg,#005182,#006a61) !important;box-shadow:0 10px 20px -8px rgba(0,81,130,.6),inset 1px 1px 2px rgba(255,255,255,.3);}
+    #scr-account section.neu-card:not(.ac-profile){position:relative;overflow:hidden;}
+    #scr-account section.neu-card:not(.ac-profile)::before{content:"";position:absolute;top:0;right:18px;width:44px;height:4px;
+      border-radius:0 0 4px 4px;background:linear-gradient(90deg,#006a61,#026aa7);}
+    #scr-account section.neu-card>span:first-child{color:#005182;}
+    #ac-logout{background:linear-gradient(135deg,#ffffff,#e9f0f9) !important;color:#005182 !important;}
+    #ac-delete{background:linear-gradient(135deg,#ffffff,#fdeeee) !important;}
+  
+    /* دسترس‌پذیری: هدف لمسی حداقل ۴۴ پیکسل و فوکوس قابل دیدن */
+    [aria-label="بزرگنمایی"],[aria-label="کوچک‌نمایی"],[aria-label="موقعیت فعلی"],[aria-label="لایه‌ها"],[aria-label="اعلان‌ها"],[aria-label="ایمنی سفر و پشتیبانی"],[aria-label="پشتیبانی سریع"],[aria-label="جابجایی زبان مبدأ و مقصد"],[aria-label="بستن انتخاب زبان"],[aria-label="بستن تقویم"],[aria-label="بستن ساعت"],#change-location-btn,#btn-mode-instant,#btn-mode-scheduled,.cat-chip,.gender-btn{min-width:44px;min-height:44px;}
+    a[data-nav]{min-height:44px;min-width:44px;}
+    button[aria-label="بستن"],#ac-gender-btn,#ac-contact-btn,#ac-passport-box input,#ac-passport-box button,#ac-cards button,#ac-invoices button,#ac-logout,#ac-logout-all,#ac-delete{min-width:44px;min-height:44px;}
+    #btn-dec-hours,#btn-inc-hours,#btn-dec-pax,#btn-inc-pax,#bk-tabs button,#bk-list button,#bk-modal button,#bk-modal input,#bk-modal select{min-width:44px;min-height:44px;}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #026AA7;outline-offset:2px;}
+  
+    /* دسترس‌پذیری: کنتراست متن (حداقل ۴٫۵:۱) */
+    .text-outline{color:#4A5868 !important;}
+    .text-emerald-600{color:#047857 !important;}
+    .leaflet-control-attribution{background:#ffffff !important;}
+  </style>
+<style>.hidden{display:none !important}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;line-height:1}.filled-icon{font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24}</style>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="">
+<style>.leaflet-container img.leaflet-tile{max-width:none !important;max-height:none !important}.leaflet-container{font-family:inherit}</style>
+<script src="i18n.js" defer></script>
+<script src="payment-methods.js" defer></script>
+<script src="support.js" defer></script>
+<link href="vendor/fonts.css" rel="stylesheet"/>
+<link href="vendor/tailwind.css" rel="stylesheet"/>
+<link href="vendor/theme.css" rel="stylesheet"/>
+<style>/* صفحه‌های فهرست زیر ناوبری پایین قرار نگیرند (موبایل و دسکتاپ) */
+#scr-bookings, #scr-translators, #scr-account { padding-bottom: 128px; }
+/* پیام کوتاه: رنگ و چیدمان مستقل از فهرست کلاس‌های فشرده‌ی Tailwind */
+#toast-pill { background: #1d2a2e; color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); font-size: 12px; line-height: 1.6; z-index: 50; }
+#toast-pill.hidden { display: none !important; }
+#toast-pill #toast-text { flex: 1; min-width: 0; }
+/* در دسکتاپ پیام‌ها پایین وسط نقشه می‌آیند تا روی کارت محل ملاقات نیفتند */
+@media (min-width: 768px){ #toast-pill { top: auto !important; bottom: 24px !important; left: 50% !important; right: auto !important; transform: translateX(-50%); width: min(92vw, 24rem); } }
+</style>
+</head>
+<body class="bg-[#dbe4ef] text-on-surface antialiased flex flex-col h-screen select-none overflow-hidden relative">
+<!-- Full Map Canvas in Background -->
+<div class="fixed inset-0 z-0 overflow-hidden bg-gradient-to-b from-[#dae3ee] to-[#e4ecf6]">
+<div id="real-map" class="absolute inset-0 z-0" dir="ltr"></div>
+<!-- Interpreter availability depends on acceptance; no live count is shown here. -->
+<div id="map-availability-note" class="absolute top-24 md:top-28 left-1/2 -translate-x-1/2 md:left-[35%] md:-translate-x-1/2 z-10 neu-card rounded-full px-3.5 py-1.5 text-[11px] font-bold text-primary flex items-center gap-1.5 whitespace-nowrap"><span class="material-symbols-outlined text-[14px] text-outline" aria-hidden="true">info</span><span class="availability-copy">پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.</span></div>
+<!-- Center User Location Pin (Stage 1 Map Confirmation) -->
+<div class="absolute top-[28%] md:top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 md:left-[35%] flex flex-col items-center pointer-events-none z-20" id="center-location-pin">
+<div class="neu-card px-3.5 py-1.5 rounded-full mb-1.5 text-[11px] font-extrabold text-primary whitespace-nowrap shadow-md border border-white/70 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>محل ملاقات با مترجم</span>
+</div>
+<div class="relative flex items-center justify-center">
+<span class="absolute w-14 h-14 rounded-full bg-primary/20 animate-ping"></span>
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg border-2 border-[#e2eaf4]">
+<span class="material-symbols-outlined text-[22px]">person_pin_circle</span>
+</div>
+</div>
+<div class="w-5 h-2 bg-black/20 rounded-full blur-[1px] mt-0.5"></div>
+</div>
+</div>
+<!-- Map Floating Control Actions -->
+<div class="absolute top-16 left-3.5 md:top-6 md:left-6 z-30 flex flex-col gap-2.5 pointer-events-auto"><button type="button" id="btn-safety-support" aria-label="ایمنی سفر و پشتیبانی" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-error hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm"><span class="material-symbols-outlined text-[20px]">shield_with_heart</span></button><button aria-label="موقعیت فعلی" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-secondary hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm" onclick="locateMe()"><span class="material-symbols-outlined text-[20px]">my_location</span></button><div class="flex flex-col neu-flat rounded-2xl overflow-hidden p-0.5 border border-white/60 shadow-sm"><button aria-label="بزرگنمایی" class="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-secondary active:neu-pressed transition-all" onclick="mapZoom(1)"><span class="material-symbols-outlined text-[19px]">add</span></button><div class="h-px bg-outline-variant/40 mx-1.5"></div><button aria-label="کوچک‌نمایی" class="w-9 h-9 flex items-center justify-center text-on-surface-variant hover:text-secondary active:neu-pressed transition-all" onclick="mapZoom(-1)"><span class="material-symbols-outlined text-[19px]">remove</span></button></div><button aria-label="لایه‌ها" class="w-10 h-10 rounded-2xl neu-flat flex items-center justify-center text-on-surface-variant hover:scale-105 active:neu-pressed transition-all border border-white/60 shadow-sm" id="btn-map-layers" onclick="showAppToast('تغییر لایهٔ نقشه در این نسخه فعال نیست.', 'info')"><span class="material-symbols-outlined text-[19px]">layers</span></button></div>
+<!-- Top Header Bar -->
+<header class="fixed top-0 left-0 right-0 z-40 pt-safe pointer-events-none md:pt-4 md:right-auto md:left-24"><div class="max-w-md md:max-w-none mx-auto px-4 py-3 md:py-0 flex items-center justify-between md:justify-start md:gap-3 pointer-events-auto"><div class="neu-card rounded-full px-3.5 py-1.5 flex items-center gap-2 border border-white/70 shadow-md"><div class="w-8 h-8 rounded-full neu-pressed flex items-center justify-center text-primary relative"><span class="material-symbols-outlined text-[20px]">translate</span></div><div class="flex flex-col text-right leading-tight"><span class="font-bold text-[14px] text-primary tracking-tight">همراه</span><span id="app-header-tagline" class="text-[10px] text-on-surface-variant font-medium">درخواست و رزرو مترجم</span></div></div><div class="flex items-center gap-2"><button id="btn-notifications" aria-label="اعلان‌ها" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-on-surface-variant hover:scale-105 active:neu-pressed transition-all border border-white/50" onclick="showAppToast('اعلان‌های مسافر در این نسخه در دسترس نیستند', 'notifications')"><span class="material-symbols-outlined text-[19px]">notifications</span></button><button type="button" id="btn-quick-support" aria-label="پشتیبانی سریع" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-secondary hover:scale-105 active:neu-pressed transition-all border border-white/50"><span class="material-symbols-outlined text-[19px]">support_agent</span></button></div></div></header>
+<!-- ========================================================================= -->
+<!-- STAGE 1: FLOATING LOCATION PICKER BAR ON MAP                             -->
+<!-- ========================================================================= -->
+<div class="fixed bottom-[74px] left-0 right-0 z-40 p-4 md:bottom-20 md:right-6 lg:right-8 md:left-auto md:w-[420px] pointer-events-auto transition-all duration-300" id="location-picker-bar">
+<div class="neu-card rounded-3xl p-4 flex flex-col gap-3.5 border border-white/70 shadow-xl">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-2xl neu-pressed flex items-center justify-center text-primary flex-shrink-0 shadow-inner">
+<span class="material-symbols-outlined text-[24px]">location_on</span>
+</div>
+<div class="flex flex-col text-right flex-1 min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] text-on-surface-variant font-medium">محل ملاقات با مترجم:</span>
+<span id="location-selection-badge" class="text-[9.5px] text-emerald-600 font-bold bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/25">قابل تغییر روی نقشه</span>
+</div>
+<span class="text-[13px] font-extrabold text-on-surface mt-1 truncate" id="selected-location-title">تهران، میدان ولیعصر، ضلع شمال غربی</span><span id="location-guidance" class="text-[10px] text-outline mt-0.5">نقطهٔ ملاقات را روی نقشه انتخاب کنید یا نشانی را جست‌وجو کنید. موقعیت دستگاه فقط پس از اجازهٔ شما خوانده می‌شود.</span>
+</div>
+</div>
+<div class="relative">
+<input id="addr-search" type="text" placeholder="جستجوی آدرس یا مکان…" autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl neu-inset-shallow bg-surface-container text-[12.5px] font-semibold text-on-surface placeholder:text-text-muted/50 outline-none">
+<div id="addr-results" class="hidden absolute left-0 right-0 bottom-full mb-1.5 z-50 neu-card rounded-2xl border border-white/70 shadow-xl overflow-hidden max-h-56 overflow-y-auto"></div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant px-1 font-medium bg-surface-container/50 py-1.5 rounded-xl border border-white/40">
+<span id="location-availability-note" class="flex items-center gap-1.5 text-secondary font-bold">
+<span class="material-symbols-outlined text-[14px] text-outline" aria-hidden="true">info</span>
+<span class="availability-copy">پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.</span>
+      </span>
+<span class="text-outline text-[10px]">یا آدرس را تایپ کنید</span>
+</div>
+<button class="w-full py-3.5 px-4 rounded-2xl neu-btn-teal text-white font-extrabold text-[14px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer hover:brightness-105" id="confirm-location-btn" onclick="confirmLocationAndContinue()" type="button">
+<span class="material-symbols-outlined text-[21px]">check_circle</span>
+<span>تأیید محل ملاقات و ادامه</span>
+</button>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- STAGE 2+: SNAPP-STYLE BOTTOM SHEET (Service Options & Multi-Stage FSM)    -->
+<!-- ========================================================================= -->
+<section class="fixed bottom-[68px] left-0 right-0 z-40 pointer-events-auto flex flex-col md:top-4 md:bottom-20 md:right-6 lg:right-8 md:left-auto md:w-[420px] md:h-auto rounded-t-[32px] md:rounded-3xl neu-card overflow-hidden transition-all duration-300 hidden border-t border-white/70" id="bottom-sheet" style="height: 540px;">
+<!-- Draggable Handle Bar Header -->
+<div class="w-full pt-3 pb-1.5 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing select-none flex-shrink-0" id="sheet-drag-handle">
+<div class="w-12 h-1.5 rounded-full bg-[#bdc9d7] neu-inset-shallow"></div>
+</div>
+<!-- Internal Scroll Area for Content (Stages 1 through 6) -->
+<div class="sheet-scroll-area flex-1 overflow-y-auto px-4 pb-3 flex flex-col gap-3.5 no-scrollbar" id="sheet-scroll-container">
+<!-- ========================================== -->
+<!-- STAGE 1: REQUEST CONFIGURATION FORM       -->
+<!-- ========================================== -->
+<div class="fsm-stage flex flex-col gap-3" id="stage-1">
+<!-- Confirmed Location Summary Bar with Change Button -->
+<div class="neu-card rounded-2xl p-2.5 flex items-center justify-between border border-white/60 bg-surface-container/60">
+<div class="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
+<div class="w-8 h-8 rounded-xl neu-pressed flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">pin_drop</span>
+</div>
+<div class="flex flex-col text-right overflow-hidden flex-1 min-w-0">
+<span class="text-[9.5px] text-on-surface-variant font-medium">محل ملاقات تأییدشده:</span>
+<span class="text-[12px] font-bold text-on-surface truncate" id="confirmed-location-label">تهران، میدان ولیعصر، ضلع شمال غربی</span>
+</div>
+</div>
+<button class="py-1.5 px-3 rounded-xl neu-flat text-secondary text-[11px] font-extrabold flex items-center gap-1 active:neu-pressed flex-shrink-0 hover:text-secondary transition-colors cursor-pointer mr-2 shadow-sm" id="change-location-btn" onclick="backToLocationPicker()" type="button">
+<span class="material-symbols-outlined text-[15px]">edit_location</span>
+<span>تغییر محل</span>
+</button>
+</div>
+<!-- Mode Switcher: Instant vs Scheduled -->
+<div class="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-surface-container neu-inset-shallow">
+<button class="py-2.5 px-3 rounded-xl neu-flat text-secondary font-bold text-[12px] flex items-center justify-center gap-1.5 transition-all" id="btn-mode-instant" type="button">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span class="">درخواست مترجم (اکنون)</span>
+</button>
+<button class="py-2.5 px-3 rounded-xl text-on-surface-variant font-medium text-[12px] flex items-center justify-center gap-1.5 transition-all hover:text-on-surface" id="btn-mode-scheduled" type="button">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span class="">رزرو زمان‌دار</span>
+</button>
+</div>
+<!-- Expandable Scheduled Date/Time Panel -->
+<div class="flex-col gap-2 p-2.5 rounded-2xl neu-flat bg-surface-container/50 border border-secondary/20 hidden" id="scheduled-panel">
+<div class="flex items-center justify-between text-[11px] px-1">
+<span class="text-secondary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">schedule</span>
+<span class="">زمان‌بندی حضور</span>
+</span>
+<span class="text-primary font-bold text-[10.5px]" id="scheduled-summary-pill">۲۵ مهر ۱۴۰۵ - ۱۰:۳۰ صبح</span>
+</div>
+<!-- Dual Neumorphic Action Buttons for Date and Time -->
+<div class="grid grid-cols-2 gap-2 pt-0.5">
+<!-- Date Trigger Button -->
+<button class="neu-card p-2.5 rounded-2xl flex items-center justify-between text-right active:neu-pressed transition-all border border-white/60 hover:border-secondary/40 group cursor-pointer" id="btn-open-datepicker" onclick="window.openDatePickerModal &amp;&amp; window.openDatePickerModal()" type="button">
+<div class="flex flex-col overflow-hidden">
+<span class="text-[9.5px] text-on-surface-variant font-medium">تاریخ اعزام</span>
+<span class="text-[12px] font-bold text-on-surface mt-0.5 group-hover:text-primary transition-colors" id="label-selected-date">۲۵ مهر ۱۴۰۵</span>
+</div>
+<div class="w-8 h-8 rounded-xl neu-flat flex items-center justify-center text-primary group-hover:scale-105 transition-transform flex-shrink-0 mr-1">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+</div>
+</button>
+<!-- Time Trigger Button -->
+<button class="neu-card p-2.5 rounded-2xl flex items-center justify-between text-right active:neu-pressed transition-all border border-white/60 hover:border-secondary/40 group cursor-pointer" id="btn-open-timepicker" onclick="window.openTimePickerModal &amp;&amp; window.openTimePickerModal()" type="button">
+<div class="flex flex-col overflow-hidden">
+<span class="text-[9.5px] text-on-surface-variant font-medium">ساعت شروع</span>
+<span class="text-[12px] font-bold text-on-surface mt-0.5 group-hover:text-secondary transition-colors" id="label-selected-time">۱۰:۳۰ صبح</span>
+</div>
+<div class="w-8 h-8 rounded-xl neu-flat flex items-center justify-center text-secondary group-hover:scale-105 transition-transform flex-shrink-0 mr-1">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+</div>
+</button>
+</div>
+<p id="scheduled-search-policy" class="px-1 text-[10px] leading-relaxed text-on-surface-variant">برای رزرو زمان‌دار، جست‌وجوی مترجم یک ساعت پیش از زمان انتخابی آغاز می‌شود. اگر تا ۱۵ دقیقه مانده مترجمی نپذیرد، وضعیت رزرو در برنامه به‌روزرسانی می‌شود.</p>
+</div>
+<!-- Language Pairing Card -->
+<div class="neu-card rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-white/60">
+<button aria-label="انتخاب زبان میهمان (مبدأ)" class="flex-1 flex flex-col cursor-pointer p-2 rounded-xl neu-flat hover:border-secondary/40 active:neu-pressed transition-all text-right group" id="btn-toggle-origin" onclick="window.openLangModal &amp;&amp; window.openLangModal('origin')" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="text-[10px] text-on-surface-variant font-medium">زبان میهمان (مبدأ)</span>
+<span class="material-symbols-outlined text-[14px] text-outline group-hover:text-primary transition-colors">expand_more</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[12.5px] font-bold text-on-surface group-hover:text-primary transition-colors truncate" id="txt-origin-lang">عربی (العربية)</span>
+</div>
+</button>
+<button aria-label="جابجایی زبان مبدأ و مقصد" class="w-9 h-9 rounded-full neu-flat flex items-center justify-center text-secondary active:neu-pressed transition-transform hover:rotate-180 flex-shrink-0 cursor-pointer" id="btn-swap-langs" onclick="window.triggerLangSwap &amp;&amp; window.triggerLangSwap()" type="button">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</button>
+<button aria-label="انتخاب زبان مقصد" class="flex-1 flex flex-col cursor-pointer p-2 rounded-xl neu-flat hover:border-secondary/40 active:neu-pressed transition-all text-right group" id="btn-toggle-dest" onclick="window.openLangModal &amp;&amp; window.openLangModal('dest')" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="text-[10px] text-on-surface-variant font-medium">زبان مقصد</span>
+<span class="material-symbols-outlined text-[14px] text-outline group-hover:text-secondary transition-colors">expand_more</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1 justify-start">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-[12.5px] font-bold text-on-surface group-hover:text-secondary transition-colors truncate" id="txt-dest-lang">فارسی (ایران)</span>
+</div>
+</button>
+</div>
+<!-- Field Specialty Domain Chips -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between px-1">
+<span class="text-[11px] text-on-surface-variant font-medium">زمینه تخصصی مترجم</span>
+<span class="text-[11px] text-secondary font-bold" id="badge-rate-hourly">ساعتی ۱,۶۸۵,۰۰۰ تومان</span>
+</div>
+<div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+<button class="cat-chip py-1.5 px-3 rounded-xl neu-pressed text-secondary text-[11px] font-bold flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-cat="medical" data-rate="1685000" type="button">
+<span class="material-symbols-outlined text-[16px]">local_hospital</span>
+<span class="">درمانی و پزشکی</span>
+</button>
+<button class="cat-chip py-1.5 px-3 rounded-xl neu-flat text-on-surface-variant text-[11px] font-medium flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-cat="business" data-rate="1950000" type="button">
+<span class="material-symbols-outlined text-[16px]">handshake</span>
+<span class="">قرارداد و بازرگانی</span>
+</button>
+<button class="cat-chip py-1.5 px-3 rounded-xl neu-flat text-on-surface-variant text-[11px] font-medium flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-cat="tourism" data-rate="1350000" type="button">
+<span class="material-symbols-outlined text-[16px]">museum</span>
+<span class="">گردشگری و خرید</span>
+</button>
+<button class="cat-chip py-1.5 px-3 rounded-xl neu-flat text-on-surface-variant text-[11px] font-medium flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-cat="general" data-rate="1450000" type="button">
+<span class="material-symbols-outlined text-[16px]">public</span>
+<span class="">عمومی و اداری</span>
+</button>
+</div>
+</div>
+<!-- Controls Row 1: Duration (+/-) & Vehicle Accompaniment -->
+<div class="grid grid-cols-2 gap-2">
+<!-- Duration Counter -->
+<div class="neu-card rounded-2xl p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant text-[10.5px]">
+<span class="">مدت همراهی</span>
+<span class="material-symbols-outlined text-[15px] text-outline">schedule</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<button class="w-8 h-8 rounded-lg neu-flat flex items-center justify-center text-secondary font-bold active:neu-pressed cursor-pointer" id="btn-dec-hours" type="button">-</button>
+<span class="text-[13px] font-extrabold text-on-surface" id="label-hours-count">۲ ساعت</span>
+<button class="w-8 h-8 rounded-lg neu-flat flex items-center justify-center text-secondary font-bold active:neu-pressed cursor-pointer" id="btn-inc-hours" type="button">+</button>
+</div>
+</div>
+<!-- Vehicle Toggle -->
+<div class="neu-card rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-transform" id="btn-toggle-car">
+<div class="flex items-center justify-between text-on-surface-variant text-[10.5px]">
+<span class="">خودروی تشریفاتی</span>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary" id="dot-car-status"></span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<span class="text-[11.5px] font-bold text-secondary" id="txt-car-status">همراه با خودرو</span>
+<span class="material-symbols-outlined text-[19px] text-secondary">directions_car</span>
+</div>
+</div>
+</div>
+<!-- Controls Row 2: Gender Preference & Passenger Count -->
+<div class="grid grid-cols-2 gap-2">
+<!-- Gender Preference Chips -->
+<div class="neu-card rounded-2xl p-2 flex flex-col justify-between">
+<span class="text-[10px] text-on-surface-variant mb-1 font-medium">ترجیح جنسیت مترجم</span>
+<div class="grid grid-cols-3 gap-1">
+<button class="gender-btn py-1 rounded-lg neu-pressed text-secondary text-[10px] font-bold cursor-pointer" data-gender="any" type="button">فرقی‌ندارد</button>
+<button class="gender-btn py-1 rounded-lg neu-flat text-on-surface-variant text-[10px] cursor-pointer" data-gender="female" type="button">خانم</button>
+<button class="gender-btn py-1 rounded-lg neu-flat text-on-surface-variant text-[10px] cursor-pointer" data-gender="male" type="button">آقا</button>
+</div>
+</div>
+<!-- Passengers Counter -->
+<div class="neu-card rounded-2xl p-2 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[10px] text-on-surface-variant font-medium">
+<span class="">تعداد مسافران</span>
+<span class="material-symbols-outlined text-[15px] text-outline">group</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<button class="w-8 h-8 rounded-lg neu-flat flex items-center justify-center text-secondary font-bold active:neu-pressed cursor-pointer" id="btn-dec-pax" type="button">-</button>
+<span class="text-[12.5px] font-bold text-on-surface" id="label-pax-count">۱ نفر</span>
+<button class="w-8 h-8 rounded-lg neu-flat flex items-center justify-center text-secondary font-bold active:neu-pressed cursor-pointer" id="btn-inc-pax" type="button">+</button>
+</div>
+</div>
+</div>
+<!-- Notes for translator (optional; not in price) -->
+<div class="neu-card rounded-2xl p-2.5 flex flex-col gap-1.5">
+<span class="text-[10.5px] text-on-surface-variant font-medium">توضیحات برای مترجم (اختیاری)</span>
+<textarea id="notes-input" rows="2" class="w-full rounded-xl neu-pressed bg-transparent p-2 text-[11.5px] outline-none resize-none" placeholder="مثلاً: ساعت ۶ صبح از ترمینال"></textarea>
+<div class="flex items-center justify-between text-[9.5px] text-outline"><span>فقط مترجمان دعوت‌شده می‌بینند؛ روی قیمت اثری ندارد.</span><span id="notes-count">۰ / ۳۰۰</span></div>
+</div>
+<!-- Pricing Estimate Summary Card -->
+<div class="neu-pressed rounded-2xl p-2.5 flex items-center justify-between bg-surface-container">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-medium">برآورد کل هزینه خدمت</span>
+<span class="text-[10.5px] text-outline" id="label-price-note">همراهی ۲ ساعت با خودروی اختصاصی</span>
+</div>
+<div class="flex flex-col text-left">
+<span class="text-[15px] font-black text-primary" id="label-price-toman">۴,۰۷۰,۰۰۰ تومان</span>
+</div>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- STAGE 2: INSTANT SEARCH STATUS             -->
+<!-- ========================================== -->
+<div class="fsm-stage hidden flex-col gap-3 py-1" id="stage-2">
+<div class="relative w-full h-44 rounded-2xl neu-pressed flex flex-col items-center justify-center overflow-hidden bg-surface-container/60">
+<div class="w-16 h-16 rounded-full neu-flat flex items-center justify-center text-secondary shadow-lg">
+<span class="material-symbols-outlined text-[32px] text-secondary">person_search</span>
+</div>
+<div id="search-status-pill" class="mt-3 px-3 py-1 rounded-full neu-flat text-[10.5px] font-bold text-secondary shadow-sm">در حال جست‌وجو</div>
+</div>
+<div class="neu-card rounded-2xl p-3 flex flex-col gap-1.5">
+<div class="flex items-start justify-between gap-2">
+<span id="search-status-title" class="min-w-0 flex-1 text-[12px] font-bold text-on-surface">در حال جست‌وجوی مترجم برای درخواست شما</span>
+<span id="search-time-limit" class="shrink-0 text-[10px] font-extrabold text-primary">حداکثر زمان جست‌وجو: ۱۰ دقیقه</span>
+</div>
+<p id="search-status-description" class="text-[11px] text-on-surface-variant leading-relaxed">مترجمان در دسترس بر اساس زبان‌ها و نوع خدمت درخواست شما بررسی می‌شوند.</p>
+</div>
+<div class="p-2.5 rounded-xl bg-surface-container-low flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">info</span>
+<span class="text-[10px] text-on-surface-variant">امکان لغو رایگان تا پیش از تایید نهایی مترجم بدون هیچ‌گونه جریمه محفوظ است. مترجم دعوت‌شده ۶۰ ثانیه فرصت پذیرش دارد.</span>
+</div>
+<div class="grid grid-cols-1 gap-2 pt-1">
+<button class="py-2.5 px-3 rounded-xl neu-flat text-error font-bold text-[12px] active:neu-pressed transition-all flex items-center justify-center gap-1 cursor-pointer" id="btn-cancel-search" type="button">
+<span class="material-symbols-outlined text-[17px]">close</span>
+<span class="">لغو درخواست</span>
+</button>
+</div>
+<p class="text-[10px] text-outline text-center">به‌محض اینکه مترجمی درخواست را بپذیرد، این صفحه خودکار به‌روز می‌شود.</p>
+</div>
+<!-- ========================================== -->
+<!-- STAGE 3: SERVER-CONFIRMED MATCHED BOOKING -->
+<!-- ========================================== -->
+<div class="hidden flex-col gap-3" id="nomatch-block">
+<div class="neu-card rounded-2xl p-4 flex flex-col items-center gap-2 text-center">
+<span class="material-symbols-outlined text-[30px] text-outline">search_off</span>
+<span class="text-[13px] font-extrabold text-on-surface">در این لحظه مترجمی پیدا نشد</span>
+<p id="nomatch-copy" class="text-[11px] text-on-surface-variant">هیچ مبلغی کسر نشده است. می‌توانید دوباره تلاش کنید، رزرو زمان‌دار ثبت کنید یا درخواست را لغو کنید.</p>
+</div>
+<button id="btn-retry-search" type="button" class="w-full py-2.5 px-4 rounded-2xl bg-secondary text-on-secondary font-bold text-[12.5px] shadow cursor-pointer">تلاش دوباره</button>
+<button id="btn-to-scheduled" type="button" class="w-full py-2.5 px-4 rounded-2xl neu-flat text-secondary font-bold text-[12px] cursor-pointer">تبدیل به رزرو زمان‌دار</button>
+<button id="btn-cancel-nomatch" type="button" class="w-full py-2.5 px-4 rounded-2xl neu-flat text-error font-bold text-[12px] cursor-pointer">لغو یا انصراف</button>
+</div>
+<div class="fsm-stage hidden flex-col gap-3" id="stage-3">
+<!-- Only the server-confirmed match is shown; no movement or arrival estimate is available. -->
+<div class="neu-pressed rounded-2xl p-3 flex items-center gap-2 bg-surface-container">
+<div class="w-10 h-10 rounded-xl neu-flat flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[22px]">check_circle</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span id="match-status-title" class="text-[10.5px] text-on-surface-variant">وضعیت رزرو</span>
+<span id="match-status-description" class="text-[14px] font-extrabold text-primary">مترجم درخواست شما را پذیرفت.</span>
+</div>
+</div>
+<!-- Matched translator details returned by the server -->
+<div class="neu-card rounded-2xl p-3 flex flex-col gap-2.5">
+<div class="flex items-center gap-3">
+<div class="relative w-13 h-13 rounded-2xl neu-flat p-0.5 overflow-hidden flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-[30px] text-secondary">person</span>
+</div>
+<div class="flex-1 flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-[13px] font-bold text-on-surface" id="matched-translator-name">مترجم همراه</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="flex items-center gap-0.5 text-[10px] text-secondary font-bold" id="matched-translator-car">—</span>
+</div>
+</div>
+</div>
+<!-- Masked Contacts Row -->
+<div class="grid grid-cols-4 gap-2 pt-0.5">
+<button class="py-2 rounded-xl neu-flat text-secondary text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-not-allowed opacity-60" id="btn-call-masked" type="button" disabled aria-describedby="trip-contact-unavailable">
+<span class="material-symbols-outlined text-[18px]">call</span>
+<span class="">تماس امن</span>
+</button>
+<button class="py-2 rounded-xl neu-flat text-secondary text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-not-allowed opacity-60" id="btn-chat-inapp" type="button" disabled aria-describedby="trip-contact-unavailable">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+<span class="">پیامک</span>
+</button>
+<button class="py-2 rounded-xl neu-flat text-on-surface-variant text-[10.5px] font-medium flex flex-col items-center gap-1 active:neu-pressed cursor-not-allowed opacity-60" id="btn-share-ride" type="button" disabled aria-describedby="trip-contact-unavailable">
+<span class="material-symbols-outlined text-[18px]">share_location</span>
+<span class="">اشتراک سفر</span>
+</button>
+<button class="py-2 rounded-xl neu-flat text-error text-[10.5px] font-bold flex flex-col items-center gap-1 active:neu-pressed cursor-pointer" id="btn-sos" type="button">
+<span class="material-symbols-outlined text-[18px]">shield_person</span>
+<span class="">راهنمای اضطراری</span>
+</button>
+</div>
+</div>
+<p id="trip-contact-unavailable" class="text-[10px] text-on-surface-variant leading-relaxed">تماس امن، پیامک با مترجم و ردیابی زنده هنوز فعال نیستند.</p>
+<!-- تأیید واقعی مسافر هنگام رسیدن مترجم؛ بعد کد امنیتی شروع خدمت نمایش داده می‌شود -->
+<button class="w-full py-2.5 px-3 rounded-2xl bg-secondary text-on-secondary font-bold text-[12px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-arrived" type="button">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span class="">مترجم به محل رسید</span>
+</button>
+<p class="text-[10px] text-outline text-center">وقتی مترجم را دیدید، این دکمه را بزنید تا کد امنیتی شروع خدمت را ببینید.</p>
+</div>
+<!-- ========================================== -->
+<!-- STAGE 4: ARRIVED & CHECK SERVICE START STATUS  -->
+<!-- ========================================== -->
+<div class="fsm-stage hidden flex-col gap-3" id="stage-4">
+<div class="p-3 rounded-2xl bg-secondary-container text-on-secondary-container flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-secondary text-on-secondary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">where_to_vote</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[12.5px] font-bold">مترجم به محل استقرار شما رسید!</span>
+<span class="text-[10px] opacity-90">مترجم منتظر شروع همراهی است.</span>
+</div>
+</div>
+<!-- Security Handshake PIN -->
+<div class="neu-card rounded-2xl p-3.5 flex flex-col items-center gap-2 text-center">
+<span class="text-[11px] text-on-surface-variant font-medium">کد امنیتی شروع خدمت را به مترجم اعلام فرمایید</span>
+<div class="flex items-center justify-center gap-2 p-2 rounded-xl bg-surface-container neu-inset-shallow w-full max-w-[220px]">
+<span class="text-[24px] text-primary font-black tracking-widest" id="security-code">۰۰۰۰۰</span>
+</div>
+<p class="text-[10px] text-outline">با اعلام این کد، تایمر رسمی خدمت همراهی آغاز خواهد شد.</p>
+</div>
+<button class="w-full py-3 px-4 rounded-2xl neu-btn-teal text-white font-bold text-[13px] shadow-lg shadow-secondary/25 hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer" id="btn-confirm-start" type="button">
+<span class="material-symbols-outlined text-[19px]">sync</span>
+<span class="">بررسی وضعیت شروع خدمت</span>
+</button>
+</div>
+<!-- ========================================== -->
+<!-- STAGE 5: IN SERVICE LIVE TIMER & EXTENSION -->
+<!-- ========================================== -->
+<div class="fsm-stage hidden flex-col gap-3" id="stage-5">
+<!-- Digital Chronometer -->
+<div class="neu-pressed rounded-3xl p-4 flex flex-col items-center justify-center bg-surface-container gap-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+<span class="text-[11px] text-secondary font-extrabold uppercase tracking-wide">همراهی حضوری در جریان است</span>
+</div>
+<div class="text-[32px] text-primary font-extrabold tracking-wider my-0.5" id="live-timer-val">۰۱:۳۴:۲۶</div>
+<span class="text-[10.5px] text-on-surface-variant" id="of-hours">از مجموع ۲ ساعت زمان رزرو شده</span>
+</div>
+<!-- Extension Card: همیشه روی صفحه‌ی تایمر دیده می‌شود؛ تمدید با تأیید مترجم انجام می‌شود -->
+<div class="p-3 rounded-2xl bg-surface-container-high flex flex-col gap-2" id="extension-card">
+<div class="flex items-center gap-1.5 text-secondary font-bold text-[11.5px]">
+<span class="material-symbols-outlined text-[17px]">more_time</span>
+<span class="">تمدید زمان خدمت</span>
+</div>
+<p class="text-[10.5px] text-on-surface-variant leading-relaxed">اگر زمان بیشتری لازم دارید، درخواست تمدید برای مترجم فرستاده می‌شود و فقط با تأیید او یک ساعت به خدمت و مبلغ نهایی اضافه می‌شود.</p>
+<p class="hidden text-[10.5px] font-bold text-amber-800" id="extension-status"></p>
+<button class="w-full py-2 px-3 rounded-xl bg-secondary text-on-secondary font-bold text-[11px] active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer" id="btn-extend-one-hour" type="button">
+<span class="material-symbols-outlined text-[15px]">add_circle</span>
+<span class="">تمدید خدمت (+۱ ساعت)</span>
+</button>
+</div>
+<!-- 30-min Expiry Warning Card -->
+<div class="p-3 rounded-2xl bg-surface-container-high flex flex-col gap-2 hidden" id="expiry-warning">
+<div class="flex items-center gap-1.5 text-amber-800 font-bold text-[11.5px]">
+<span class="material-symbols-outlined text-[17px]">notification_important</span>
+<span class="">کمتر از ۳۰ دقیقه تا پایان وقت رزرو</span>
+</div>
+<p class="text-[10.5px] text-on-surface-variant leading-relaxed">
+          اگر زمان بیشتری لازم دارید، از کارت «تمدید زمان خدمت» در همین صفحه درخواست بدهید؛ مترجم باید آن را تأیید کند.
+        </p>
+</div>
+<!-- درخواست پایان از سوی مترجم: قبول یا رد با مسافر است -->
+<div class="hidden p-3 rounded-2xl bg-amber-50 flex flex-col gap-2" id="finish-request-banner">
+<div class="flex items-center gap-1.5 text-amber-800 font-bold text-[11.5px]">
+<span class="material-symbols-outlined text-[17px]">notification_important</span>
+<span class="">مترجم درخواست پایان خدمت داده است</span>
+</div>
+<p class="text-[10.5px] text-on-surface-variant leading-relaxed">اگر قبول کنید، خدمت همین حالا با همان مبلغ کاملِ توافق‌شده تمام می‌شود و فاکتور صادر می‌گردد.</p>
+<div class="flex items-center gap-2">
+<button class="flex-1 py-2 px-3 rounded-xl bg-error text-white font-bold text-[11px] active:scale-95 transition-all cursor-pointer" id="btn-approve-finish" type="button">قبول پایان خدمت</button>
+<button class="flex-1 py-2 px-3 rounded-xl neu-flat text-on-surface-variant font-bold text-[11px] cursor-pointer" id="btn-reject-finish" type="button">ادامه‌ی خدمت</button>
+</div>
+</div>
+<!-- Finish Service CTA: مسافر هر وقت خواست خودش تمام می‌کند؛ مبلغ کامل پابرجاست -->
+<button class="w-full py-2.5 px-4 rounded-2xl neu-flat text-error font-bold text-[12px] active:neu-pressed transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-finish-service" type="button">
+<span class="material-symbols-outlined text-[18px]">stop_circle</span>
+<span class="">ثبت پایان رسمی خدمت و صدور فاکتور</span>
+</button>
+</div>
+<!-- ========================================== -->
+<!-- STAGE 6: ITEMISED INVOICE & PAYMENT       -->
+<!-- ========================================== -->
+<div class="fsm-stage hidden flex-col gap-3" id="stage-6">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[20px] text-primary">receipt_long</span>
+<span class="text-[12.5px] font-extrabold text-on-surface">صورت‌حساب قطعی خدمت همراهی</span>
+</div>
+<span id="invoice-source-label" class="text-[10px] text-secondary font-bold bg-secondary-container/60 px-2 py-0.5 rounded-full">جزئیات رزرو</span>
+</div>
+<div class="neu-card rounded-2xl p-3 flex flex-col gap-2 text-[11px]">
+<div class="flex items-center justify-between text-on-surface-variant"><span id="inv-label">خدمت همراهی</span><span class="text-on-surface font-semibold" id="inv-base">—</span></div>
+<div class="flex items-center justify-between text-on-surface-variant"><span id="inv-tax-label">مالیات و خدمات رفاهی</span><span class="text-on-surface font-semibold" id="inv-tax">—</span></div>
+<div class="h-px bg-outline-variant/30 my-0.5"></div>
+<div class="flex items-center justify-between font-extrabold"><span class="text-on-surface text-[12px]">مبلغ کل قابل پرداخت:</span><div class="flex flex-col text-left"><span class="text-[14px] text-primary" id="inv-total">—</span></div></div>
+</div>
+<!-- Payment Method Selection -->
+<p id="payment-method-status" role="status" aria-live="polite" class="text-[11px] text-on-surface-variant">در حال دریافت روش‌های پرداخت…</p>
+<button id="btn-refresh-payment-methods" type="button" class="self-start text-[11px] font-bold text-secondary underline cursor-pointer">تازه‌سازی روش‌های پرداخت</button>
+<div class="flex flex-col gap-1.5">
+<span class="text-[10.5px] text-on-surface-variant px-1">شیوه پرداخت:</span>
+<div class="grid grid-cols-2 gap-2">
+<button class="neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer" id="pay-method-online" type="button" disabled>
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[18px] text-secondary">credit_card</span>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary" id="dot-pay-online"></span>
+</div>
+<span class="text-[11.5px] font-bold text-on-surface">پرداخت آنلاین</span>
+<span class="text-[9.5px] text-on-surface-variant">درگاه شتاب و بانکی</span>
+</button>
+<button class="neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer" id="pay-method-cash" type="button" disabled>
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-[18px] text-outline">payments</span>
+<span class="w-2.5 h-2.5 rounded-full bg-outline-variant" id="dot-pay-cash"></span>
+</div>
+<span class="text-[11.5px] font-bold text-on-surface">پرداخت نقدی</span>
+<span class="text-[9.5px] text-on-surface-variant">پرداخت نقدی به تومان؛ دریافت را هر دو طرف تأیید می‌کنند</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-2 pt-1">
+<button class="w-full py-3 px-4 rounded-2xl bg-secondary text-on-secondary font-bold text-[12.5px] shadow hover:bg-secondary/90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer" id="btn-settle-return" type="button" disabled>
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="">پرداخت و بازگشت به خانه</span>
+</button>
+<button class="w-full py-1.5 text-on-surface-variant text-[11px] font-medium flex items-center justify-center gap-1 cursor-pointer" id="btn-back-to-timer" type="button">
+<span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+<span class="">بازگشت به تایمر خدمت</span>
+</button>
+</div>
+</div>
+</div>
+<!-- STICKY ACTION BUTTON CONTAINER AT BOTTOM OF PANEL -->
+<div class="p-3 pt-2 bg-gradient-to-t from-[#e3ebf5] via-[#e3ebf5] to-[#e3ebf5]/90 border-t border-white/50 flex-shrink-0" id="sticky-cta-container">
+<!-- Primary CTA Button (Visible on Stage 1) -->
+<button class="w-full py-3.5 px-4 rounded-2xl neu-btn-teal text-white font-bold text-[14px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer hover:brightness-105 shadow-lg" id="btn-main-submit" type="button">
+<span class="material-symbols-outlined text-[20px]" id="icon-main-submit">radar</span>
+<span class="" id="txt-main-submit">ثبت درخواست مترجم</span>
+</button>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- MODAL: JALALI PERSIAN CALENDAR DIALOG                                      -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-[60] bg-black/45 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 transition-opacity duration-200 hidden" id="modal-datepicker">
+<div class="w-full max-w-sm neu-card rounded-t-3xl md:rounded-3xl p-4 flex flex-col gap-3.5 shadow-2xl border border-white/60 animate-in fade-in slide-in-from-bottom duration-200">
+<!-- Modal Header -->
+<div class="flex items-center justify-between pb-1 border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-xl neu-pressed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+</div>
+<span class="text-[13px] font-bold text-on-surface">تقویم انتخاب تاریخ اعزام</span>
+</div>
+<button aria-label="بستن تقویم" class="w-7 h-7 rounded-full neu-flat flex items-center justify-center text-outline hover:text-on-surface active:neu-pressed cursor-pointer" id="btn-close-date-modal" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Month Navigator -->
+<div class="neu-pressed rounded-2xl p-2 flex items-center justify-between bg-surface-container">
+<button class="w-7 h-7 rounded-lg neu-flat flex items-center justify-center text-secondary active:neu-pressed cursor-pointer" id="cal-btn-prev-month" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+<span class="text-[12px] font-bold text-on-surface" id="cal-month-title">مهر ۱۴۰۵</span>
+<button class="w-7 h-7 rounded-lg neu-flat flex items-center justify-center text-secondary active:neu-pressed cursor-pointer" id="cal-btn-next-month" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_left</span>
+</button>
+</div>
+<!-- Day-of-week headers -->
+<div class="grid grid-cols-7 gap-1 text-center text-[10px] text-outline font-semibold">
+<span class="">ش</span><span class="">ی</span><span class="">د</span><span class="">س</span><span class="">چ</span><span class="">پ</span><span class="text-error font-bold">ج</span>
+</div>
+<!-- Calendar Days Grid (Container populated via JS) -->
+<div class="grid grid-cols-7 gap-1 text-center" id="cal-days-grid"></div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col text-right">
+<span class="text-[10px] text-on-surface-variant font-medium">تاریخ منتخب:</span>
+<span class="text-[12px] font-bold text-primary" id="cal-selected-preview">۲۵ مهر ۱۴۰۵</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="py-2 px-3 rounded-xl neu-flat text-on-surface-variant font-medium text-[11px] active:neu-pressed cursor-pointer" id="btn-cancel-date" type="button">لغو</button>
+<button class="py-2 px-4 rounded-xl neu-btn-teal text-white font-bold text-[11.5px] active:scale-95 transition-all shadow cursor-pointer" id="btn-confirm-date" type="button">تأیید تاریخ</button>
+</div>
+</div>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- MODAL: LANGUAGE PICKER DIALOG                                             -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-[60] bg-black/45 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 transition-opacity duration-200 hidden" id="modal-langpicker">
+<div class="w-full max-w-sm neu-card rounded-t-3xl md:rounded-3xl p-4 flex flex-col gap-3 shadow-2xl border border-white/60 animate-in fade-in slide-in-from-bottom duration-200 max-h-[85vh]">
+<!-- Modal Header -->
+<div class="flex items-center justify-between pb-1 border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-xl neu-pressed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[19px]">translate</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="text-[13px] font-bold text-on-surface" id="lang-modal-title">انتخاب زبان میهمان (مبدأ)</span>
+<span class="text-[9.5px] text-on-surface-variant">مترجمان مسلط به این زبان فیلتر خواهند شد</span>
+</div>
+</div>
+<button aria-label="بستن انتخاب زبان" class="w-7 h-7 rounded-full neu-flat flex items-center justify-center text-outline hover:text-on-surface active:neu-pressed cursor-pointer" id="btn-close-lang-modal" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Language Search Bar -->
+<div class="neu-pressed rounded-xl p-2 flex items-center gap-2 bg-surface-container">
+<span class="material-symbols-outlined text-[18px] text-outline">search</span>
+<input class="bg-transparent border-0 p-0 text-[11.5px] text-on-surface placeholder:text-outline focus:ring-0 w-full outline-none" id="lang-search-input" placeholder="جستجوی نام یا کد زبان (مثلاً انگلیسی یا En)..." type="text"/>
+</div>
+<!-- Languages List -->
+<div class="flex flex-col gap-1.5 overflow-y-auto no-scrollbar max-h-60 p-0.5" id="lang-options-list"></div>
+<!-- Modal Footer -->
+<div class="flex items-center justify-between pt-1 border-t border-outline-variant/30">
+<span class="text-[10px] text-on-surface-variant">انتخاب سریع با یک کلیک</span>
+<button class="py-1.5 px-3 rounded-xl neu-flat text-on-surface-variant font-medium text-[11px] active:neu-pressed cursor-pointer" id="btn-cancel-lang-modal" type="button">انصراف</button>
+</div>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- MODAL: START TIME PICKER DIALOG (30-MIN STEPS)                            -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-[60] bg-black/45 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 transition-opacity duration-200 hidden" id="modal-timepicker">
+<div class="w-full max-w-sm neu-card rounded-t-3xl md:rounded-3xl p-4 flex flex-col gap-3.5 shadow-2xl border border-white/60 animate-in fade-in slide-in-from-bottom duration-200">
+<!-- Modal Header -->
+<div class="flex items-center justify-between pb-1 border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-xl neu-pressed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+</div>
+<span class="text-[13px] font-bold text-on-surface">انتخاب ساعت شروع حضور</span>
+</div>
+<button aria-label="بستن ساعت" class="w-7 h-7 rounded-full neu-flat flex items-center justify-center text-outline hover:text-on-surface active:neu-pressed cursor-pointer" id="btn-close-time-modal" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Period Indicator & Fast Navigation -->
+<div class="flex items-center justify-between text-[11px] px-1 text-on-surface-variant">
+<span id="time-slot-step-policy" class="">انتخاب زمان با گام‌های ۳۰ دقیقه‌ای</span>
+<span id="time-selection-window-label" class="text-[10px] text-secondary font-bold bg-secondary-container/40 px-2 py-0.5 rounded-full">ساعت‌های فهرست‌شده: ۸ صبح تا ۹ شب</span>
+</div>
+<!-- Time Slots Grid -->
+<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto no-scrollbar p-1" id="time-slots-container"></div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col text-right">
+<span class="text-[10px] text-on-surface-variant font-medium">ساعت منتخب:</span>
+<span class="text-[12px] font-bold text-secondary" id="time-selected-preview">۱۰:۳۰ صبح</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="py-2 px-3 rounded-xl neu-flat text-on-surface-variant font-medium text-[11px] active:neu-pressed cursor-pointer" id="btn-cancel-time" type="button">لغو</button>
+<button class="py-2 px-4 rounded-xl neu-btn-teal text-white font-bold text-[11.5px] active:scale-95 transition-all shadow cursor-pointer" id="btn-confirm-time" type="button">تأیید ساعت</button>
+</div>
+</div>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- FIXED FLUSH BOTTOM NAVIGATION BAR                                         -->
+<!-- ========================================================================= -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 h-[68px] pb-safe pointer-events-none md:bottom-5 md:left-6 md:right-auto md:h-auto">
+<div class="max-w-md mx-auto px-4 h-full flex items-center justify-center pb-1 md:p-0 md:max-w-none pointer-events-auto">
+<div class="neu-card rounded-full px-3 py-1.5 flex items-center justify-around w-full md:w-auto md:justify-center md:gap-3 border border-white/70 shadow-lg">
+<a class="flex flex-col items-center justify-center min-w-[56px] py-1 px-2.5 rounded-full text-secondary font-bold transition-all" href="#" data-nav="map">
+<span class="material-symbols-outlined text-[20px]">map</span>
+<span class="text-[10px] mt-0.5">درخواست</span>
+</a>
+<a class="flex flex-col items-center justify-center min-w-[56px] py-1 px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all" href="#" data-nav="bookings">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span class="text-[10px] mt-0.5">رزروها</span>
+</a>
+<a class="flex flex-col items-center justify-center min-w-[56px] py-1 px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all" href="#" data-nav="translators">
+<span class="material-symbols-outlined text-[20px]">badge</span>
+<span class="text-[10px] mt-0.5">مترجمان</span>
+</a>
+<a class="flex flex-col items-center justify-center min-w-[56px] py-1 px-2.5 rounded-full text-on-surface-variant hover:text-on-surface transition-all" href="#" data-nav="account">
+<span class="material-symbols-outlined text-[20px]">person</span>
+<span class="text-[10px] mt-0.5">حساب من</span>
+</a>
+</div>
+</div>
+</nav>
+
+<!-- ===================== رزروها ===================== -->
+<div id="scr-bookings" class="fixed inset-0 z-40 bg-[#dbe4ef] overflow-y-auto hidden">
+<div class="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 md:px-8 md:pl-28 lg:pl-36 pt-20 md:pt-24 pb-28 md:pb-12 flex flex-col gap-3 lg:grid lg:grid-cols-[15rem_1fr] lg:gap-x-6 lg:gap-y-3 lg:items-start">
+<div class="scr-hero lg:col-span-2"><span class="material-symbols-outlined scr-hero-ico">calendar_month</span><div class="min-w-0"><h1 class="scr-title">رزروها</h1><p class="scr-sub">درخواست‌ها و مأموریت‌های شما در یک نگاه</p></div></div>
+<div id="bk-tabs" class="flex gap-1.5 overflow-x-auto p-1.5 rounded-2xl neu-pressed lg:flex-col lg:overflow-visible lg:sticky lg:top-24"></div>
+<div id="bk-list" class="flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-3 lg:grid-cols-2 lg:gap-3 lg:min-w-0"></div>
+</div></div>
+
+<!-- ===================== مترجمان ===================== -->
+<div id="scr-translators" class="fixed inset-0 z-40 bg-[#dbe4ef] overflow-y-auto hidden">
+<div class="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 md:px-8 md:pl-28 lg:pl-36 pt-20 md:pt-24 pb-28 md:pb-12 flex flex-col gap-3">
+<div class="scr-hero"><span class="material-symbols-outlined scr-hero-ico">translate</span><div class="min-w-0"><h1 class="scr-title">مترجمان</h1><p class="scr-sub">اطلاعات مترجمان</p></div></div>
+<div class="neu-card tr-card rounded-3xl p-4 md:p-7 flex flex-col gap-2 md:flex-row md:items-center md:gap-10 lg:min-h-[160px]">
+<span class="text-[13px] md:text-[15px] font-bold text-primary md:flex-none">حریم خصوصی مترجمان</span>
+<p id="translator-privacy-note" class="text-[11px] md:text-[13px] text-on-surface-variant leading-relaxed">برای حفظ حریم خصوصی، هویت و موقعیت دقیق مترجمان پیش از تطبیق نمایش داده نمی‌شود. مترجم فقط پس از پذیرش درخواست شما معرفی می‌شود.</p>
+</div></div></div>
+
+<!-- ===================== حساب من ===================== -->
+<div id="scr-account" class="fixed inset-0 z-40 bg-[#dbe4ef] overflow-y-auto hidden">
+<div class="w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 md:px-8 md:pl-28 lg:pl-36 pt-20 md:pt-24 pb-28 md:pb-12 flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-3 lg:grid-cols-12 lg:gap-4 lg:items-start">
+<div class="scr-hero md:col-span-2 lg:col-span-12"><span class="material-symbols-outlined scr-hero-ico">account_circle</span><div class="min-w-0"><h1 class="scr-title">حساب من</h1><p class="scr-sub">اطلاعات، پرداخت و تنظیمات شما</p></div></div>
+
+<section class="neu-card ac-profile rounded-3xl p-4 flex flex-col gap-3 md:col-span-2 lg:col-span-5">
+<div class="flex items-center gap-3"><div id="ac-avatar" class="w-12 h-12 rounded-full neu-pressed flex items-center justify-center font-extrabold text-primary"></div>
+<div class="flex flex-col"><span id="ac-fullname" class="text-[14px] font-bold"></span><span id="ac-contact" class="text-[11px] text-on-surface-variant num" dir="ltr"></span></div></div>
+<label class="self-start cursor-pointer text-[11px] font-bold text-secondary">تغییر عکس پروفایل<input accept="image/jpeg,image/png" class="hidden" id="ac-photo" type="file"></label>
+<div class="grid grid-cols-2 gap-2">
+<div class="flex flex-col gap-1"><span class="text-[11px] text-on-surface-variant font-medium">نام</span><input id="ac-name" aria-label="نام" class="w-full min-h-[48px] px-4 py-2.5 rounded-2xl neu-pressed bg-transparent outline-none text-[14px] text-on-surface !min-h-[40px] text-[13px]"></div>
+<div class="flex flex-col gap-1"><span class="text-[11px] text-on-surface-variant font-medium">نام خانوادگی</span><input id="ac-last" aria-label="نام خانوادگی" class="w-full min-h-[48px] px-4 py-2.5 rounded-2xl neu-pressed bg-transparent outline-none text-[14px] text-on-surface !min-h-[40px] text-[13px]"></div>
+</div>
+<p id="ac-profile-local-note" class="text-[10px] text-on-surface-variant">نام و عکس پروفایل فقط در همین مرورگر ذخیره می‌شوند.</p>
+<button type="button" id="ac-save" class="w-full min-h-[46px] rounded-2xl font-bold text-[13px] cursor-pointer" style="background:#006a61;color:#fff;box-shadow:0 8px 18px -4px rgba(0,106,97,.45)">ذخیره‌ی اطلاعات</button>
+<div class="flex flex-col gap-1 text-[11px] text-on-surface-variant">
+<div class="flex justify-between"><span>جنسیت: <span id="ac-gender" class="font-bold text-on-surface"></span></span><button type="button" id="ac-gender-btn" disabled aria-describedby="ac-gender-note" class="text-on-surface-variant font-bold cursor-not-allowed opacity-60">فعلاً غیرفعال</button></div>
+<p id="ac-gender-note" class="text-[10px]">تغییر جنسیت از این صفحه هنوز فعال نیست؛ درخواستی برای پشتیبانی ثبت نمی‌شود.</p>
+</div>
+<div class="flex justify-between text-[11px] text-on-surface-variant"><span>شمارهٔ ورود</span><button type="button" id="ac-contact-btn" disabled aria-describedby="ac-contact-note" class="text-on-surface-variant font-bold cursor-not-allowed opacity-60">فعلاً غیرفعال</button></div>
+<p id="ac-contact-note" class="text-[10px] text-on-surface-variant">تغییر شمارهٔ ورود از این صفحه هنوز فعال نیست.</p>
+</section>
+
+<section class="neu-card rounded-3xl p-4 flex flex-col gap-2 lg:col-span-7">
+<span class="text-[13px] font-extrabold text-on-surface">بررسی گذرنامه (غیرفعال)</span>
+<div id="ac-passport-box" class="flex flex-col gap-2"><p id="ac-passport-status" class="text-[11px] text-on-surface-variant leading-relaxed">بررسی گذرنامه هنوز فعال نیست؛ از این صفحه مدرکی برای بررسی ارسال نمی‌شود.</p></div>
+</section>
+
+<section class="neu-card rounded-3xl p-4 flex flex-col gap-2 lg:col-span-7">
+<span class="text-[13px] font-extrabold text-on-surface">روش‌های پرداخت ذخیره‌شده</span>
+<div id="ac-cards" class="flex flex-col gap-2"><p id="ac-cards-status" class="text-[11px] text-on-surface-variant">ذخیره و اتصال کارت بانکی در این نسخه فعال نیست.</p></div>
+<p id="ac-cards-note" class="text-[10px] text-outline">پرداخت رزروها از بخش فاکتور انجام می‌شود.</p>
+</section>
+
+<section class="neu-card rounded-3xl p-4 flex flex-col gap-2 text-[12px] lg:col-span-5">
+<div class="flex items-center justify-between"><span>یادآوری رزروها</span><span id="ac-reminders-status" class="text-[11px] text-on-surface-variant font-bold">در این نسخه در دسترس نیست</span></div>
+<p id="ac-reminders-note" class="text-[10px] text-outline">در این نسخه اعلان خودکار برای یادآوری رزروها ارسال نمی‌شود.</p>
+<div class="flex items-center justify-between mt-2 gap-3"><span data-i18n="زبان برنامه">زبان برنامه</span><select aria-label="زبان برنامه" class="rounded-lg px-2 py-1 text-[12px] font-bold bg-transparent border border-outline-variant" id="hz-lang-select"><option value="fa">فارسی</option><option value="en">English</option><option value="ar">العربية</option></select></div>
+
+</section>
+
+<section class="neu-card rounded-3xl p-4 flex flex-col gap-2 text-[12px] lg:col-span-12">
+<h2 class="font-bold text-[13px]">فاکتورهای گذشته</h2>
+<div id="ac-invoices" class="flex flex-col gap-2"></div>
+</section>
+<section class="flex flex-col gap-2 md:col-span-2 lg:col-span-12">
+<button type="button" id="ac-logout" class="w-full min-h-[46px] rounded-2xl neu-flat text-on-surface font-bold text-[13px] cursor-pointer">خروج از این دستگاه</button>
+<button type="button" id="ac-logout-all" class="w-full min-h-[46px] rounded-2xl neu-flat text-on-surface font-bold text-[13px] cursor-pointer">خروج از همه‌ی دستگاه‌ها</button>
+<button type="button" id="ac-delete" class="w-full min-h-[46px] rounded-2xl neu-flat text-error font-bold text-[13px] cursor-pointer">حذف حساب</button>
+<p id="ac-delete-note" class="text-[10px] text-outline hidden">حذف حساب وقتی رزرو فعال دارید ممکن نیست.</p>
+<div id="ac-delete-box" class="hidden flex-col gap-2 neu-card rounded-2xl p-3">
+<p class="text-[11px] text-on-surface-variant leading-relaxed">حذف حساب پس از تأیید سرور انجام می‌شود و قابل بازگشت نیست. رزرو یا پرداخت باز مانع حذف حساب است.</p>
+<label for="ac-delete-input" class="text-[11px] text-on-surface-variant font-medium">برای تأیید عبارت «حذف حساب» را بنویسید</label>
+<input id="ac-delete-input" class="w-full min-h-[48px] px-4 py-2.5 rounded-2xl neu-pressed bg-transparent outline-none text-[14px] text-on-surface !min-h-[40px] text-[13px]">
+<button type="button" id="ac-delete-confirm" class="w-full min-h-[46px] rounded-2xl neu-flat text-on-surface font-bold text-[13px] cursor-pointer text-error" disabled>حذف نهایی حساب</button>
+</div>
+</section>
+</div></div>
+
+
+<!-- No automatic emergency alert is sent; only an explicitly configured phone may be dialed. -->
+<dialog id="support-dialog" aria-labelledby="support-title" aria-describedby="support-safety-note" class="neu-card rounded-3xl text-on-surface" style="width:calc(100% - 2rem);max-width:32rem;max-height:85vh;overflow:auto;border:0;padding:1.25rem;margin:auto">
+<div class="flex flex-col gap-3 text-[12px]">
+<h2 id="support-title" class="font-extrabold text-[15px]">پشتیبانی و ایمنی</h2>
+<p id="support-safety-note" class="font-bold text-error leading-relaxed">این دکمه هشدار اضطراری ارسال نمی‌کند. در خطر فوری، با خدمات اضطراری محل تماس بگیرید.</p>
+<p class="text-on-surface-variant leading-relaxed">تماس با پشتیبانی از طریق شماره‌گیر دستگاه انجام می‌شود؛ این سرویس، تماس امن یا اعزام اضطراری نیست.</p>
+<p id="support-status" role="status" aria-live="polite" class="text-on-surface-variant"></p>
+<a id="support-call" class="hidden min-h-[44px] px-3 py-2 rounded-xl neu-flat text-secondary font-bold" dir="auto"><span>باز کردن شماره‌گیر پشتیبانی</span> · <bdi id="support-phone" dir="ltr"></bdi></a>
+<button id="support-retry" type="button" class="min-h-[44px] px-3 rounded-xl neu-flat text-secondary font-bold">تازه‌سازی شمارهٔ پشتیبانی</button>
+<button id="support-close" type="button" class="min-h-[44px] px-3 rounded-xl neu-flat font-bold" autofocus>بستن</button>
+</div>
+</dialog>
+<style>#support-dialog::backdrop{background:rgba(0,0,0,.45)}</style>
+
+<!-- Toast Notification -->
+<div class="fixed top-16 left-4 right-4 z-50 md:left-auto md:right-12 md:max-w-sm p-3 rounded-2xl bg-on-surface text-surface-container-lowest shadow-2xl flex items-center justify-between gap-2 text-[11px] font-medium hidden" id="toast-pill">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-secondary-container" id="toast-icon">info</span>
+<span class="" id="toast-text">پیام سامانه</span>
+</div>
+<button class="text-outline-variant hover:text-white cursor-pointer" onclick="document.getElementById('toast-pill').classList.add('hidden')" type="button">
+<span class="material-symbols-outlined text-[15px]">close</span>
+</button>
+</div>
+<!-- ========================================================================= -->
+<!-- UNIFIED MASTER SCRIPT WITH TWO-STAGE LOCATION FLOW                        -->
+<!-- ========================================================================= -->
+<script>
+// تنظیمات: مقادیر متغیر از پنل مدیریت می‌آیند؛ ثابت‌های کد اینجا می‌مانند.
+const CONFIG = {
+  carFeePerHour: 350000,   // تومان در ساعت (پنل مدیریت)
+  taxRate: 0.10,           // مالیات (پنل مدیریت)
+  hoursMax: 12,
+  partyMax: { car: 3, nocar: 5 },
+  notesMax: 300,           // ثابت کد
+  acceptSec: 60,           // مهلت پذیرش مترجم (ثابت)
+  minLeadMin: 120,         // حداقل فاصله‌ی رزرو: ۲ ساعت (ثابت)
+  expiryWarnMin: 30,
+  cancelBeforeMatchPct: 30,  // لغو بین ۲۴ ساعت تا تطبیق: درصد از حداقل هزینه‌ی یک ساعت (نمونه، از پنل مدیریت)
+  cancelAfterMatchPct: 50,   // لغو بعد از تطبیق (نمونه، از پنل مدیریت)
+  retryPromptMin: 15,        // یادآوری «تلاش دوباره یا لغو؟» (فصل ۶.۵)
+  maxImportantChanges: 3,    // تاریخ، ساعت و محل جمعاً (فصل ۷.۱)
+};
+
+// Global helpers exposed immediately for inline onclick handlers
+window.showAppToast = function(msg, icon) {
+  var pill = document.getElementById('toast-pill');
+  var txt = document.getElementById('toast-text');
+  var ico = document.getElementById('toast-icon');
+  if (!pill || !txt) return;
+  txt.textContent = msg;
+  if (ico && icon) ico.textContent = icon;
+  pill.classList.remove('hidden');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(function() {
+    pill.classList.add('hidden');
+  }, 3200);
+};
+
+// Global Stage Transition 1 -> 2 (Confirm Location and Open Bottom Sheet)
+window.confirmLocationAndContinue = function() {
+  var locBar = document.getElementById('location-picker-bar');
+  var bottomSheet = document.getElementById('bottom-sheet');
+  var confirmedLabel = document.getElementById('confirmed-location-label');
+  var selectedTitle = document.getElementById('selected-location-title');
+
+  if (confirmedLabel && selectedTitle) {
+    confirmedLabel.textContent = selectedTitle.textContent;
+  }
+  if (locBar) {
+    locBar.classList.add('hidden');
+  }
+  if (bottomSheet) {
+    bottomSheet.classList.remove('hidden');
+    if (window.setSheetSnap) {
+      window.setSheetSnap('half');
+    }
+  }
+  window.showAppToast('محل ملاقات تأیید شد. اکنون تنظیمات خدمت را مشخص فرمایید.', 'check_circle');
+};
+
+// Global Stage Transition 2 -> 1 (Back to Location Picker on Map)
+window.backToLocationPicker = function() {
+  var locBar = document.getElementById('location-picker-bar');
+  var bottomSheet = document.getElementById('bottom-sheet');
+  if (bottomSheet) {
+    bottomSheet.classList.add('hidden');
+  }
+  if (locBar) {
+    locBar.classList.remove('hidden');
+  }
+  window.showAppToast('می‌توانید پین را روی نقشه جابجا کنید و دوباره تأیید فرمایید', 'edit_location');
+};
+
+// Main Execution
+document.addEventListener('DOMContentLoaded', function() {
+  // Application State
+  const state = {
+    currentStage: 1,
+    bookingMode: 'instant', // 'instant' or 'scheduled'
+    scheduledDate: '',
+    scheduledTime: '۱۰:۳۰ صبح',
+    tempSelectedDay: 0,
+    scheduledDay: 0,
+    tempSelectedTime: '۱۰:۳۰ صبح',
+    originLang: 'عربی (العربية)',
+    destLang: 'فارسی (ایران)',
+    category: 'medical',
+    categoryName: 'درمانی و پزشکی',
+    hourlyRate: 1685000,
+    hours: 2,
+    hasCar: true,
+    passengers: 1,
+    gender: 'any',
+    payMethod: 'online',
+  };
+
+  // داده‌ی رزرو برای ذخیره (در محدوده‌ی state)
+  function getScheduledStart() {
+    var d = new Date(); d.setDate(d.getDate() + (state.scheduledDay - todayJ[2]));
+    var m = slotMinutes(state.scheduledTime); d.setHours(Math.floor(m / 60), m % 60, 0, 0);
+    return d.getTime();
+  }
+  window.jLabel = function (ms) {
+    var d = new Date(ms); var j = g2j(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    return toPersianDigits(j[2]) + ' ' + JMONTHS[j[1] - 1] + ' ' + toPersianDigits(j[0]);
+  };
+  window.getBookingPricing = function (scheduled) {
+    var p = state.lastPrice || {};
+    var n = document.getElementById('notes-input');
+    return {
+      gender: state.gender, category: state.category, rate: state.hourlyRate, hours: state.hours, car: state.hasCar, pax: state.passengers,
+      notes: n ? n.value.slice(0, CONFIG.notesMax) : '',
+      startAt: scheduled ? getScheduledStart() : null,
+      base: p.base || 0, tax: p.tax || 0, total: p.total || 0
+    };
+  };
+
+  // Bind Location Confirmation / Back Buttons
+  const confirmBtn = document.getElementById('confirm-location-btn');
+  const changeBtn = document.getElementById('change-location-btn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', window.confirmLocationAndContinue);
+  }
+  if (changeBtn) {
+    changeBtn.addEventListener('click', window.backToLocationPicker);
+  }
+
+  // Bottom Sheet references
+  const bottomSheet = document.getElementById('bottom-sheet');
+  const sheetDragHandle = document.getElementById('sheet-drag-handle');
+  const stickyCtaContainer = document.getElementById('sticky-cta-container');
+  const btnMainSubmit = document.getElementById('btn-main-submit');
+  const txtMainSubmit = document.getElementById('txt-main-submit');
+  const iconMainSubmit = document.getElementById('icon-main-submit');
+
+  const btnModeInstant = document.getElementById('btn-mode-instant');
+  const btnModeScheduled = document.getElementById('btn-mode-scheduled');
+  const scheduledPanel = document.getElementById('scheduled-panel');
+  const scheduledSummaryPill = document.getElementById('scheduled-summary-pill');
+
+  // Trigger Elements
+  const btnOpenDatePicker = document.getElementById('btn-open-datepicker');
+  const btnOpenTimePicker = document.getElementById('btn-open-timepicker');
+  const labelSelectedDate = document.getElementById('label-selected-date');
+  const labelSelectedTime = document.getElementById('label-selected-time');
+
+  // Modals
+  const modalDatePicker = document.getElementById('modal-datepicker');
+  const btnCloseDateModal = document.getElementById('btn-close-date-modal');
+  const btnCancelDate = document.getElementById('btn-cancel-date');
+  const btnConfirmDate = document.getElementById('btn-confirm-date');
+  const calDaysGrid = document.getElementById('cal-days-grid');
+  const calSelectedPreview = document.getElementById('cal-selected-preview');
+
+  const modalTimePicker = document.getElementById('modal-timepicker');
+  const btnCloseTimeModal = document.getElementById('btn-close-time-modal');
+  const btnCancelTime = document.getElementById('btn-cancel-time');
+  const btnConfirmTime = document.getElementById('btn-confirm-time');
+  const timeSlotsContainer = document.getElementById('time-slots-container');
+  const timeSelectedPreview = document.getElementById('time-selected-preview');
+
+  const modalLangPicker = document.getElementById('modal-langpicker');
+  const langModalTitle = document.getElementById('lang-modal-title');
+  const btnCloseLangModal = document.getElementById('btn-close-lang-modal');
+  const btnCancelLangModal = document.getElementById('btn-cancel-lang-modal');
+  const langSearchInput = document.getElementById('lang-search-input');
+  const langOptionsContainer = document.getElementById('lang-options-list');
+
+  const txtOriginLang = document.getElementById('txt-origin-lang');
+  const txtDestLang = document.getElementById('txt-dest-lang');
+  const btnSwapLangs = document.getElementById('btn-swap-langs');
+  const btnToggleOrigin = document.getElementById('btn-toggle-origin');
+  const btnToggleDest = document.getElementById('btn-toggle-dest');
+
+  const catChips = document.querySelectorAll('.cat-chip');
+  const badgeRateHourly = document.getElementById('badge-rate-hourly');
+
+  const btnIncHours = document.getElementById('btn-inc-hours');
+  const btnDecHours = document.getElementById('btn-dec-hours');
+  const labelHoursCount = document.getElementById('label-hours-count');
+
+  const btnToggleCar = document.getElementById('btn-toggle-car');
+  const dotCarStatus = document.getElementById('dot-car-status');
+  const txtCarStatus = document.getElementById('txt-car-status');
+
+  const btnIncPax = document.getElementById('btn-inc-pax');
+  const btnDecPax = document.getElementById('btn-dec-pax');
+  const labelPaxCount = document.getElementById('label-pax-count');
+
+  const genderBtns = document.querySelectorAll('.gender-btn');
+
+  const labelPriceToman = document.getElementById('label-price-toman');
+  const labelPriceNote = document.getElementById('label-price-note');
+
+  function toPersianDigits(n) {
+    if (n === null || n === undefined) return '';
+    const persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return n.toString().replace(/\d/g, x => persian[x]);
+  }
+
+  function formatToman(num) {
+    return toPersianDigits(num.toLocaleString('en-US')) + ' تومان';
+  }
+
+  // Price Calculation Engine
+  function updatePricing() {
+    const carFeePerHour = state.hasCar ? CONFIG.carFeePerHour : 0;
+    const baseToman = (state.hourlyRate + carFeePerHour) * state.hours;
+    const taxToman = Math.round(baseToman * CONFIG.taxRate);
+    const totalToman = baseToman + taxToman;
+    state.lastPrice = { base: baseToman, tax: taxToman, total: totalToman, hours: state.hours };
+
+    // مسافر فقط مبلغ کل (با مالیات) را می‌بیند؛ سند ۴۶ و ۳۶
+    if (labelPriceToman) labelPriceToman.textContent = formatToman(totalToman);
+
+    const carText = state.hasCar ? 'با خودروی اختصاصی' : 'بدون خودرو (پیاده)';
+    if (labelPriceNote) labelPriceNote.textContent = `همراهی ${toPersianDigits(state.hours)} ساعت ${carText}`;
+  }
+
+  function updateInvoice() {
+    const booking = serviceBooking();
+    const p = booking ? { base: Number(booking.base) || 0, tax: Number(booking.tax) || 0,
+      total: Number(booking.total) || 0, hours: booking.hoursNum } : state.lastPrice;
+    if (!p) return;
+    const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+    set('inv-label', `خدمت همراهی ${toPersianDigits(p.hours)} ساعت${!booking && state.hasCar ? ' با خودروی اختصاصی' : ''}`);
+    set('inv-base', formatToman(p.base));
+    set('inv-tax-label', booking ? 'مالیات و خدمات رفاهی' : `مالیات و خدمات رفاهی (${toPersianDigits(Math.round(CONFIG.taxRate * 100))}٪)`);
+    set('inv-tax', formatToman(p.tax));
+    set('inv-total', formatToman(p.total));
+  }
+
+  function updateScheduledSummary() {
+    if (scheduledSummaryPill) scheduledSummaryPill.textContent = `${state.scheduledDate} - ${state.scheduledTime}`;
+    if (labelSelectedDate) labelSelectedDate.textContent = state.scheduledDate;
+    if (labelSelectedTime) labelSelectedTime.textContent = state.scheduledTime;
+  }
+
+  // -----------------------------------------------------------
+  // JALALI CALENDAR MODAL
+  // -----------------------------------------------------------
+  // تقویم جلالی از ساعت سیستم؛ فقط ماه جاری (ماه‌های بعد بعداً اضافه می‌شوند)
+  const JMONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  function g2j(gy, gm, gd) {
+    const gdm = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+    const gy2 = gm > 2 ? gy + 1 : gy;
+    let days = 355666 + 365 * gy + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) + gd + gdm[gm - 1];
+    let jy = -1595 + 33 * Math.floor(days / 12053);
+    days %= 12053; jy += 4 * Math.floor(days / 1461); days %= 1461;
+    if (days > 365) { jy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+    let jm, jd;
+    if (days < 186) { jm = 1 + Math.floor(days / 31); jd = 1 + (days % 31); }
+    else { jm = 7 + Math.floor((days - 186) / 30); jd = 1 + ((days - 186) % 30); }
+    return [jy, jm, jd];
+  }
+  const todayG = new Date(); todayG.setHours(0, 0, 0, 0);
+  const todayJ = g2j(todayG.getFullYear(), todayG.getMonth() + 1, todayG.getDate());
+  const day1G = new Date(todayG.getFullYear(), todayG.getMonth(), todayG.getDate() - (todayJ[2] - 1));
+  let monthLen = 0;
+  for (let i = 0; i < 31; i++) {
+    const d = new Date(day1G.getFullYear(), day1G.getMonth(), day1G.getDate() + i);
+    if (g2j(d.getFullYear(), d.getMonth() + 1, d.getDate())[1] !== todayJ[1]) break;
+    monthLen++;
+  }
+  const firstOffset = (day1G.getDay() + 1) % 7; // شنبه = ستون اول
+  function fmtJ(day) { return `${toPersianDigits(day)} ${JMONTHS[todayJ[1] - 1]} ${toPersianDigits(todayJ[0])}`; }
+
+  function buildCalendarGrid() {
+    if (!calDaysGrid) return;
+    calDaysGrid.innerHTML = '';
+    for (let i = 0; i < firstOffset; i++) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'py-2';
+      calDaysGrid.appendChild(emptyDiv);
+    }
+    for (let day = 1; day <= monthLen; day++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const isSelected = day === state.tempSelectedDay;
+      const isPast = day < todayJ[2];
+      btn.className = isSelected
+        ? 'py-1.5 rounded-xl neu-pressed text-secondary font-extrabold text-[12px] border border-secondary/40 shadow-sm cursor-pointer'
+        : isPast
+          ? 'py-1.5 text-outline/40 text-[11px] cursor-not-allowed'
+          : 'py-1.5 rounded-xl neu-flat text-on-surface text-[11px] font-medium hover:text-primary active:neu-pressed cursor-pointer';
+      btn.textContent = toPersianDigits(day);
+      if (!isPast) {
+        btn.addEventListener('click', () => {
+          state.tempSelectedDay = day;
+          if (calSelectedPreview) calSelectedPreview.textContent = fmtJ(day);
+          buildCalendarGrid();
+        });
+      } else {
+        btn.disabled = true;
+      }
+      calDaysGrid.appendChild(btn);
+    }
+    const title = document.getElementById('cal-month-title');
+    if (title) title.textContent = `${JMONTHS[todayJ[1] - 1]} ${toPersianDigits(todayJ[0])}`;
+    ['cal-btn-prev-month', 'cal-btn-next-month'].forEach((id) => {
+      const b2 = document.getElementById(id);
+      if (b2) { b2.disabled = true; b2.classList.add('opacity-40'); }
+    });
+  }
+
+  window.openDatePickerModal = function() {
+    state.tempSelectedDay = state.scheduledDay;
+    if (calSelectedPreview) calSelectedPreview.textContent = fmtJ(state.tempSelectedDay);
+    buildCalendarGrid();
+    if (modalDatePicker) modalDatePicker.classList.remove('hidden');
+  };
+
+  function closeDatePicker() {
+    if (modalDatePicker) modalDatePicker.classList.add('hidden');
+  }
+
+  if (btnOpenDatePicker) btnOpenDatePicker.addEventListener('click', window.openDatePickerModal);
+  if (btnCloseDateModal) btnCloseDateModal.addEventListener('click', closeDatePicker);
+  if (btnCancelDate) btnCancelDate.addEventListener('click', closeDatePicker);
+  if (btnConfirmDate) {
+    btnConfirmDate.addEventListener('click', () => {
+      state.scheduledDate = fmtJ(state.tempSelectedDay);
+      state.scheduledDay = state.tempSelectedDay;
+      if (!slotAllowed(state.scheduledTime)) state.scheduledTime = standardTimeSlots.find((t) => slotAllowed(t)) || state.scheduledTime;
+      updateScheduledSummary();
+      closeDatePicker();
+      window.showAppToast(`تاریخ اعزام به ${state.scheduledDate} تنظیم شد`, 'event_available');
+    });
+  }
+
+  // -----------------------------------------------------------
+  // TIME PICKER MODAL
+  // -----------------------------------------------------------
+  const standardTimeSlots = [
+    '۰۸:۰۰ صبح',
+    '۰۸:۳۰ صبح',
+    '۰۹:۰۰ صبح',
+    '۰۹:۳۰ صبح',
+    '۱۰:۰۰ صبح',
+    '۱۰:۳۰ صبح',
+    '۱۱:۰۰ صبح',
+    '۱۱:۳۰ صبح',
+    '۱۲:۰۰ ظهر',
+    '۱۲:۳۰ ظهر',
+    '۱۳:۰۰ بعدازظهر',
+    '۱۳:۳۰ بعدازظهر',
+    '۱۴:۰۰ بعدازظهر',
+    '۱۴:۳۰ بعدازظهر',
+    '۱۵:۰۰ بعدازظهر',
+    '۱۵:۳۰ بعدازظهر',
+    '۱۶:۰۰ عصر',
+    '۱۶:۳۰ عصر',
+    '۱۷:۰۰ عصر',
+    '۱۷:۳۰ عصر',
+    '۱۸:۰۰ غروب',
+    '۱۸:۳۰ غروب',
+    '۱۹:۰۰ شب',
+    '۱۹:۳۰ شب',
+    '۲۰:۰۰ شب',
+    '۲۰:۳۰ شب',
+    '۲۱:۰۰ شب'
+  ];
+
+  function slotMinutes(label) {
+    const m = label.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).match(/(\d{1,2}):(\d{2})/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
+  }
+  // حداقل ۲ ساعت قبل از موعد؛ فقط برای امروز بررسی می‌شود
+  function slotAllowed(label, day) {
+    const d = day === undefined ? state.scheduledDay : day;
+    if (d !== todayJ[2]) return true;
+    const now = new Date();
+    return slotMinutes(label) >= now.getHours() * 60 + now.getMinutes() + CONFIG.minLeadMin;
+  }
+
+  function buildTimeSlots() {
+    if (!timeSlotsContainer) return;
+    timeSlotsContainer.innerHTML = '';
+    standardTimeSlots.forEach(slot => {
+      const isSelected = slot === state.tempSelectedTime;
+      const ok = slotAllowed(slot);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.disabled = !ok;
+      btn.className = (isSelected
+        ? 'py-2 px-1 rounded-xl neu-pressed text-secondary font-bold text-[11.5px] border border-secondary/40 cursor-pointer'
+        : 'py-2 px-1 rounded-xl neu-flat text-on-surface-variant font-medium text-[11px] hover:text-on-surface active:neu-pressed cursor-pointer')
+        + (ok ? '' : ' opacity-40 cursor-not-allowed');
+      btn.textContent = slot;
+      if (ok) {
+        btn.addEventListener('click', () => {
+          state.tempSelectedTime = slot;
+          if (timeSelectedPreview) timeSelectedPreview.textContent = slot;
+          buildTimeSlots();
+        });
+      }
+      timeSlotsContainer.appendChild(btn);
+    });
+  }
+
+  window.openTimePickerModal = function() {
+    state.tempSelectedTime = state.scheduledTime;
+    if (timeSelectedPreview) timeSelectedPreview.textContent = state.tempSelectedTime;
+    buildTimeSlots();
+    if (modalTimePicker) modalTimePicker.classList.remove('hidden');
+  };
+
+  function closeTimePicker() {
+    if (modalTimePicker) modalTimePicker.classList.add('hidden');
+  }
+
+  if (btnOpenTimePicker) btnOpenTimePicker.addEventListener('click', window.openTimePickerModal);
+  if (btnCloseTimeModal) btnCloseTimeModal.addEventListener('click', closeTimePicker);
+  if (btnCancelTime) btnCancelTime.addEventListener('click', closeTimePicker);
+  if (btnConfirmTime) {
+    btnConfirmTime.addEventListener('click', () => {
+      state.scheduledTime = state.tempSelectedTime;
+      updateScheduledSummary();
+      closeTimePicker();
+      window.showAppToast(`ساعت شروع به ${state.scheduledTime} تنظیم شد`, 'schedule');
+    });
+  }
+
+  if (modalDatePicker) {
+    modalDatePicker.addEventListener('click', e => { if (e.target === modalDatePicker) closeDatePicker(); });
+  }
+  if (modalTimePicker) {
+    modalTimePicker.addEventListener('click', e => { if (e.target === modalTimePicker) closeTimePicker(); });
+  }
+
+  // -----------------------------------------------------------
+  // LANGUAGE PICKER MODAL
+  // -----------------------------------------------------------
+  let activeTargetType = 'origin';
+  const allLanguages = [
+    { code: 'ar', name: 'عربی (العربية)', sub: 'Arabic • لهجه‌های خلیجی، عراقی و شامی' },
+    { code: 'fa', name: 'فارسی (ایران)', sub: 'Persian • زبان معیار رسمی کشور' },
+    { code: 'en', name: 'انگلیسی (English)', sub: 'English • بین‌المللی تجاری و پزشکی' },
+    { code: 'tr', name: 'ترکی (Türkçe)', sub: 'Turkish • استانبولی و آذربایجانی' },
+    { code: 'ru', name: 'روسی (Русский)', sub: 'Russian • فنی و بازرگانی اوراسیا' },
+    { code: 'fr', name: 'فرانسوی (Français)', sub: 'French • تشریفات دیپلماتیک و هنری' },
+    { code: 'de', name: 'آلمانی (Deutsch)', sub: 'German • صنعتی، تخصصی و دانشگاهی' },
+    { code: 'zh', name: 'چینی (中文)', sub: 'Chinese • تجاری، صنعتی و نمایشگاهی' }
+  ];
+
+  function renderLanguages(filterText) {
+    if (!langOptionsContainer) return;
+    filterText = (filterText || '').toLowerCase().trim();
+    const currentVal = activeTargetType === 'origin' ? state.originLang : state.destLang;
+    langOptionsContainer.innerHTML = '';
+
+    const filtered = allLanguages.filter(item => {
+      if (!filterText) return true;
+      return item.name.toLowerCase().includes(filterText) || item.code.toLowerCase().includes(filterText) || item.sub.toLowerCase().includes(filterText);
+    });
+
+    if (filtered.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'py-4 text-center text-outline text-[11px]';
+      emptyDiv.textContent = 'زبانی با این مشخصات یافت نشد';
+      langOptionsContainer.appendChild(emptyDiv);
+      return;
+    }
+
+    filtered.forEach(lang => {
+      const isSelected = currentVal === lang.name;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = isSelected
+        ? 'p-2.5 rounded-xl neu-pressed flex items-center justify-between text-right active:neu-pressed transition-all group border border-secondary/40 cursor-pointer'
+        : 'p-2.5 rounded-xl neu-flat flex items-center justify-between text-right active:neu-pressed transition-all group cursor-pointer';
+
+      const checkIcon = isSelected
+        ? '<span class="material-symbols-outlined text-[18px] text-secondary">check_circle</span>'
+        : '<span class="material-symbols-outlined text-[18px] text-outline/30">radio_button_unchecked</span>';
+
+      btn.innerHTML = `<div class="flex items-center gap-2.5">
+        <span class="w-7 h-7 rounded-lg neu-pressed flex items-center justify-center text-[10px] font-black ${activeTargetType === 'origin' ? 'text-primary' : 'text-secondary'}">${lang.code.toUpperCase()}</span>
+        <div class="flex flex-col text-right">
+          <span class="text-[12px] font-bold text-on-surface ${isSelected ? (activeTargetType === 'origin' ? 'text-primary' : 'text-secondary') : 'group-hover:text-primary'} transition-colors">${lang.name}</span>
+          <span class="text-[9.5px] text-on-surface-variant">${lang.sub}</span>
+        </div>
+      </div>${checkIcon}`;
+
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        selectLanguage(lang.name);
+      });
+      langOptionsContainer.appendChild(btn);
+    });
+  }
+
+  window.openLangModal = function(type) {
+    activeTargetType = type;
+    if (langModalTitle) {
+      langModalTitle.textContent = type === 'origin' ? 'انتخاب زبان میهمان (مبدأ)' : 'انتخاب زبان مقصد خدمت';
+    }
+    if (langSearchInput) langSearchInput.value = '';
+    renderLanguages('');
+    if (modalLangPicker) modalLangPicker.classList.remove('hidden');
+  };
+
+  function closeLangModal() {
+    if (modalLangPicker) modalLangPicker.classList.add('hidden');
+  }
+
+  function selectLanguage(langName) {
+    if (activeTargetType === 'origin') {
+      state.originLang = langName;
+      if (txtOriginLang) txtOriginLang.textContent = langName;
+    } else {
+      state.destLang = langName;
+      if (txtDestLang) txtDestLang.textContent = langName;
+    }
+    closeLangModal();
+    window.showAppToast((activeTargetType === 'origin' ? 'زبان میهمان به ' : 'زبان مقصد به ') + langName + ' تغییر یافت', 'translate');
+  }
+
+  window.triggerLangSwap = function() {
+    const temp = state.originLang;
+    state.originLang = state.destLang;
+    state.destLang = temp;
+    if (txtOriginLang) txtOriginLang.textContent = state.originLang;
+    if (txtDestLang) txtDestLang.textContent = state.destLang;
+    window.showAppToast('زبان مبدأ و مقصد جابجا شدند', 'swap_horiz');
+  };
+
+  if (btnCloseLangModal) btnCloseLangModal.addEventListener('click', closeLangModal);
+  if (btnCancelLangModal) btnCancelLangModal.addEventListener('click', closeLangModal);
+  if (modalLangPicker) {
+    modalLangPicker.addEventListener('click', e => { if (e.target === modalLangPicker) closeLangModal(); });
+  }
+  if (langSearchInput) {
+    langSearchInput.addEventListener('input', e => renderLanguages(e.target.value));
+  }
+
+  // -----------------------------------------------------------
+  // SNAPP BOTTOM SHEET DRAG & SNAP SYSTEM
+  // -----------------------------------------------------------
+  let currentSnap = 'half';
+  let startY = 0;
+  let startHeight = 0;
+  let isDragging = false;
+
+  function getSnapPixels(snap) {
+    const vh = window.innerHeight;
+    if (snap === 'collapsed') return Math.max(220, Math.round(vh * 0.32));
+    if (snap === 'half') return Math.max(460, Math.round(vh * 0.62));
+    if (snap === 'expanded') return Math.round(vh * 0.84);
+    return 520;
+  }
+
+  window.setSheetSnap = function(snap) {
+    if (window.innerWidth >= 768) {
+      if (bottomSheet) bottomSheet.style.height = '';
+      return;
+    }
+    currentSnap = snap;
+    if (bottomSheet) {
+      bottomSheet.classList.remove('is-dragging');
+      bottomSheet.style.height = `${getSnapPixels(snap)}px`;
+    }
+  };
+
+  function onTouchStart(y) {
+    if (window.innerWidth >= 768 || !bottomSheet) return;
+    isDragging = true;
+    startY = y;
+    startHeight = bottomSheet.getBoundingClientRect().height;
+    bottomSheet.classList.add('is-dragging');
+  }
+
+  function onTouchMove(y) {
+    if (!isDragging || window.innerWidth >= 768 || !bottomSheet) return;
+    const deltaY = startY - y;
+    let newH = startHeight + deltaY;
+    const minH = getSnapPixels('collapsed') * 0.8;
+    const maxH = getSnapPixels('expanded') * 1.05;
+    if (newH < minH) newH = minH;
+    if (newH > maxH) newH = maxH;
+    bottomSheet.style.height = `${newH}px`;
+  }
+
+  function onTouchEnd() {
+    if (!isDragging || window.innerWidth >= 768 || !bottomSheet) return;
+    isDragging = false;
+    bottomSheet.classList.remove('is-dragging');
+    const curH = bottomSheet.getBoundingClientRect().height;
+    const hCol = getSnapPixels('collapsed');
+    const hHalf = getSnapPixels('half');
+    const hExp = getSnapPixels('expanded');
+
+    const dCol = Math.abs(curH - hCol);
+    const dHalf = Math.abs(curH - hHalf);
+    const dExp = Math.abs(curH - hExp);
+
+    if (dCol <= dHalf && dCol <= dExp) {
+      window.setSheetSnap('collapsed');
+    } else if (dHalf <= dExp) {
+      window.setSheetSnap('half');
+    } else {
+      window.setSheetSnap('expanded');
+    }
+  }
+
+  if (sheetDragHandle) {
+    sheetDragHandle.addEventListener('touchstart', e => onTouchStart(e.touches[0].clientY), { passive: true });
+    sheetDragHandle.addEventListener('mousedown', e => onTouchStart(e.clientY));
+    sheetDragHandle.addEventListener('click', () => {
+      if (currentSnap === 'collapsed') window.setSheetSnap('half');
+      else if (currentSnap === 'half') window.setSheetSnap('expanded');
+      else window.setSheetSnap('half');
+    });
+  }
+  window.addEventListener('touchmove', e => { if (isDragging) onTouchMove(e.touches[0].clientY); }, { passive: true });
+  window.addEventListener('touchend', () => { if (isDragging) onTouchEnd(); });
+  window.addEventListener('mousemove', e => { if (isDragging) onTouchMove(e.clientY); });
+  window.addEventListener('mouseup', () => { if (isDragging) onTouchEnd(); });
+
+  // -----------------------------------------------------------
+  // MULTI-STAGE FSM INSIDE BOTTOM SHEET
+  // -----------------------------------------------------------
+  let sessionStart = 0;
+  let serviceBookingId = null;
+  let searchBookingId = null;
+  let restoredService = false;
+  function serviceBooking() {
+    const list = readLocalBookings().filter(b => !window.hzSyncedBookingIds || window.hzSyncedBookingIds.includes(b.serverId));
+    return list.find(b => b.serverId === serviceBookingId)
+      || list.find(b => b.serverId && b.srvStatus === 'matched' && b.serviceStarted)
+      || list.find(b => b.serverId && b.srvStatus === 'finished' && !b.payState);
+  }
+  function syncServiceClock(b) {
+    if (!b) return;
+    serviceBookingId = b.serverId;
+    const started = Date.parse(b.serviceStartedAt);
+    if (Number.isFinite(started)) sessionStart = started;
+    if (b.hoursNum) state.hours = b.hoursNum;
+  }
+  const pad2 = (n) => String(n).padStart(2, '0');
+  function showNoMatch(booking) {
+    const scheduled = !!(booking && booking.mode === 'scheduled');
+    const s2 = document.getElementById('stage-2');
+    if (s2) s2.classList.add('hidden');
+    const nm = document.getElementById('nomatch-block');
+    if (nm) nm.classList.remove('hidden');
+    const copy = document.getElementById('nomatch-copy');
+    if (copy) copy.textContent = scheduled
+      ? 'مترجمی تا ۱۵ دقیقه مانده به زمان قرار درخواست را نپذیرفت. می‌توانید جست‌وجو را دوباره آغاز کنید یا این رزرو را لغو کنید.'
+      : 'هیچ مبلغی کسر نشده است. می‌توانید دوباره تلاش کنید، رزرو زمان‌دار ثبت کنید یا درخواست را لغو کنید.';
+    const convert = document.getElementById('btn-to-scheduled');
+    if (convert) convert.classList.toggle('hidden', scheduled);
+  }
+  // کد امنیتی شروع خدمت را سرور هنگام ثبت رزرو صادر می‌کند؛ مرورگر فقط همان کد همگام‌شده را نمایش می‌دهد
+  function setSecurityCode() {
+    const el = document.getElementById('security-code');
+    if (!el) return;
+    const b = readLocalBookings().find(x => x.serverId === (serviceBookingId || searchBookingId));
+    el.textContent = b && /^[0-9]{5}$/.test(b.serviceCode || '') ? toPersianDigits(b.serviceCode) : '—';
+  }
+
+  function goToStage(num) {
+    state.currentStage = num;
+    if (num === 4) setSecurityCode();
+    if (num === 5) {
+      const b = serviceBooking();
+      if (b) syncServiceClock(b);
+      // Without a confirmed server start there is no running service clock.
+    }
+    if (num === 6) {
+      const booking = serviceBooking();
+      const payButton = document.getElementById('btn-settle-return');
+      if (payButton) payButton.dataset.bookingId = booking ? String(booking.serverId) : '';
+      updateInvoice();
+      if (window.HZ_PAYMENTS) window.HZ_PAYMENTS.refresh().catch(function () {});
+    }
+    const nmBlock = document.getElementById('nomatch-block');
+    if (nmBlock) nmBlock.classList.add('hidden');
+    for (let i = 1; i <= 6; i++) {
+      const el = document.getElementById(`stage-${i}`);
+      if (el) {
+        if (i === num) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      }
+    }
+
+    if (stickyCtaContainer) {
+      if (num === 1) stickyCtaContainer.classList.remove('hidden');
+      else stickyCtaContainer.classList.add('hidden');
+    }
+
+    window.setSheetSnap('half');
+  }
+
+  // Instant vs Scheduled Switcher
+  if (btnModeInstant) {
+    btnModeInstant.addEventListener('click', () => {
+      state.bookingMode = 'instant';
+      btnModeInstant.className = 'py-2.5 px-3 rounded-xl neu-flat text-secondary font-bold text-[12px] flex items-center justify-center gap-1.5 transition-all';
+      btnModeScheduled.className = 'py-2.5 px-3 rounded-xl text-on-surface-variant font-medium text-[12px] flex items-center justify-center gap-1.5 transition-all hover:text-on-surface';
+      if (scheduledPanel) scheduledPanel.classList.add('hidden');
+      if (txtMainSubmit) txtMainSubmit.textContent = 'ثبت درخواست مترجم';
+      if (iconMainSubmit) iconMainSubmit.textContent = 'radar';
+    });
+  }
+
+  if (btnModeScheduled) {
+    btnModeScheduled.addEventListener('click', () => {
+      state.bookingMode = 'scheduled';
+      btnModeScheduled.className = 'py-2.5 px-3 rounded-xl neu-flat text-secondary font-bold text-[12px] flex items-center justify-center gap-1.5 transition-all';
+      btnModeInstant.className = 'py-2.5 px-3 rounded-xl text-on-surface-variant font-medium text-[12px] flex items-center justify-center gap-1.5 transition-all hover:text-on-surface';
+      if (scheduledPanel) scheduledPanel.classList.remove('hidden');
+      if (txtMainSubmit) txtMainSubmit.textContent = 'ثبت رزرو زمان‌دار';
+      if (iconMainSubmit) iconMainSubmit.textContent = 'event_available';
+      window.setSheetSnap('half');
+    });
+  }
+
+  // تعرفه‌ها از پنل مدیر: نرخ دسته‌ها، هزینه‌ی خودرو و مالیات (بدون نرخ دلار)
+  function applyTariffs(t) {
+    if (!t) return;
+    if (t.car_fee_per_hour !== undefined) CONFIG.carFeePerHour = Number(t.car_fee_per_hour) || 0;
+    if (t.tax_percent !== undefined) CONFIG.taxRate = (Number(t.tax_percent) || 0) / 100;
+    if (t.hourly) {
+      catChips.forEach(function (c) { if (t.hourly[c.dataset.cat] !== undefined) c.dataset.rate = String(t.hourly[c.dataset.cat]); });
+    }
+    if (typeof state !== 'undefined') {
+      var active = document.querySelector('.cat-chip.neu-pressed');
+      if (active && active.dataset.rate) state.hourlyRate = parseInt(active.dataset.rate, 10);
+      if (badgeRateHourly && active) badgeRateHourly.textContent = `ساعتی ${formatToman(state.hourlyRate)}`;
+      updatePricing();
+    }
+  }
+  fetch('/api/config').then(function (r) { return r.json(); }).then(function (d) { applyTariffs(d.tariffs); if (window.HZ_APPLY_CFG) window.HZ_APPLY_CFG(d); }).catch(function () {});
+
+  // Category Selector
+  catChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      catChips.forEach(c => {
+        c.className = 'cat-chip py-1.5 px-3 rounded-xl neu-flat text-on-surface-variant text-[11px] font-medium flex items-center gap-1.5 flex-shrink-0 cursor-pointer';
+      });
+      chip.className = 'cat-chip py-1.5 px-3 rounded-xl neu-pressed text-secondary text-[11px] font-bold flex items-center gap-1.5 flex-shrink-0 cursor-pointer';
+      state.category = chip.dataset.cat;
+      state.hourlyRate = parseInt(chip.dataset.rate, 10);
+      if (badgeRateHourly) badgeRateHourly.textContent = `ساعتی ${formatToman(state.hourlyRate)}`;
+      updatePricing();
+    });
+  });
+
+  // Hours counter (+ / -)
+  if (btnIncHours) {
+    btnIncHours.addEventListener('click', () => {
+      if (state.hours < CONFIG.hoursMax) {
+        state.hours++;
+        if (labelHoursCount) labelHoursCount.textContent = `${toPersianDigits(state.hours)} ساعت`;
+        updatePricing();
+      }
+    });
+  }
+  if (btnDecHours) {
+    btnDecHours.addEventListener('click', () => {
+      if (state.hours > 1) {
+        state.hours--;
+        if (labelHoursCount) labelHoursCount.textContent = `${toPersianDigits(state.hours)} ساعت`;
+        updatePricing();
+      }
+    });
+  }
+
+  // Vehicle Accompaniment Toggle
+  if (btnToggleCar) {
+    btnToggleCar.addEventListener('click', () => {
+      state.hasCar = !state.hasCar;
+      if (state.hasCar) {
+        if (dotCarStatus) dotCarStatus.className = 'w-2.5 h-2.5 rounded-full bg-secondary';
+        if (txtCarStatus) {
+          txtCarStatus.textContent = 'همراه با خودرو';
+          txtCarStatus.className = 'text-[11.5px] font-bold text-secondary';
+        }
+        if (state.passengers > CONFIG.partyMax.car) {
+          state.passengers = CONFIG.partyMax.car;
+          if (labelPaxCount) labelPaxCount.textContent = `${toPersianDigits(state.passengers)} نفر`;
+        }
+      } else {
+        if (dotCarStatus) dotCarStatus.className = 'w-2.5 h-2.5 rounded-full bg-outline-variant';
+        if (txtCarStatus) {
+          txtCarStatus.textContent = 'بدون خودرو (پیاده)';
+          txtCarStatus.className = 'text-[11.5px] font-medium text-on-surface-variant';
+        }
+      }
+      updatePricing();
+    });
+  }
+
+  // Gender Buttons
+  genderBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      genderBtns.forEach(b => {
+        b.className = 'gender-btn py-1 rounded-lg neu-flat text-on-surface-variant text-[10px] cursor-pointer';
+      });
+      btn.className = 'gender-btn py-1 rounded-lg neu-pressed text-secondary text-[10px] font-bold cursor-pointer';
+      state.gender = btn.dataset.gender;
+    });
+  });
+
+  // Passengers (+ / -)
+  if (btnIncPax) {
+    btnIncPax.addEventListener('click', () => {
+      const max = state.hasCar ? CONFIG.partyMax.car : CONFIG.partyMax.nocar;
+      if (state.passengers < max) {
+        state.passengers++;
+        if (labelPaxCount) labelPaxCount.textContent = `${toPersianDigits(state.passengers)} نفر`;
+      }
+    });
+  }
+  if (btnDecPax) {
+    btnDecPax.addEventListener('click', () => {
+      if (state.passengers > 1) {
+        state.passengers--;
+        if (labelPaxCount) labelPaxCount.textContent = `${toPersianDigits(state.passengers)} نفر`;
+      }
+    });
+  }
+
+  // The request bridge is called only after an authenticated server response.
+  window.HZ_BOOKING_SCREEN = {
+    currentId: () => searchBookingId,
+    serviceId: () => state.currentStage >= 5 ? (serviceBooking() || {}).serverId : (searchBookingId || (serviceBooking() || {}).serverId),
+    serviceConfirmed: (action, id) => {
+      if (id !== window.HZ_BOOKING_SCREEN.serviceId()) return;
+      const b = readLocalBookings().find(x => x.serverId === id);
+      if (!b) return;
+      serviceBookingId = id;
+      if (b.serviceStarted) syncServiceClock(b);
+      if (action === 'arrived') goToStage(b.serviceStarted ? 5 : 4);
+      else if (action === 'start-check') goToStage(5);
+      else if (action === 'finish' || action === 'finish-approve') goToStage(6);
+      else if (action === 'extend') updateExtensionUi(b);
+    },
+    confirmed: (action, id) => {
+      if (action === 'created') {
+        searchBookingId = id; serviceBookingId = null; sessionStart = 0; goToStage(2);
+      } else if (searchBookingId === id) {
+        if (action === 'retry') goToStage(2);
+        else if (action === 'cancel' || action === 'convert') { searchBookingId = null; goToStage(1); }
+      }
+    }
+  };
+
+  // جلو رفتن صفحه‌ها فقط با وضعیت واقعی رزرو روی سرور است (بدون دکمه‌ی شبیه‌سازی):
+  // پذیرش درخواست از سوی مترجم ← صفحه‌ی تأیید تطبیق، شروع خدمت با کد امنیتی ← تایمر، پایان خدمت ← فاکتور.
+  function readLocalBookings() {
+    try { return JSON.parse(localStorage.getItem('hamzaban.bookings.v1') || '[]'); } catch (e) { return []; }
+  }
+  function fillMatchedTranslator(b) {
+    var nameEl = document.getElementById('matched-translator-name');
+    if (nameEl && b && b.translatorName) nameEl.textContent = b.translatorName;
+    var carEl = document.getElementById('matched-translator-car');
+    if (carEl) carEl.textContent = b && b.translatorCar ? b.translatorCar : 'بدون خودرو';
+  }
+  // وضعیت تمدید روی صفحه‌ی تایمر: انتظار پاسخ مترجم، و نتیجه‌ی تأیید/رد او
+  var extUiState = { pendingId: null };
+  function updateExtensionUi(b) {
+    var st = document.getElementById('extension-status');
+    var btn = document.getElementById('btn-extend-one-hour');
+    if (!st || !btn || !b) return;
+    if (b.pendingExtension) {
+      extUiState.pendingId = b.pendingExtension.id;
+      st.textContent = 'درخواست تمدید برای مترجم فرستاده شده؛ منتظر تأیید او هستیم…';
+      st.classList.remove('hidden');
+      btn.disabled = true; btn.classList.add('opacity-50');
+      return;
+    }
+    btn.disabled = !!(window.HZ_SERVICE_BUSY && window.HZ_SERVICE_BUSY(b.serverId)); btn.classList.remove('opacity-50');
+    if (extUiState.pendingId) {
+      extUiState.pendingId = null;
+      if (b.lastExtensionStatus === 'accepted') {
+        if (b.hoursNum && b.hoursNum !== state.hours) { state.hours = b.hoursNum; updatePricing(); updateInvoice(); }
+        st.textContent = 'مترجم تمدید را تأیید کرد؛ یک ساعت به خدمت اضافه شد.';
+        st.classList.remove('hidden');
+        window.showAppToast('تمدید تأیید شد؛ یک ساعت اضافه شد', 'add_circle');
+      } else {
+        st.textContent = b.lastExtensionStatus === 'rejected' ? 'مترجم با تمدید موافقت نکرد؛ خدمت در موعد قبلی تمام می‌شود.' : 'مهلت پاسخ مترجم به تمدید تمام شد.';
+        st.classList.remove('hidden');
+        window.showAppToast(st.textContent, 'info');
+      }
+    }
+  }
+  setInterval(() => {
+    const list = readLocalBookings();
+    // Restore once, and only after an authenticated server refresh (not stale local storage).
+    if (!restoredService && window.hzBookingsSynced) {
+      restoredService = true;
+      const active = serviceBooking();
+      if (active && state.currentStage === 1) {
+        syncServiceClock(active);
+        document.getElementById('location-picker-bar').classList.add('hidden');
+        bottomSheet.classList.remove('hidden');
+        goToStage(active.srvStatus === 'finished' ? 6 : 5);
+      } else if (state.currentStage === 1) {
+        const searching = list.find(b => b.serverId && b.mode === 'instant' &&
+          ['searching', 'no_match', 'matched'].includes(b.srvStatus) && !b.serviceStarted &&
+          (!window.hzSyncedBookingIds || window.hzSyncedBookingIds.includes(b.serverId)));
+        if (searching) {
+          searchBookingId = searching.serverId;
+          document.getElementById('location-picker-bar').classList.add('hidden');
+          bottomSheet.classList.remove('hidden'); goToStage(2);
+        }
+      }
+    }
+    if (state.currentStage === 6) { updateInvoice(); return; }
+    if (state.currentStage !== 2 && state.currentStage !== 3 && state.currentStage !== 4 && state.currentStage !== 5) return;
+    const b = (state.currentStage <= 4 && searchBookingId ? list.find(x => x.serverId === searchBookingId) : null) || list.find(x => x.serverId === serviceBookingId) || list.find(x => x.serverId && ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched', 'finished'].indexOf(x.srvStatus) !== -1)
+      || list.find(x => x.serverId);
+    if (!b) return;
+    if (b.srvStatus === 'cancelled' && state.currentStage <= 4) { searchBookingId = null; goToStage(1); return; }
+    if (state.currentStage === 2) {
+      if (b.srvStatus === 'matched') { fillMatchedTranslator(b); goToStage(3); window.showAppToast('مترجم سفر را پذیرفت', 'check_circle'); }
+      else if (b.srvStatus === 'no_match' || b.srvStatus === 'unmatched_ask') showNoMatch(b);
+    } else if (state.currentStage === 3) {
+      fillMatchedTranslator(b);
+    } else if (state.currentStage === 4 && b.serviceStarted) {
+      goToStage(5);
+      window.showAppToast('همراهی رسمی آغاز شد. تایمر فعال گردید', 'play_arrow');
+    } else if (state.currentStage === 5) {
+      syncServiceClock(b);
+      updateExtensionUi(b);
+      var frb = document.getElementById('finish-request-banner');
+      if (frb) frb.classList.toggle('hidden', !b.finishRequested);
+      if (b.srvStatus === 'finished') {
+        goToStage(6);
+        window.showAppToast('فاکتور نهایی صادر شد', 'receipt_long');
+      }
+    }
+  }, 1000);
+
+  // Showing a code, entering the timer and changing service state all require
+  // a fresh server booking. No local-only start/finish/extension simulation.
+  [['btn-arrived', 'arrived'], ['btn-confirm-start', 'start-check'],
+   ['btn-finish-service', 'finish'], ['btn-extend-one-hour', 'extend']].forEach(([id, action]) => {
+    const button = document.getElementById(id);
+    if (button) button.addEventListener('click', () => {
+      if (window.HZ_SERVICE_ACTION) window.HZ_SERVICE_ACTION(action);
+    });
+  });
+
+  // Payment Selection
+  const payMethodOnline = document.getElementById('pay-method-online');
+  const payMethodCash = document.getElementById('pay-method-cash');
+  const dotPayOnline = document.getElementById('dot-pay-online');
+  const dotPayCash = document.getElementById('dot-pay-cash');
+
+  if (payMethodOnline && payMethodCash) {
+    var cashNote = document.createElement('p');
+    cashNote.id = 'cash-note'; cashNote.className = 'hidden text-[11px] leading-6 text-on-surface-variant mt-2';
+    cashNote.textContent = 'پرداخت نقدی فقط به تومان است. هم شما و هم مترجم باید دریافت را در اپ تأیید کنید. اگر تأییدها با هم نخواند، مورد به پشتیبانی ارجاع می‌شود.';
+    payMethodCash.parentElement.insertAdjacentElement('afterend', cashNote);
+    var setCashUi = function (isCash) {
+      cashNote.classList.toggle('hidden', !isCash);
+    };
+    payMethodOnline.addEventListener('click', () => {
+      if (payMethodOnline.disabled) return;
+      state.payMethod = 'online'; window.payChoice = 'online'; setCashUi(false);
+      payMethodOnline.className = 'neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer';
+      payMethodCash.className = 'neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer';
+      if (dotPayOnline) dotPayOnline.className = 'w-2.5 h-2.5 rounded-full bg-secondary';
+      if (dotPayCash) dotPayCash.className = 'w-2.5 h-2.5 rounded-full bg-outline-variant';
+    });
+
+    payMethodCash.addEventListener('click', () => {
+      if (payMethodCash.disabled) return;
+      state.payMethod = 'cash'; window.payChoice = 'cash'; setCashUi(true);
+      payMethodCash.className = 'neu-pressed rounded-2xl p-2.5 flex flex-col text-right gap-1 border border-secondary/40 cursor-pointer';
+      payMethodOnline.className = 'neu-flat rounded-2xl p-2.5 flex flex-col text-right gap-1 cursor-pointer';
+      if (dotPayCash) dotPayCash.className = 'w-2.5 h-2.5 rounded-full bg-secondary';
+      if (dotPayOnline) dotPayOnline.className = 'w-2.5 h-2.5 rounded-full bg-outline-variant';
+    });
+  }
+
+  setInterval(() => {
+    if (state.currentStage === 6 && window.HZ_PAYMENTS) window.HZ_PAYMENTS.refresh().catch(function () {});
+  }, 15000);
+
+  // Navigation is a consequence of a confirmed server response, never of a click.
+  window.addEventListener('hamzaban:payment-recorded', () => {
+    goToStage(1);
+    window.backToLocationPicker();
+  });
+
+  const btnBackToTimer = document.getElementById('btn-back-to-timer');
+  if (btnBackToTimer) {
+    btnBackToTimer.addEventListener('click', () => goToStage(5));
+  }
+
+  // Live chronometer: from the real start moment (not fixed)
+  const timerValEl = document.getElementById('live-timer-val');
+  setInterval(() => {
+    if (state.currentStage !== 5 || !timerValEl) return;
+    const b = serviceBooking();
+    if (b) syncServiceClock(b);
+    if (!sessionStart) return;
+    const finished = b && Date.parse(b.finishedAt);
+    const elapsed = Math.max(0, Math.floor(((Number.isFinite(finished) ? finished : Date.now()) - sessionStart) / 1000));
+    timerValEl.textContent = toPersianDigits(`${pad2(Math.floor(elapsed / 3600))}:${pad2(Math.floor((elapsed % 3600) / 60))}:${pad2(elapsed % 60)}`);
+    const left = state.hours * 3600 - elapsed;
+    const warn = document.getElementById('expiry-warning');
+    if (warn) warn.classList.toggle('hidden', !(left > 0 && left <= CONFIG.expiryWarnMin * 60));
+    const of = document.getElementById('of-hours');
+    if (of) of.textContent = `از مجموع ${toPersianDigits(state.hours)} ساعت زمان رزرو شده`;
+  }, 1000);
+
+  // Notes counter (max 300 chars)
+  const notesInput = document.getElementById('notes-input');
+  const notesCount = document.getElementById('notes-count');
+  if (notesInput) {
+    notesInput.addEventListener('input', () => {
+      notesInput.value = notesInput.value.slice(0, CONFIG.notesMax);
+      if (notesCount) notesCount.textContent = `${toPersianDigits(notesInput.value.length)} / ${toPersianDigits(CONFIG.notesMax)}`;
+    });
+  }
+
+  // No-match actions are bound to the real reservation API below.
+
+  // Default schedule: امروز؛ اگر هیچ ساعتی امروز مجاز نیست، فردا (در همین ماه)
+  let defDay = todayJ[2];
+  if (!standardTimeSlots.some((t) => slotAllowed(t, defDay)) && defDay < monthLen) defDay += 1;
+  state.scheduledDay = defDay;
+  state.tempSelectedDay = defDay;
+  state.scheduledDate = fmtJ(defDay);
+  state.scheduledTime = standardTimeSlots.find((t) => slotAllowed(t, defDay)) || standardTimeSlots[0];
+  state.tempSelectedTime = state.scheduledTime;
+
+  // Initialize view values
+  updatePricing();
+  updateScheduledSummary();
+});
+</script>
+<script>if("serviceWorker" in navigator && location.protocol.startsWith("http")){try { navigator.serviceWorker.register("sw.js").catch(function(){}); } catch (e) {}}</script>
+
+<script>
+(function () {
+  'use strict';
+  var CONFIG_LOCAL = { minLeadMin: 120, notesMax: 300 };
+  var KEY_USER = 'hamzaban.user.v1';
+  try { if (!localStorage.getItem(KEY_USER)) location.replace('index.html'); } catch (e) {}
+  var KEY_BK = 'hamzaban.bookings.v1';
+  var fa = function (n) { return String(n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); };
+  var fmtT = function (n) { return fa(Math.round(n).toLocaleString('en-US')) + ' تومان'; };
+  var $ = function (id) { return document.getElementById(id); };
+  var COUNTRIES = [['+98', 'ایران'], ['+964', 'عراق'], ['+971', 'امارات'], ['+968', 'عمان'], ['+90', 'ترکیه'], ['+44', 'انگلستان'], ['+49', 'آلمان'], ['+7', 'روسیه'], ['+86', 'چین']];
+
+  function toast(msg, icon) { if (window.showAppToast) window.showAppToast(msg, icon || 'info'); }
+  function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  // ---------- رزروها ----------
+  var TABS = [['pending', 'در انتظار تطبیق'], ['upcoming', 'پیش رو'], ['live', 'در جریان'], ['done', 'انجام‌شده'], ['cancelled', 'لغوشده']];
+  var bkTab = 'pending';
+  function getBk() { return load(KEY_BK, []); }
+  function setBk(list) { save(KEY_BK, list); }
+  function addBooking(b) { var list = getBk(); b.id = Date.now().toString(36); list.unshift(b); setBk(list); renderBookings(); }
+
+  // ---------- همگام‌سازی رزروها با سرور ----------
+  var KEY_TOKEN_T = 'hamzaban.token.v1';
+  var bookingActions = Object.create(null), bookingRevision = 0, bookingSubmissionPending = false;
+  function srvToken() { try { return localStorage.getItem(KEY_TOKEN_T); } catch (e) { return null; } }
+  function srvCall(method, path, body, options) {
+    var t = srvToken(); if (!t) return Promise.reject({ status: 401 });
+    var headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t };
+    return fetch('/api' + path, { method: method, headers: headers, signal: options && options.signal, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (r.status === 401 && srvToken() === t) clearTravelerSession(true);
+          if (!r.ok) { var e = new Error(d.error || 'http'); e.status = r.status; throw e; }
+          return d;
+        });
+      });
+  }
+  var LANG_NAMES = [['عرب', 'ar'], ['فارس', 'fa'], ['انگلیس', 'en']];
+  var LANG_LABEL = { ar: 'عربی', fa: 'فارسی', en: 'انگلیسی' };
+  var FIELD_LABEL = { general: 'عمومی', medical: 'پزشکی', legal: 'حقوقی', business: 'تجاری' };
+  function langCode(txt, dflt) {
+    for (var i = 0; i < LANG_NAMES.length; i++) if ((txt || '').indexOf(LANG_NAMES[i][0]) !== -1) return LANG_NAMES[i][1];
+    return dflt;
+  }
+  // نگاشت وضعیت سرور به برگه و برچسب محلی
+  function localStateOf(sb) {
+    var sched = sb.kind === 'scheduled';
+    switch (sb.status) {
+      case 'searching': return { tab: 'live', label: 'در جستجوی مترجم' };
+      case 'waiting_schedule': return { tab: 'pending', label: STATUS.pending };
+      case 'matching': return { tab: 'pending', label: STATUS.pending };
+      case 'unmatched_ask': return { tab: 'pending', label: 'مترجمی پیدا نشد؛ تلاش دوباره یا لغو؟' };
+      case 'no_match': return { tab: 'pending', label: 'مترجمی پیدا نشد' };
+      case 'matched': return sched ? { tab: 'upcoming', label: STATUS.upcoming } : { tab: 'live', label: 'مترجم تطبیق یافت' };
+      case 'cancelled': return { tab: 'cancelled', label: STATUS.cancelled };
+      case 'finished':
+        if (sb.pay_state === 'disputed') return { tab: 'live', label: 'در بررسی پشتیبانی' };
+        if (sb.pay_state === 'awaiting_cash') return { tab: 'live', label: 'منتظر تأیید دریافت وجه' };
+        return { tab: 'live', label: 'پایان خدمت؛ انتخاب پرداخت' };
+      case 'done': return { tab: 'done', label: STATUS.done };
+    }
+    return null;
+  }
+  function syncServer(allowPendingId, signal) {
+    if (deletePending) return; // Do not race deletion confirmation with background polling.
+    var sessionToken = srvToken();
+    if (!sessionToken) return;
+    var revision = bookingRevision, pendingAtStart = Object.keys(bookingActions);
+    return srvCall('GET', '/traveler/bookings', null, { signal: signal }).then(function (d) {
+      if (srvToken() !== sessionToken || revision !== bookingRevision) return null;
+      if (!d || !Array.isArray(d.bookings)) return null;
+      // Reject malformed snapshots before they can drive the stage/timer loop.
+      if (!d.bookings.every(function (row) {
+        return row && Number.isInteger(row.id) && row.id > 0 && ['instant', 'scheduled'].includes(row.kind) &&
+          !!localStateOf(row) && Number.isFinite(row.total) && row.total >= 0 && Number.isFinite(row.hours) && row.hours >= 1 &&
+          typeof row.service_started === 'boolean' && (!row.service_started ||
+            (Number.isFinite(Date.parse(row.service_started_at)) &&
+             (!['finished', 'done'].includes(row.status) || Number.isFinite(Date.parse(row.finished_at)))));
+      })) return null;
+      var list = getBk(), changed = false;
+      d.bookings.forEach(function (sb) {
+        if (pendingAtStart.includes(String(sb.id)) && sb.id !== allowPendingId) return;
+        var lb = list.find(function (x) { return x.serverId === sb.id; });
+        var m = localStateOf(sb);
+        if (!m) return;
+        if (!lb) { // رزروی که روی سرور ثبت شده و در این مرورگر نیست: به فهرست اضافه شود
+          lb = { id: 's' + sb.id, serverId: sb.id, mode: sb.kind, title: LANG_LABEL[sb.origin_lang] + ' ← ' + LANG_LABEL[sb.dest_lang],
+            field: FIELD_LABEL[sb.field] || '', hours: '', amount: (Number(sb.total) || 0).toLocaleString('fa-IR') + ' تومان',
+            when: sb.scheduled_at ? (window.jLabel ? window.jLabel(Date.parse(sb.scheduled_at)) : sb.scheduled_at) : 'فوری',
+            startAt: sb.scheduled_at ? Date.parse(sb.scheduled_at) : null, place: sb.place || '', srvStatus: sb.status, total: Number(sb.total) || 0, base: sb.base, tax: sb.tax, payMethod: sb.pay_method || null, payState: sb.pay_state || null, serviceCode: sb.service_code || null, translatorName: sb.translator_name || null, translatorCar: sb.translator_car || null, serviceStarted: !!sb.service_started, serviceStartedAt: sb.service_started_at || null, finishedAt: sb.finished_at || null, hoursNum: sb.hours || null, pendingExtension: sb.pending_extension || null, lastExtensionStatus: sb.last_extension_status || null, finishRequested: !!sb.finish_requested, finishedBy: sb.finished_by || null };
+          list.unshift(lb); changed = true;
+        }
+        var startAt = sb.scheduled_at ? Date.parse(sb.scheduled_at) : null;
+        if (lb.mode !== sb.kind || lb.startAt !== startAt) {
+          lb.mode = sb.kind; lb.startAt = startAt;
+          lb.when = startAt ? (window.jLabel ? window.jLabel(startAt) : sb.scheduled_at) : 'فوری'; changed = true;
+        }
+        if (lb.tab !== m.tab || lb.statusLabel !== m.label || lb.srvStatus !== sb.status) {
+          lb.tab = m.tab; lb.statusLabel = m.label; lb.srvStatus = sb.status; changed = true;
+        }
+        if (lb.total !== (Number(sb.total) || 0) || lb.base !== sb.base || lb.tax !== sb.tax || lb.payMethod !== (sb.pay_method || null) || lb.payState !== (sb.pay_state || null)) {
+          lb.total = Number(sb.total) || 0; lb.base = sb.base; lb.tax = sb.tax; lb.payMethod = sb.pay_method || null; lb.payState = sb.pay_state || null; changed = true;
+        }
+        if (lb.place !== (sb.place || '') || lb.notes !== (sb.notes || '')) { lb.place = sb.place || ''; lb.notes = sb.notes || ''; changed = true; }
+        if (lb.serviceCode !== (sb.service_code || null)) { lb.serviceCode = sb.service_code || null; changed = true; }
+        if (lb.translatorName !== (sb.translator_name || null) || lb.translatorCar !== (sb.translator_car || null) || lb.serviceStarted !== !!sb.service_started) {
+          lb.translatorName = sb.translator_name || null; lb.translatorCar = sb.translator_car || null; lb.serviceStarted = !!sb.service_started; changed = true;
+        }
+        if (lb.serviceStartedAt !== (sb.service_started_at || null) || lb.finishedAt !== (sb.finished_at || null)) {
+          lb.serviceStartedAt = sb.service_started_at || null; lb.finishedAt = sb.finished_at || null; changed = true;
+        }
+        if (lb.hoursNum !== (sb.hours || null) || JSON.stringify(lb.pendingExtension || null) !== JSON.stringify(sb.pending_extension || null) || lb.lastExtensionStatus !== (sb.last_extension_status || null)) {
+          lb.hoursNum = sb.hours || null; lb.pendingExtension = sb.pending_extension || null; lb.lastExtensionStatus = sb.last_extension_status || null; changed = true;
+        }
+        if (lb.finishRequested !== !!sb.finish_requested || lb.finishedBy !== (sb.finished_by || null)) {
+          lb.finishRequested = !!sb.finish_requested; lb.finishedBy = sb.finished_by || null; changed = true;
+        }
+        if (lb.payState !== (sb.pay_state || null)) { lb.payState = sb.pay_state || null; changed = true; }
+        if (lb.total !== (Number(sb.total) || 0)) { lb.total = Number(sb.total) || 0; changed = true; }
+        var pc = sb.pending_change || null;
+        if (JSON.stringify(lb.pendingChange || null) !== JSON.stringify(pc)) { lb.pendingChange = pc; changed = true; }
+      });
+      if (changed) { setBk(list); renderBookings(); }
+      window.hzSyncedBookingIds = (d.bookings || []).map(b => b.id);
+      window.hzBookingsSynced = true;
+      return d;
+    }).catch(function () { return null; });
+  }
+  function searchBooking() {
+    var id = window.HZ_BOOKING_SCREEN && window.HZ_BOOKING_SCREEN.currentId();
+    return getBk().find(function (b) { return b.serverId === id; });
+  }
+  function updateBookingActionControls() {
+    document.querySelectorAll('[data-booking-id]').forEach(function (group) {
+      var busy = !!bookingActions[group.dataset.bookingId];
+      group.querySelectorAll('button').forEach(function (button) {
+        button.disabled = busy;
+        if (busy) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+      });
+    });
+    var submitBusy = bookingSubmissionPending || Object.keys(bookingActions).length > 0;
+    var submit = $('btn-main-submit');
+    submit.disabled = submitBusy || (window.HZ_FEAT && !window.HZ_FEAT('traveler_booking'));
+    if (submitBusy) submit.setAttribute('aria-busy', 'true'); else submit.removeAttribute('aria-busy');
+    var serviceId = window.HZ_BOOKING_SCREEN && window.HZ_BOOKING_SCREEN.serviceId();
+    var service = getBk().find(function (b) { return b.serverId === serviceId; });
+    ['btn-arrived', 'btn-confirm-start', 'btn-finish-service', 'btn-extend-one-hour', 'btn-approve-finish', 'btn-reject-finish'].forEach(function (id) {
+      var button = $(id), pending = !!bookingActions[serviceId];
+      button.disabled = pending || (id === 'btn-extend-one-hour' && !!(service && service.pendingExtension));
+      if (pending) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+    });
+    var active = searchBooking(), busy = active && !!bookingActions[active.serverId];
+    ['btn-cancel-search', 'btn-cancel-nomatch', 'btn-retry-search', 'btn-to-scheduled'].forEach(function (id) {
+      var button = $(id); button.disabled = !!busy;
+      if (busy) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+    });
+  }
+  function bookingAction(b, action, body) {
+    if (!b || !b.serverId || !srvToken()) {
+      toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return Promise.resolve(false);
+    }
+    if (bookingSubmissionPending || bookingActions[b.serverId] || logoutPending || deletePending) return Promise.resolve(false);
+    var token = srvToken(), id = b.serverId;
+    bookingActions[id] = action; bookingRevision++; updateBookingActionControls();
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 10000);
+    return srvCall('POST', '/traveler/bookings/' + id + '/' + action, body, { signal: controller.signal }).then(function (d) {
+      if (!d || d.ok !== true) throw new Error('action_not_confirmed');
+      if (srvToken() !== token) return false;
+      if (action === 'cancel') {
+        if (typeof d.fee_percent !== 'number' || !Number.isFinite(d.fee_percent) || d.fee_percent < 0 || d.fee_percent > 100) throw new Error('invalid_cancel_fee');
+        var found = findBk(b.id);
+        if (found.b) { found.b.tab = 'cancelled'; found.b.statusLabel = STATUS.cancelled; found.b.srvStatus = 'cancelled'; found.b.cancelFee = d.fee_percent; setBk(found.list); }
+        renderBookings();
+        if (window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.confirmed(action, id);
+        toast('لغو رزرو در سرور تأیید شد.', 'cancel'); return true;
+      }
+      // A retry/conversion receipt alone must not fabricate a new search state.
+      return syncServer(id, controller.signal).then(function (fresh) {
+        if (srvToken() !== token) return false;
+        var actual = fresh && fresh.bookings.find(function (row) { return row.id === id; });
+        if (!actual) throw new Error('state_not_confirmed');
+        if (action === 'retry' && !['searching', 'matching', 'matched'].includes(actual.status)) throw new Error('state_not_confirmed');
+        if (action === 'convert' && actual.kind !== 'scheduled') throw new Error('state_not_confirmed');
+        if (window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.confirmed(action, id);
+        toast(action === 'retry' ? 'جستجوی دوباره در سرور تأیید شد.' : 'تبدیل رزرو در سرور تأیید شد.', 'check_circle'); return true;
+      });
+    }).catch(function (e) {
+      if (srvToken() !== token) return false;
+      toast(e && e.message === 'service_already_started' ? 'خدمت شروع شده است؛ برای پایان زودتر، پایان خدمت را انتخاب کنید. مبلغ کامل پابرجاست.' : 'عملیات رزرو تأیید نشد. وضعیت را بررسی کنید و دوباره تلاش کنید.', 'error');
+      return false;
+    }).finally(function () {
+      clearTimeout(timeout); delete bookingActions[id]; bookingRevision++; updateBookingActionControls();
+    });
+  }
+  function cancelServer(b) { return bookingAction(b, 'cancel'); }
+  function retryServer(b) { return bookingAction(b, 'retry'); }
+  window.HZ_SERVICE_BUSY = function (id) { return !!bookingActions[id]; };
+  window.HZ_SERVICE_ACTION = function (action) {
+    var id = window.HZ_BOOKING_SCREEN && window.HZ_BOOKING_SCREEN.serviceId();
+    return serviceAction(getBk().find(function (b) { return b.serverId === id; }), action);
+  };
+  function serviceAction(b, action) {
+    if (!b || !b.serverId || !srvToken()) {
+      toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return Promise.resolve(false);
+    }
+    if (bookingSubmissionPending || bookingActions[b.serverId] || logoutPending || deletePending) return Promise.resolve(false);
+    var id = b.serverId, token = srvToken();
+    bookingActions[id] = action; bookingRevision++; updateBookingActionControls();
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 10000);
+    function readFresh() {
+      if (srvToken() !== token) return Promise.reject(new Error('session_changed'));
+      return syncServer(id, controller.signal).then(function (d) {
+        if (srvToken() !== token) throw new Error('session_changed');
+        var row = d && d.bookings.find(function (r) { return r.id === id; });
+        if (!row) throw new Error('state_not_confirmed');
+        return row;
+      });
+    }
+    return readFresh().then(function (before) {
+      if (before.status !== 'matched') throw new Error('not_in_service');
+      if (action === 'arrived') {
+        if (!/^[0-9]{5}$/.test(before.service_code || '')) throw new Error('no_service_code');
+        return before;
+      }
+      if (before.service_started !== true || !Number.isFinite(Date.parse(before.service_started_at))) throw new Error('not_started');
+      if (action === 'start-check') return before;
+      if (action === 'extend' && before.pending_extension) throw new Error('extension_pending');
+      if ((action === 'finish-approve' || action === 'finish-reject') && before.finish_requested !== true) throw new Error('no_finish_request');
+      return srvCall('POST', '/traveler/bookings/' + id + '/' + action,
+        action === 'extend' ? { extra_hours: 1 } : null, { signal: controller.signal }).then(function (receipt) {
+          if (action === 'extend') {
+            if (!receipt || receipt.pending !== true || !Number.isInteger(receipt.id) || receipt.id <= 0 || receipt.extra_hours !== 1 ||
+                !Number.isFinite(receipt.extra_total) || receipt.extra_total < 0 || !Number.isFinite(receipt.new_total) ||
+                !Number.isFinite(Date.parse(receipt.expires_at))) throw new Error('extension_not_confirmed');
+          } else {
+            if (!receipt || receipt.ok !== true) throw new Error('finish_not_confirmed');
+            if (action === 'finish-reject') {
+              if (receipt.status !== 'matched') throw new Error('finish_not_confirmed');
+            } else if (receipt.status !== 'finished' || receipt.finished_by !== (action === 'finish' ? 'traveler' : 'translator') ||
+                       !Number.isFinite(receipt.total) || receipt.total < 0) throw new Error('finish_not_confirmed');
+          }
+          return readFresh().then(function (after) {
+            if (action === 'extend') {
+              if (after.status !== 'matched' || !after.pending_extension || after.pending_extension.id !== receipt.id) throw new Error('state_not_confirmed');
+            } else if (action === 'finish-reject') {
+              if (after.status !== 'matched' || after.finish_requested !== false) throw new Error('state_not_confirmed');
+            } else if (!['finished', 'done'].includes(after.status) || after.finished_by !== receipt.finished_by ||
+                       after.total !== receipt.total || !Number.isFinite(Date.parse(after.finished_at))) throw new Error('state_not_confirmed');
+            return after;
+          });
+        });
+    }).then(function (actual) {
+      if (srvToken() !== token) return false;
+      if (window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.serviceConfirmed(action, id);
+      var messages = {
+        arrived: 'کد امنیتی را به مترجم اعلام کنید تا خدمت شروع شود',
+        'start-check': 'شروع خدمت با کد امنیتی در سرور تأیید شد.',
+        extend: 'درخواست تمدید برای مترجم فرستاده شد؛ منتظر تأیید او هستیم',
+        finish: 'خدمت تمام شد؛ مبلغ کامل در فاکتور است',
+        'finish-approve': 'خدمت تمام شد؛ مبلغ کامل در فاکتور است',
+        'finish-reject': 'خدمت ادامه پیدا می‌کند'
+      };
+      toast(messages[action], action === 'extend' ? 'more_time' : 'check_circle'); return true;
+    }).catch(function (e) {
+      if (srvToken() !== token) return false;
+      var messages = {
+        not_started: 'خدمت هنوز با کد امنیتی در سرور شروع نشده است.',
+        extension_pending: 'درخواست تمدید قبلی منتظر پاسخ مترجم است'
+      };
+      toast(messages[e && e.message] || 'عملیات خدمت تأیید نشد. وضعیت را بررسی کنید و دوباره تلاش کنید.', 'error'); return false;
+    }).finally(function () {
+      clearTimeout(timeout); delete bookingActions[id]; bookingRevision++; updateBookingActionControls();
+    });
+  }
+
+  // Booking creation requires a confirmed server record; never create a local-only success.
+  function submitBooking(s, kind) {
+    if (bookingSubmissionPending || Object.keys(bookingActions).length || logoutPending || deletePending || !window.HZ_FEAT('traveler_booking')) return;
+    if (!srvToken()) { toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return; }
+    var submitToken = srvToken();
+    var uu = load(KEY_USER, null) || {};
+    var body = {
+      kind: kind,
+      origin_lang: langCode(faText($('txt-origin-lang')), 'ar'),
+      dest_lang: langCode(faText($('txt-dest-lang')), 'fa'),
+      place: s.place || '', notes: s.notes || '',
+      traveler_name: [uu.name, uu.last].filter(Boolean).join(' '),
+      traveler_gender: uu.gender === 'مرد' ? 'male' : uu.gender === 'زن' ? 'female' : null,
+      gender_pref: s.gender === 'female' || s.gender === 'male' ? s.gender : 'any',
+      hours: Number(s.hoursNum) || 1, car: !!s.car && window.HZ_FEAT('car_mode'), party: Number(s.pax) || 1,
+      category: s.category || 'general'
+    };
+    var cityId = window.HZ_NEAREST_CITY ? window.HZ_NEAREST_CITY() : null;
+    if (cityId) body.city_id = cityId;
+    if (s.lat != null && s.lng != null) { body.lat = s.lat; body.lng = s.lng; }
+    if (kind === 'scheduled') body.scheduled_at = new Date(s.startAt).toISOString();
+    bookingSubmissionPending = true;
+    var submit = $('btn-main-submit'); submit.disabled = true; submit.setAttribute('aria-busy', 'true');
+    var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 10000);
+    srvCall('POST', '/traveler/bookings', body, { signal: controller.signal }).then(function (sb) {
+      if (!sb || !Number.isInteger(sb.id) || sb.id <= 0 || sb.kind !== kind || !localStateOf(sb) || !Number.isFinite(sb.total)) throw new Error('booking_not_confirmed');
+      if (srvToken() !== submitToken) return;
+      s.total = sb.total; s.base = sb.base; s.tax = sb.tax; s.amount = fmtT(sb.total);
+      var m = localStateOf(sb) || {};
+      s.serverId = sb.id; s.srvStatus = sb.status; s.serviceCode = sb.service_code || null; s.tab = m.tab || s.tab; s.statusLabel = m.label || s.statusLabel;
+      addBooking(s); syncServer();
+      if (kind === 'instant' && window.HZ_BOOKING_SCREEN) window.HZ_BOOKING_SCREEN.confirmed('created', sb.id);
+      toast('ثبت رزرو در سرور تأیید شد.', 'check_circle');
+    }).catch(function (e) {
+      if (srvToken() !== submitToken) return;
+      var msgs = { too_soon: 'زمان قرار باید حداقل ۲ ساعت بعد از اکنون باشد.', invalid_place: 'مکان ملاقات را انتخاب کنید.' };
+      window.showAppToast(msgs[e.message] || 'ثبت رزرو تأیید نشد. پیش از تلاش دوباره، فهرست رزروها را بررسی کنید.', 'error');
+    }).finally(function () {
+      clearTimeout(timeout); bookingSubmissionPending = false; submit.disabled = !window.HZ_FEAT('traveler_booking'); submit.removeAttribute('aria-busy');
+    });
+  }
+  // ---- تغییر و تبدیل رزرو روی سرور (سند ۷.۱ و ۶) ----
+  var SLOT_LIST = []; for (var sh = 8; sh <= 21; sh++) { SLOT_LIST.push(sh + ':00'); if (sh < 21) SLOT_LIST.push(sh + ':30'); }
+  function faDigits(t) { return String(t).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
+  function srvErrText(e) {
+    var msgs = {
+      too_late_for_change: 'کمتر از ۳۰ دقیقه به قرار مانده؛ تغییر مهم ممکن نیست.',
+      change_pending: 'یک درخواست تغییر هنوز در انتظار پاسخ مترجم است.',
+      change_limit: 'سقف ۳ درخواست تغییر برای این رزرو پر شده است.',
+      not_changeable: 'این رزرو دیگر قابل تغییر نیست.',
+      too_soon: 'زمان قرار باید حداقل ۲ ساعت بعد از اکنون باشد.',
+      invalid_time: 'زمان انتخاب‌شده معتبر نیست.',
+      nothing_to_change: 'تغییری وارد نشده است.',
+      convert_not_allowed: 'این رزرو فعلاً قابل تبدیل نیست.',
+      not_payable: 'پرداخت بعد از پایان خدمت انجام می‌شود.',
+      already_paid: 'این رزرو قبلاً پرداخت شده است.',
+      method_disabled: 'این روش پرداخت فعال نیست.',
+      payment_config_unavailable: 'روش‌های پرداخت دریافت نشد. دوباره تلاش کنید.',
+      not_disputable: 'برای این رزرو اختلاف ثبت نمی‌شود.'
+    };
+    return msgs[e && e.message] || 'انجام نشد. دوباره تلاش کنید.';
+  }
+  function slotDate(dateStr, slot) {
+    var p = dateStr.split('-'), t = slot.split(':');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), Number(t[0]), Number(t[1]), 0, 0);
+  }
+  function fillDateTime(body) {
+    var dIn = document.createElement('input'); dIn.type = 'date'; dIn.className = 'dir-ltr neu-flat rounded-xl p-2 text-[12px]';
+    var today = new Date(); var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+    dIn.min = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+    var sel = document.createElement('select'); sel.className = 'neu-flat rounded-xl p-2 text-[12px]';
+    SLOT_LIST.forEach(function (t) { var o = document.createElement('option'); o.value = t; o.textContent = faDigits(t); sel.appendChild(o); });
+    var l1 = document.createElement('label'); l1.className = 'flex flex-col gap-1'; l1.textContent = 'تاریخ';
+    l1.appendChild(dIn);
+    var l2 = document.createElement('label'); l2.className = 'flex flex-col gap-1'; l2.textContent = 'ساعت';
+    l2.appendChild(sel);
+    body.appendChild(l1); body.appendChild(l2);
+    return { date: dIn, slot: sel };
+  }
+  function fillPlace(body, b) {
+    var l = document.createElement('label'); l.className = 'flex flex-col gap-1'; l.textContent = 'مکان ملاقات';
+    var inp = document.createElement('input'); inp.type = 'text'; inp.value = b.place || ''; inp.className = 'neu-flat rounded-xl p-2 text-[12px]';
+    l.appendChild(inp); body.appendChild(l);
+    return inp;
+  }
+  function fillNotes(body, b) {
+    var l = document.createElement('label'); l.className = 'flex flex-col gap-1'; l.textContent = 'توضیحات (بدون تغییر قیمت)';
+    var ta = document.createElement('textarea'); ta.rows = 2; ta.value = b.notes || ''; ta.className = 'neu-flat rounded-xl p-2 text-[12px]';
+    l.appendChild(ta); body.appendChild(l);
+    return ta;
+  }
+  function srvChangeSheet(b) {
+    var isSched = !!b.startAt;
+    var ui = {};
+    openModal('تغییر رزرو', function (body) {
+      var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
+      n.textContent = 'توضیحات بی‌هزینه تغییر می‌کند. تغییر مکان یا زمان نیاز به موافقت مترجم دارد؛ اگر مترجم ۵ دقیقه پاسخ ندهد، درخواست رد می‌شود.';
+      body.appendChild(n);
+      ui.place = fillPlace(body, b);
+      if (isSched) { var dt = fillDateTime(body); ui.date = dt.date; ui.slot = dt.slot; }
+      ui.notes = fillNotes(body, b);
+    }, [
+      { label: 'انصراف', onClick: function () { return true; } },
+      { label: 'ثبت تغییر', primary: true, onClick: function () {
+        var body = {};
+        if (ui.place.value.trim() !== (b.place || '')) body.place = ui.place.value.trim();
+        if (isSched && ui.date.value) {
+          var d = slotDate(ui.date.value, ui.slot.value);
+          if (d.getTime() !== b.startAt) body.scheduled_at = d.toISOString();
+        }
+        if (ui.notes.value !== (b.notes || '')) body.notes = ui.notes.value;
+        if (!Object.keys(body).length) { window.showAppToast('تغییری وارد نشده است', 'info'); return false; }
+        srvCall('POST', '/traveler/bookings/' + b.serverId + '/change', body).then(function (d) {
+          if (d && d.pending) window.showAppToast('درخواست به مترجم فرستاده شد؛ تا ۵ دقیقه فرصت دارد.', 'info');
+          else window.showAppToast('تغییر ثبت شد', 'info');
+          syncServer();
+        }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+        return true;
+      } }
+    ]);
+  }
+  function srvConvertSheet(b) {
+    var ui = {};
+    var modal = openModal('تبدیل به رزرو زمان‌دار', function (body) {
+      var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
+      n.textContent = 'برای درخواست فوری مترجمی پیدا نشد. اگر آن را زمان‌دار کنید، جست‌وجو یک ساعت پیش از زمان قرار آغاز می‌شود؛ زمان قرار باید دست‌کم ۲ ساعت بعد از اکنون باشد.';
+      body.appendChild(n);
+      ui.dt = fillDateTime(body);
+    }, [
+      { label: 'انصراف', onClick: function () { return true; } },
+      { label: 'ثبت زمان‌دار', primary: true, onClick: function () {
+        if (!ui.dt.date.value) { window.showAppToast('تاریخ را انتخاب کنید', 'error'); return false; }
+        var d = slotDate(ui.dt.date.value, ui.dt.slot.value);
+        if (d.getTime() - Date.now() < 2 * 3600 * 1000) { window.showAppToast(srvErrText({ message: 'too_soon' }), 'error'); return false; }
+        bookingAction(b, 'convert', { scheduled_at: d.toISOString() }).then(function (ok) { if (ok) modal.remove(); });
+        return false;
+      } }
+    ]);
+    modal.dataset.bookingId = String(b.serverId);
+  }
+
+  // ---- پایان خدمت و پرداخت (سند ۷.۳) ----
+  function loadPayCfg() {
+    return window.HZ_PAYMENTS ? window.HZ_PAYMENTS.refresh() : Promise.reject(new Error('payment_config_unavailable'));
+  }
+  function srvPaySheet(b) {
+    loadPayCfg().then(function (cfg) {
+      var actions = [{ label: 'انصراف', onClick: function () { return true; } }];
+      actions.push({ label: 'اختلاف دارم', danger: true, onClick: function () {
+        srvCall('POST', '/traveler/bookings/' + b.serverId + '/dispute').then(function () {
+          window.showAppToast('اختلاف به پشتیبانی ارجاع شد', 'info'); syncServer();
+        }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+        return true;
+      } });
+      function pay(method) {
+        // Recheck at submission too: the admin may have disabled a method while the modal was open.
+        loadPayCfg().then(function (latest) {
+          if (!latest[method]) throw new Error('method_disabled');
+          return srvCall('POST', '/traveler/bookings/' + b.serverId + '/payment', { method: method });
+        }).then(function () {
+          window.showAppToast(method === 'cash' ? 'پرداخت نقدی ثبت شد. منتظر تأیید مترجم.' : 'پرداخت انجام شد. با تشکر از همراهی شما', 'check_circle');
+          syncServer();
+        }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+        return true;
+      }
+      if (cfg.cash) actions.push({ label: 'نقدی پرداخت کردم', primary: true, onClick: function () { return pay('cash'); } });
+      if (cfg.online) actions.push({ label: 'پرداخت آنلاین', primary: true, onClick: function () { return pay('online'); } });
+      openModal('پرداخت', function (body) {
+        var n = document.createElement('p'); n.className = 'text-[11px] text-on-surface-variant leading-6';
+        n.textContent = cfg.cash
+          ? 'اگر نقدی پرداخت می‌کنید، مبلغ را مستقیماً به مترجم بدهید و تأیید کنید. مترجم هم دریافت را تأیید می‌کند. تسویه‌ی نقدی فقط به تومان است.'
+          : cfg.online ? 'روش پرداخت آنلاین فعال است.' : 'روش پرداخت فعالی وجود ندارد.';
+        body.appendChild(n);
+      }, actions);
+    }).catch(function (e) { window.showAppToast(srvErrText(e), 'error'); });
+  }
+  function pendingChangeText(pc) {
+    var left = Math.max(0, Math.ceil((Date.parse(pc.expires_at) - Date.now()) / 60000));
+    return 'درخواست تغییر در انتظار پاسخ مترجم است (حدود ' + faDigits(left) + ' دقیقه).';
+  }
+  function lastOpen() { return getBk().find(function (b) { return b.serverId && (b.tab === 'live' || b.tab === 'pending' || b.tab === 'upcoming'); }); }
+  function renderBookings() {
+    updateBookingActionControls();
+    var tabs = $('bk-tabs'); tabs.innerHTML = '';
+    TABS.forEach(function (t) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 'shrink-0 px-3 py-2 rounded-xl text-[11.5px] cursor-pointer ' + (bkTab === t[0] ? 'neu-flat text-secondary font-bold' : 'text-on-surface-variant font-medium');
+      b.textContent = t[1];
+      b.onclick = function () { bkTab = t[0]; renderBookings(); };
+      tabs.appendChild(b);
+    });
+    var list = $('bk-list'); list.innerHTML = '';
+    var items = getBk().filter(function (b) { return b.tab === bkTab; });
+    if (!items.length) { list.innerHTML = '<div class="neu-card rounded-2xl p-6 text-center text-[12px] text-on-surface-variant">در این بخش رزروی نیست.</div>'; return; }
+    items.forEach(function (b) {
+      var card = document.createElement('article');
+      if (b.serverId) card.dataset.bookingId = String(b.serverId);
+      card.className = 'neu-card rounded-2xl p-3 flex flex-col gap-2 text-[12px]';
+      card.innerHTML = '<div class="flex justify-between items-center"><span class="font-extrabold"></span><span class="text-[10px] font-bold text-secondary"></span></div>' +
+        '<div class="text-[11px] text-on-surface-variant flex flex-wrap gap-x-3 gap-y-1"><span class="b-when"></span><span class="b-field"></span><span class="b-hours"></span></div>' +
+        '<div class="flex justify-between items-center"><span class="font-bold text-primary b-amt"></span><span class="b-act"></span></div>';
+      card.querySelector('.font-extrabold').textContent = b.title;
+      card.querySelector('.text-secondary').textContent = b.statusLabel;
+      card.querySelector('.b-when').textContent = b.when;
+      card.querySelector('.b-field').textContent = b.field;
+      card.querySelector('.b-hours').textContent = b.hours;
+      if (b.place) { var bp = document.createElement('span'); bp.textContent = '📍 ' + b.place; card.querySelector('.b-hours').parentNode.appendChild(bp); }
+      card.querySelector('.b-amt').textContent = b.amount;
+      var act = card.querySelector('.b-act'); act.className = 'b-act flex items-center gap-3';
+      if (b.serverId) {
+        var srvOpen = ['searching', 'waiting_schedule', 'matching', 'unmatched_ask', 'no_match', 'matched'].indexOf(b.srvStatus) !== -1;
+        if (b.srvStatus === 'no_match' || b.srvStatus === 'unmatched_ask') act.appendChild(bkAction('تلاش دوباره', 'text-secondary font-bold text-[11.5px]', function () { retryServer(b); }));
+        if (b.srvStatus === 'finished' && !b.payState) act.appendChild(bkAction('پرداخت', 'text-secondary font-bold text-[11.5px]', function () { srvPaySheet(b); }));
+        if (b.srvStatus === 'finished' && b.payState === 'awaiting_cash') act.appendChild(bkAction('اختلاف', 'text-error font-bold text-[11.5px]', function () { srvPaySheet(b); }));
+        if (b.srvStatus === 'no_match' && window.HZ_FEAT('booking_convert')) act.appendChild(bkAction('تبدیل به رزرو زمان‌دار', 'text-secondary font-bold text-[11.5px]', function () { srvConvertSheet(b); }));
+        if (b.srvStatus === 'matched' && !b.pendingChange && window.HZ_FEAT('booking_change')) act.appendChild(bkAction('تغییر', 'text-secondary font-bold text-[11.5px]', function () { srvChangeSheet(b); }));
+        if (b.srvStatus === 'matched' && b.finishRequested) {
+          act.appendChild(bkAction('قبول پایان', 'text-error font-bold text-[11.5px]', function () {
+            serviceAction(b, 'finish-approve');
+          }));
+          act.appendChild(bkAction('ادامه‌ی خدمت', 'text-secondary font-bold text-[11.5px]', function () {
+            serviceAction(b, 'finish-reject');
+          }));
+        }
+        if (srvOpen && !b.serviceStarted) act.appendChild(bkAction('لغو', 'text-error font-bold text-[11.5px]', function () { cancelServer(b); }));
+      } else {
+        var legacy = document.createElement('p'); legacy.className = 'text-[11px] text-outline';
+        legacy.textContent = 'این سابقه فقط در مرورگر است؛ عملیات سروری برای آن ممکن نیست.'; card.appendChild(legacy);
+      }
+      if (b.tab === 'cancelled' && Number.isFinite(b.cancelFee)) {
+        var fee = document.createElement('p'), label = document.createElement('span');
+        fee.className = 'text-[11px] text-outline'; label.textContent = 'درصد کارمزد لغو اعلام‌شده از سرور:';
+        fee.appendChild(label); fee.appendChild(document.createTextNode(' ' + fa(b.cancelFee) + '٪')); card.appendChild(fee);
+      }
+      if (b.tab === 'done') {
+        act.appendChild(bkAction('فاکتور', 'text-secondary font-bold text-[11.5px]', function () { openInvoice(b); }));
+        act.appendChild(bkAction('PDF', 'text-secondary font-bold text-[11.5px]', function () { printInvoice(b); }));
+      }
+      if (b.pendingChange) { var pn = document.createElement('p'); pn.className = 'text-[11px] font-bold text-secondary'; pn.textContent = pendingChangeText(b.pendingChange); card.appendChild(pn); }
+      list.appendChild(card);
+    });
+    updateBookingActionControls();
+  }
+
+  var printStyle = document.createElement('style');
+  printStyle.textContent = '#print-area{display:none}@media print{body *{visibility:hidden}#print-area,#print-area *{visibility:visible}#print-area{display:block;position:absolute;left:0;top:0;width:100%;padding:24px;font-family:Vazirmatn,Tahoma,sans-serif;direction:rtl;color:#000;background:#fff}}';
+  document.head.appendChild(printStyle);
+  function printInvoice(b) {
+    var area = document.getElementById('print-area');
+    if (!area) { area = document.createElement('div'); area.id = 'print-area'; document.body.appendChild(area); }
+    area.innerHTML = '';
+    var h = document.createElement('h1'); h.textContent = 'فاکتور رزرو همراه'; h.style.fontSize = '20px'; area.appendChild(h);
+    var meta = [['خدمت', b.title || ''], ['زمان', b.when || ''], ['مدت', b.hours || ''], ['وضعیت', b.statusLabel || '']];
+    var rows = invoiceRows(b);
+    meta.concat(rows).forEach(function (r) {
+      var d = document.createElement('p'); d.style.margin = '6px 0'; d.style.display = 'flex'; d.style.justifyContent = 'space-between';
+      var a = document.createElement('span'); a.textContent = r[0]; var c = document.createElement('span'); c.textContent = r[1];
+      d.appendChild(a); d.appendChild(c); area.appendChild(d);
+    });
+    try { window.print(); } catch (e) { window.showAppToast('چاپ در این محیط در دسترس نیست', 'info'); }
+  }
+
+  // ---------- رزروها: ویرایش، لغو با کارمزد مرحله‌ای، فاکتور، یادآوری ۱۵ دقیقه‌ای (سند ۶.۵، ۷، ۹.۲) ----------
+  function openModal(title, buildBody, actions) {
+    var old = document.getElementById('bk-modal'); if (old) old.remove();
+    var wrap = document.createElement('div');
+    wrap.id = 'bk-modal';
+    wrap.className = 'fixed inset-0 z-[70] bg-black/40 flex items-end md:items-center justify-center p-3';
+    wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true'); wrap.setAttribute('aria-label', title);
+    var box = document.createElement('div');
+    box.className = 'neu-card rounded-3xl p-4 w-full max-w-md flex flex-col gap-3 text-[12px] max-h-[90vh] overflow-y-auto';
+    var h = document.createElement('h3'); h.className = 'font-extrabold text-[15px]'; h.textContent = title; box.appendChild(h);
+    var body = document.createElement('div'); body.className = 'flex flex-col gap-3'; box.appendChild(body);
+    buildBody(body);
+    var row = document.createElement('div'); row.className = 'flex gap-2 pt-1';
+    actions.forEach(function (a) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 'flex-1 min-h-[44px] px-3 rounded-2xl font-bold text-[12.5px] cursor-pointer ' +
+        (a.primary ? 'bg-secondary text-on-secondary' : (a.danger ? 'neu-flat text-error' : 'neu-flat text-on-surface'));
+      b.textContent = a.label;
+      b.onclick = function () { if (a.onClick() !== false) wrap.remove(); };
+      row.appendChild(b);
+    });
+    box.appendChild(row); wrap.appendChild(box); document.body.appendChild(wrap);
+    wrap.addEventListener('keydown', function (e) { if (e.key === 'Escape') wrap.remove(); });
+    wrap.addEventListener('click', function (e) { if (e.target === wrap) wrap.remove(); });
+    var first = box.querySelector('textarea,button'); if (first) first.focus();
+    return wrap;
+  }
+  function findBk(id) { var list = getBk(); return { list: list, b: list.find(function (x) { return x.id === id; }) }; }
+
+  // فاکتور رزرو انجام‌شده (سند ۹.۲ و ۱۱.۲)
+  // ردیف‌های فاکتور (سند ۷.۳): خدمت، مالیات، کل. رزرو سرور تفکیک را ندارد تا نرخ مالیات تعیین شود؛ فقط کل نشان داده می‌شود
+  function invoiceRows(b) {
+    if (b.base === undefined || b.tax === undefined) return [['مبلغ کل قابل پرداخت', fmtT(b.total || 0)]];
+    return [
+      ['خدمت همراهی (قبل از مالیات)', fmtT(b.base || 0)],
+      ['مالیات و خدمات رفاهی', fmtT(b.tax || 0)],
+      ['مبلغ کل قابل پرداخت', fmtT(b.total || 0)]
+    ];
+  }
+  var PAY_METHOD_FA = { cash: 'نقدی (تومان)', online: 'آنلاین' };
+  var PAY_STATE_FA = { settled: 'تسویه شده', awaiting_cash: 'منتظر تأیید دریافت وجه', disputed: 'در بررسی پشتیبانی', paid: 'پرداخت شده' };
+  function renderInvoiceBody(b, body) {
+    var rows = invoiceRows(b).map(function (r) { return r; });
+    if (b.payMethod) rows.push(['روش پرداخت', PAY_METHOD_FA[b.payMethod] || b.payMethod]);
+    if (b.payState) rows.push(['وضعیت پرداخت', PAY_STATE_FA[b.payState] || b.payState]);
+    rows.forEach(function (r, i) {
+      var d = document.createElement('div'); d.className = 'flex justify-between gap-2 ' + (i === 2 ? 'font-extrabold text-primary pt-2 border-t border-outline-variant/40' : '');
+      d.innerHTML = '<span></span><span class="num"></span>'; d.firstChild.textContent = r[0]; d.lastChild.textContent = r[1]; body.appendChild(d);
+    });
+  }
+  function openInvoice(b) {
+    openModal('فاکتور رزرو', function (body) {
+      renderInvoiceBody(b, body);
+      if (!b.serverId) return;
+      // رزروهای سرور: آخرین مبلغ و روش پرداخت از سرور خوانده می‌شود
+      srvCall('GET', '/traveler/bookings').then(function (d) {
+        var sb = (d.bookings || []).find(function (x) { return x.id === b.serverId; });
+        if (!sb) return;
+        b.total = Number(sb.total) || 0; b.base = sb.base; b.tax = sb.tax; b.payMethod = sb.pay_method || null; b.payState = sb.pay_state || null;
+        body.textContent = ''; renderInvoiceBody(b, body);
+      }).catch(function () {
+        var n = document.createElement('p'); n.className = 'text-[11px] text-error'; n.textContent = 'اطلاعات تازه دریافت نشد؛ مبلغ ممکن است قدیمی باشد.'; body.appendChild(n);
+      });
+    }, [{ label: 'بستن', primary: true, onClick: function () { return true; } }]);
+  }
+
+  function bkAction(label, cls, fn) {
+    var btn = document.createElement('button'); btn.type = 'button'; btn.className = cls + ' cursor-pointer'; btn.textContent = label; btn.onclick = fn; return btn;
+  }
+
+  // ثبت رزرو هنگام ثبت درخواست / تبدیل وضعیت هنگام لغو و پرداخت
+  var STATUS = { pending: 'در انتظار تطبیق', upcoming: 'پیش رو', live: 'در جریان', done: 'انجام‌شده', cancelled: 'لغوشده' };
+  // متن فارسی اصلی یک عنصر (حتی وقتی صفحه انگلیسی/عربی است) — برای ذخیره‌ی رزرو به زبان ثابت
+  function faText(el) {
+    if (!el) return '';
+    var n = el.firstChild;
+    return (n && n.nodeType === 3 && n.__hzFa !== undefined) ? n.__hzFa.trim() : el.textContent.trim();
+  }
+  function snapshot(scheduled) {
+    var pill = $('scheduled-summary-pill');
+    var pr = (window.getBookingPricing ? window.getBookingPricing(scheduled) : {});
+    return {
+      gender: pr.gender || 'any', category: pr.category || 'general', place: faText($('selected-location-title')), lat: (window.meetingPoint && isFinite(window.meetingPoint.lat)) ? window.meetingPoint.lat : null, lng: (window.meetingPoint && isFinite(window.meetingPoint.lng)) ? window.meetingPoint.lng : null, rate: pr.rate, hoursNum: pr.hours, car: pr.car, pax: pr.pax, notes: pr.notes, startAt: pr.startAt, base: pr.base, tax: pr.tax, total: pr.total,
+      title: faText($('txt-origin-lang')) + ' ← ' + faText($('txt-dest-lang')),
+      field: faText($('label-price-note')),
+      hours: faText($('label-hours-count')),
+      amount: faText($('label-price-toman')),
+      when: faText(pill)
+    };
+  }
+  $('btn-main-submit').addEventListener('click', function () {
+    var scheduled = !$('scheduled-panel').classList.contains('hidden');
+    if (scheduled) {
+      var s = snapshot(true);
+      if (!Number.isFinite(s.startAt) || s.startAt - Date.now() < 120 * 60000) { toast('زمان قرار باید حداقل ۲ ساعت بعد از اکنون باشد.', 'error'); return; }
+      if (lastOpen()) { toast('یک رزرو باز دارید. ابتدا آن را تمام یا لغو کنید.'); return; }
+      submitBooking(Object.assign(s, { tab: 'pending', statusLabel: STATUS.pending, mode: 'scheduled' }), 'scheduled');
+    } else {
+      var s2 = snapshot(false);
+      submitBooking(Object.assign(s2, { tab: 'live', statusLabel: STATUS.live, when: 'فوری', mode: 'instant' }), 'instant');
+    }
+  });
+  // Timer controls use the same per-booking lock as the booking cards.
+  [['btn-approve-finish', 'finish-approve'], ['btn-reject-finish', 'finish-reject']].forEach(function (pair) {
+    $(pair[0]).addEventListener('click', function () { window.HZ_SERVICE_ACTION(pair[1]); });
+  });
+  // لغو از صفحه‌ی جستجو: رزرو روی سرور باید لغو شود، وگرنه همگام‌سازی آن را دوباره «در جستجو» می‌کند
+  ['btn-cancel-search', 'btn-cancel-nomatch'].forEach(function (id) {
+    $(id).addEventListener('click', function () { cancelServer(searchBooking()); });
+  });
+  $('btn-retry-search').addEventListener('click', function () { retryServer(searchBooking()); });
+  $('btn-to-scheduled').addEventListener('click', function () {
+    var b = searchBooking();
+    if (!b || !b.serverId || !srvToken()) { toast('برای این کار، ورود و رزرو معتبر سروری لازم است.', 'error'); return; }
+    if (!bookingActions[b.serverId] && window.HZ_FEAT('booking_convert')) srvConvertSheet(b);
+  });
+  function markCashPending(booking) {
+    var f = findBk(booking.id); if (!f.b) return;
+    f.b.cashTraveler = true; f.b.statusLabel = 'منتظر تأیید مترجم'; setBk(f.list); renderBookings();
+    window.showAppToast('تأیید شما ثبت شد. با تأیید مترجم، رزرو انجام‌شده می‌شود.', 'check_circle');
+  }
+  // Keep the invoice open on rejection/network failure. A click is not a payment.
+  var paymentInFlight = false;
+  $('btn-settle-return').addEventListener('click', function () {
+    if (paymentInFlight) return;
+    var button = $('btn-settle-return');
+    var bookingId = Number(button.dataset.bookingId);
+    var ob = bookingId ? getBk().find(function (b) { return b.serverId === bookingId; }) : lastOpen();
+    var method = window.payChoice === 'cash' ? 'cash' : 'online';
+    if (!ob || !ob.serverId || !srvToken()) {
+      window.showAppToast('برای ثبت پرداخت، ورود و رزرو معتبر لازم است.', 'error');
+      return;
+    }
+    paymentInFlight = true;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    loadPayCfg().then(function (cfg) {
+      // Keep the user's chosen method for this attempt; never silently charge a fallback.
+      if (!cfg[method]) throw new Error('method_disabled');
+      return srvCall('POST', '/traveler/bookings/' + ob.serverId + '/payment', { method: method });
+    }).then(function (result) {
+      if (!result.ok || (method === 'cash' ? ['awaiting_cash', 'settled'].indexOf(result.pay_state) === -1 : result.pay_state !== 'settled')) {
+        throw new Error('payment_not_confirmed');
+      }
+      if (method === 'cash' && result.pay_state === 'awaiting_cash') markCashPending(ob);
+      else window.showAppToast('پرداخت انجام شد. با تشکر از همراهی شما', 'check_circle');
+      syncServer();
+      window.dispatchEvent(new CustomEvent('hamzaban:payment-recorded'));
+    }).catch(function (e) {
+      window.showAppToast(srvErrText(e), 'error');
+    }).finally(function () {
+      paymentInFlight = false;
+      button.removeAttribute('aria-busy');
+      if (window.HZ_PAYMENTS) window.HZ_PAYMENTS.render();
+    });
+  });
+
+  // ---------- حساب من ----------
+  syncServer();
+  setInterval(syncServer, 5000);
+  function renderAccount() {
+    var u = load(KEY_USER, null);
+    if (!u) return;
+    var av = $('ac-avatar'); av.innerHTML = '';
+    if (u.photo) { var im = document.createElement('img'); im.src = u.photo; im.alt = ''; im.className = 'w-full h-full object-cover rounded-full'; av.appendChild(im); }
+    else av.textContent = u.name.charAt(0);
+    $('ac-fullname').textContent = u.name + ' ' + u.last;
+    $('ac-contact').textContent = u.contact || u.phone || '';
+    $('ac-name').value = u.name;
+    $('ac-last').value = u.last;
+    $('ac-gender').textContent = u.gender;
+    var inv = $('ac-invoices'); inv.innerHTML = '';
+    var past = getBk().filter(function (x) { return x.tab === 'done'; });
+    if (!past.length) { inv.innerHTML = '<span class="text-[11px] text-on-surface-variant">فاکتوری وجود ندارد.</span>'; }
+    past.forEach(function (x) {
+      var row = document.createElement('div'); row.className = 'flex justify-between items-center gap-2';
+      var t = document.createElement('span'); t.textContent = (x.when || '') + ' · ' + (x.amount || '');
+      var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'text-secondary font-bold text-[11.5px] cursor-pointer min-h-[40px] px-2'; btn.textContent = 'دانلود PDF';
+      btn.onclick = function () { printInvoice(x); };
+      row.appendChild(t); row.appendChild(btn); inv.appendChild(row);
+    });
+    $('ac-delete-note').classList.toggle('hidden', !lastOpen());
+    $('ac-delete').disabled = deletePending || logoutPending || !!lastOpen();
+  }
+  $('ac-photo').addEventListener('change', function () {
+    var f = this.files && this.files[0]; this.value = ''; if (!f) return;
+    if (!/^image\/(jpeg|png)$/.test(f.type)) { toast(photoMsg('photo_type')); return; }
+    if (f.size > 5 * 1024 * 1024) { toast(photoMsg('photo_size')); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var side = 256, c = document.createElement('canvas'); c.width = side; c.height = side;
+        var k = Math.min(img.width, img.height), sx = (img.width - k) / 2, sy = (img.height - k) / 2;
+        c.getContext('2d').drawImage(img, sx, sy, k, k, 0, 0, side, side);
+        var u = load(KEY_USER, null); if (!u) return;
+        u.photo = c.toDataURL('image/jpeg', 0.85); save(KEY_USER, u); renderAccount();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+  });
+  function photoMsg(k) {
+    var l = (window.HZ_I18N && window.HZ_I18N.get && window.HZ_I18N.get()) || 'fa';
+    var t = { fa: { photo_type: 'فقط فایل JPG یا PNG مجاز است.', photo_size: 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.' },
+      en: { photo_type: 'Only JPG or PNG files are allowed.', photo_size: 'The photo must be 5 MB or smaller.' },
+      ar: { photo_type: 'يُسمح بملفات JPG أو PNG فقط.', photo_size: 'يجب ألا يتجاوز حجم الصورة ٥ ميغابايت.' } };
+    return (t[l] || t.fa)[k];
+  }
+  $('ac-save').onclick = function () {
+    var u = load(KEY_USER, null); if (!u) return;
+    var n = $('ac-name').value.trim(), l = $('ac-last').value.trim();
+    if (!/^[\p{L}\s'.-]{2,40}$/u.test(n) || !/^[\p{L}\s'.-]{2,40}$/u.test(l)) { toast('نام و نام خانوادگی معتبر نیست'); return; }
+    u.name = n; u.last = l; save(KEY_USER, u); renderAccount(); toast('اطلاعات ذخیره شد');
+  };
+  // Passport review, stored cards and account-change requests have no server workflow yet.
+  // Never derive a verification badge or a saved payment method from local profile flags.
+
+  var logoutPending = false;
+  var deletePending = false;
+  function clearTravelerSession(expired) {
+    [KEY_TOKEN_T, KEY_USER, KEY_BK].forEach(function (key) { localStorage.removeItem(key); });
+    if (expired) { try { sessionStorage.setItem('hamzaban.auth.notice.v1', 'expired'); } catch (e) {} }
+    location.replace('index.html');
+  }
+  function logoutTraveler(allDevices) {
+    if (logoutPending || deletePending || bookingSubmissionPending || Object.keys(bookingActions).length) return;
+    if (!srvToken()) {
+      if (!allDevices) clearTravelerSession(false);
+      else toast('برای خروج از همهٔ دستگاه‌ها، ابتدا وارد حساب شوید.', 'error');
+      return;
+    }
+    var logoutToken = srvToken();
+    logoutPending = true;
+    var buttons = [$('ac-logout'), $('ac-logout-all')];
+    var active = buttons[allDevices ? 1 : 0];
+    buttons.forEach(function (button) { button.disabled = true; });
+    active.setAttribute('aria-busy', 'true');
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 10000);
+    // Keep local credentials until the server confirms revocation, including on retry.
+    srvCall('POST', allDevices ? '/auth/logout-all' : '/auth/logout', null, { signal: controller.signal })
+      .then(function (result) {
+        if (!result || result.ok !== true) throw new Error('logout_not_confirmed');
+        if (srvToken() === logoutToken) clearTravelerSession(false);
+      }).catch(function () {
+        if (srvToken() !== logoutToken) return;
+        toast('خروج ثبت نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.', 'error');
+      }).finally(function () {
+        clearTimeout(timeout);
+        logoutPending = false;
+        buttons.forEach(function (button) { button.disabled = false; });
+        active.removeAttribute('aria-busy');
+      });
+  }
+  $('ac-logout').onclick = function () { logoutTraveler(false); };
+  $('ac-logout-all').onclick = function () { logoutTraveler(true); };
+  $('ac-delete').onclick = function () { if (lastOpen()) { toast('حذف حساب وقتی رزرو فعال دارید ممکن نیست'); return; } $('ac-delete-box').classList.remove('hidden'); $('ac-delete-box').classList.add('flex'); };
+  // عبارت تأیید حذف، به زبان انتخاب‌شده‌ی برنامه است
+  function deleteWord() {
+    var l = (window.HZ_I18N && window.HZ_I18N.get && window.HZ_I18N.get()) || 'fa';
+    return { fa: 'حذف حساب', en: 'Delete account', ar: 'حذف الحساب' }[l] || 'حذف حساب';
+  }
+  function updateDeleteButton() {
+    $('ac-delete-confirm').disabled = deletePending || $('ac-delete-input').value.trim() !== deleteWord();
+  }
+  $('ac-delete-input').addEventListener('input', updateDeleteButton);
+  $('ac-delete-confirm').onclick = function () {
+    // Recheck the phrase in the handler too: disabled alone does not guard synthetic clicks.
+    if (bookingSubmissionPending || Object.keys(bookingActions).length || deletePending || logoutPending || $('ac-delete-input').value.trim() !== deleteWord()) return;
+    if (lastOpen()) { toast('حذف حساب وقتی رزرو فعال دارید ممکن نیست'); return; }
+    var deleteToken = srvToken();
+    if (!deleteToken) { toast('برای حذف حساب، ابتدا وارد حساب شوید.', 'error'); return; }
+    deletePending = true;
+    var button = $('ac-delete-confirm');
+    var input = $('ac-delete-input');
+    var sessionButtons = [$('ac-logout'), $('ac-logout-all'), $('ac-delete')];
+    updateDeleteButton();
+    input.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    sessionButtons.forEach(function (b) { b.disabled = true; });
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 10000);
+    srvCall('DELETE', '/auth/account', null, { signal: controller.signal }).then(function (result) {
+      if (!result || result.ok !== true) throw new Error('delete_not_confirmed');
+      // A delayed response for an old account must never clear a newer session.
+      if (srvToken() !== deleteToken) return;
+      try { sessionStorage.setItem('hamzaban.auth.notice.v1', 'deleted'); } catch (e) {}
+      clearTravelerSession(false);
+    }).catch(function (e) {
+      if (srvToken() !== deleteToken) return;
+      if (e && e.status === 409) { toast('حذف حساب وقتی رزرو یا کارِ باز دارید ممکن نیست', 'error'); return; }
+      toast('حذف حساب تأیید نشد. اتصال را بررسی کنید و دوباره تلاش کنید.', 'error');
+    }).finally(function () {
+      clearTimeout(timeout);
+      deletePending = false;
+      input.disabled = false;
+      button.removeAttribute('aria-busy');
+      sessionButtons.forEach(function (b) { b.disabled = false; });
+      $('ac-delete').disabled = !!lastOpen();
+      updateDeleteButton();
+    });
+  };
+
+  // ---------- ناوبری بین صفحه‌ها ----------
+  var SCREENS = { bookings: 'scr-bookings', translators: 'scr-translators', account: 'scr-account' };
+  function show(name) {
+    Object.keys(SCREENS).forEach(function (k) { $(SCREENS[k]).classList.toggle('hidden', k !== name); });
+    var navs = document.querySelectorAll('nav a[data-nav]');
+    Array.prototype.forEach.call(navs, function (a) {
+      var on = a.getAttribute('data-nav') === (name || 'map');
+      a.classList.toggle('text-secondary', on); a.classList.toggle('font-bold', on);
+      a.classList.toggle('text-on-surface-variant', !on);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('nav a[data-nav]'), function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var n = a.getAttribute('data-nav');
+      if (n === 'bookings') renderBookings();
+      if (n === 'account') renderAccount();
+      show(n === 'map' ? null : n);
+    });
+  });
+  show(null);
+})();
+</script>
+
+<script src="vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
+<script>
+(function () {
+  var mapEl = document.getElementById('real-map');
+  var pinEl = document.querySelector('#center-location-pin > div.relative');
+  if (!window.L || !mapEl || !pinEl) {
+    // اگر Leaflet بارگذاری نشود، دکمه‌های نقشه خطا نمی‌دهند و پیام کوتاه نشان می‌دهند
+    var noMap = function () { if (window.showAppToast) window.showAppToast('نقشه در این محیط در دسترس نیست', 'map'); };
+    window.mapZoom = window.mapZoom || noMap;
+    window.locateMe = window.locateMe || noMap;
+    return;
+  }
+  // نقطه‌ی شروع: آخرین محل ملاقات ذخیره‌شده‌ی خود کاربر؛ اگر نبود، میدان ولیعصر تهران
+  var START = [35.6997, 51.3380];
+  try {
+    var savedMp = JSON.parse(localStorage.getItem('hamzaban.meeting.v1') || 'null');
+    if (savedMp && isFinite(savedMp.lat) && isFinite(savedMp.lng)) START = [savedMp.lat, savedMp.lng];
+  } catch (e) {}
+  // زبان نشانی و جستجو همان زبان رابط کاربر است (fa/en/ar)
+  function uiLang() {
+    try { return (window.HZ_I18N && HZ_I18N.get && HZ_I18N.get()) || localStorage.getItem('hamzaban_lang') || 'fa'; }
+    catch (e) { return 'fa'; }
+  }
+
+  var map = L.map(mapEl, { zoomControl: false, minZoom: 5, maxZoom: 19 });
+  // پیش‌نمایش داخل iframe ساندباکس است و مرورگر در آن Referer نمی‌فرستد؛
+  // سرور OpenStreetMap چنین درخواستی را با «Access blocked» پاسخ می‌دهد.
+  var sandboxed = window.origin === 'null';
+  if (!sandboxed) {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+  } else {
+    mapEl.style.background = '#e4ecf6';
+    var note = document.createElement('div');
+    note.setAttribute('style', 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:500;width:270px;padding:14px 16px;border-radius:18px;background:#eef4fd;color:#161c23;font:600 12px/1.8 Vazirmatn,sans-serif;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.12);');
+    note.appendChild(document.createTextNode('نقشه‌ی OpenStreetMap داخل پیش‌نمایش نمایش داده نمی‌شود.'));
+    note.appendChild(document.createElement('br'));
+    var a = document.createElement('a');
+    a.href = window.location.href; a.target = '_blank'; a.rel = 'noopener';
+    a.setAttribute('style', 'color:#006a61;text-decoration:underline;pointer-events:auto');
+    a.textContent = 'باز کردن برنامه در برگه‌ی جدید';
+    note.appendChild(a);
+    mapEl.appendChild(note);
+  }
+
+  // نقطه‌ی زیر پین (در مختصات صفحه‌ی نقشه)
+  function pinPoint() {
+    var r = pinEl.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
+    return L.point(r.left + r.width / 2 - m.left, r.top + r.height / 2 - m.top);
+  }
+  // مرکز نقشه را طوری تنظیم می‌کند که latlng زیر پین قرار گیرد
+  function centerUnderPin(latlng) {
+    var offset = pinPoint().subtract(map.getSize().divideBy(2));
+    var centerPx = map.project(L.latLng(latlng)).subtract(offset);
+    map.setView(map.unproject(centerPx), map.getZoom(), { animate: false });
+  }
+  function pinLatLng() { return map.containerPointToLatLng(pinPoint()); }
+  // نقطه‌ی زیر پین = محل ملاقات انتخابی؛ نشانی آن با Nominatim (OpenStreetMap) پیدا می‌شود.
+  // پاسخ‌ها ذخیره (cache) می‌شوند تا به سرویس رایگان کمتر درخواست برود.
+  var geoTimer = null, geoSeq = 0, geoPending = false;
+  var geoCache = {};
+  function coordsText(ll) { return ll.lat.toFixed(5) + '، ' + ll.lng.toFixed(5); }
+  function shortAddress(j) {
+    var a = j.address || {};
+    var parts = [a.road || a.pedestrian || a.footway, a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village].filter(Boolean);
+    if (parts.length) return parts.join('، ');
+    return (j.display_name || '').split(',').slice(0, 3).join('،').trim();
+  }
+  function updateTitle() {
+    var ll = pinLatLng();
+    var el = document.getElementById('selected-location-title');
+    var seq = ++geoSeq;
+    window.meetingPoint = { lat: ll.lat, lng: ll.lng, label: coordsText(ll) };
+    var cacheKey = uiLang() + ':' + ll.lat.toFixed(4) + ',' + ll.lng.toFixed(4);
+    if (geoCache[cacheKey]) {
+      window.meetingPoint.label = geoCache[cacheKey];
+      if (el) el.textContent = geoCache[cacheKey];
+      geoPending = false;
+      return;
+    }
+    geoPending = true;
+    if (el) el.textContent = 'در حال یافتن نشانی...';
+    clearTimeout(geoTimer);
+    geoTimer = setTimeout(function () {
+      fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=' + encodeURIComponent(uiLang()) + '&zoom=18&lat=' + ll.lat + '&lon=' + ll.lng)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (seq !== geoSeq) return;
+          var label = (j && shortAddress(j)) || coordsText(ll);
+          geoCache[cacheKey] = label;
+          window.meetingPoint.label = label;
+          if (el) el.textContent = label;
+        })
+        .catch(function () {
+          if (seq !== geoSeq) return;
+          window.meetingPoint.label = coordsText(ll);
+          if (el) el.textContent = coordsText(ll);
+        })
+        .finally(function () { if (seq === geoSeq) geoPending = false; });
+    }, 900);
+  }
+  function toast(msg, icon) { if (typeof window.showAppToast === 'function') window.showAppToast(msg, icon); }
+
+  window.mapZoom = function (d) { map.setZoom(Math.max(5, Math.min(19, map.getZoom() + d))); };
+  map.setView(START, 16, { animate: false });
+  centerUnderPin(START);
+  map.on('moveend', updateTitle);
+  window.addEventListener('resize', function () { map.invalidateSize(); });
+  setTimeout(function () { map.invalidateSize(); }, 300);
+
+  // موقعیت فقط با درخواست کاربر خوانده می‌شود (دلیل در نوار موقعیت نمایش داده شده است)
+  // تأیید محل: نقطه‌ی انتخابی ذخیره می‌شود؛ تا پیدا شدن نشانی اجازه‌ی تأیید نیست
+  var originalConfirm = window.confirmLocationAndContinue;
+  window.confirmLocationAndContinue = function () {
+    if (geoPending) { toast('لطفاً چند لحظه صبر کنید تا نشانی محل ملاقات پیدا شود.', 'schedule'); return; }
+    if (window.meetingPoint) {
+      try { localStorage.setItem('hamzaban.meeting.v1', JSON.stringify(window.meetingPoint)); } catch (e) {}
+    }
+    if (typeof originalConfirm === 'function') return originalConfirm();
+  };
+  updateTitle();
+  // پین قابل کشیدن است (مثل اسنپ): پین روی نقشه حرکت می‌کند و نقطه‌ی زیر آن محل ملاقات است
+  (function () {
+    var wrap = document.getElementById('center-location-pin');
+    if (!wrap) return;
+    pinEl.style.pointerEvents = 'auto';
+    pinEl.style.touchAction = 'none';
+    pinEl.style.cursor = 'grab';
+    var off = window.pinOffset = { x: 0, y: 0 }, drag = null, PAD = 24;
+    pinEl.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var r = pinEl.getBoundingClientRect();
+      drag = { sx: e.clientX, sy: e.clientY, ox: off.x, oy: off.y,
+               cx: r.left + r.width / 2, cy: r.top + r.height / 2, m: mapEl.getBoundingClientRect() };
+      try { pinEl.setPointerCapture(e.pointerId); } catch (err) {}
+      pinEl.style.cursor = 'grabbing';
+    });
+    pinEl.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var m = drag.m;
+      var nx = Math.min(m.right - PAD, Math.max(m.left + PAD, drag.cx + (e.clientX - drag.sx)));
+      var ny = Math.min(m.bottom - PAD, Math.max(m.top + PAD, drag.cy + (e.clientY - drag.sy)));
+      off.x = drag.ox + (nx - drag.cx);
+      off.y = drag.oy + (ny - drag.cy);
+      wrap.style.translate = off.x + 'px ' + off.y + 'px';
+    });
+    function end() {
+      if (!drag) return;
+      drag = null;
+      pinEl.style.cursor = 'grab';
+      updateTitle();
+    }
+    pinEl.addEventListener('pointerup', end);
+    pinEl.addEventListener('pointercancel', end);
+  })();
+  // کلیک روی نقشه: پین به همان نقطه می‌رود (کشیدن نقشه کلیک حساب نمی‌شود)
+  map.on('click', function (e) {
+    var wrap = document.getElementById('center-location-pin');
+    var oe = e.originalEvent;
+    if (!wrap || !oe || !window.pinOffset) return;
+    var r = pinEl.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var m = mapEl.getBoundingClientRect(), PAD = 24;
+    var tx = Math.min(m.right - PAD, Math.max(m.left + PAD, oe.clientX));
+    var ty = Math.min(m.bottom - PAD, Math.max(m.top + PAD, oe.clientY));
+    window.pinOffset.x += tx - cx;
+    window.pinOffset.y += ty - cy;
+    wrap.style.transition = 'translate .2s ease';
+    wrap.style.translate = window.pinOffset.x + 'px ' + window.pinOffset.y + 'px';
+    setTimeout(function () { wrap.style.transition = ''; }, 250);
+    updateTitle();
+  });
+  window.locateMe = function () {
+    if (!navigator.geolocation) { toast('مرورگر شما موقعیت‌یابی را پشتیبانی نمی‌کند. آدرس را تایپ کنید.', 'location_off'); return; }
+    navigator.geolocation.getCurrentPosition(function (p) {
+      centerUnderPin([p.coords.latitude, p.coords.longitude]);
+      toast('موقعیت شما روی نقشه نمایش داده شد', 'my_location');
+    }, function () {
+      toast('دسترسی به موقعیت داده نشد. آدرس را تایپ کنید یا نقشه را جابه‌جا کنید.', 'location_off');
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  };
+
+  // اگر کاربر قبلاً اجازه‌ی موقعیت داده است، بدون پرسش دوباره نقشه از موقعیت خودش شروع می‌شود.
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+      if (st.state === 'granted') window.locateMe();
+    }).catch(function () {});
+  }
+
+  // جستجوی آدرس/مکان با Nominatim: با وقفه و ذخیره‌ی پاسخ، تا به سرویس رایگان کمتر درخواست برود.
+  (function () {
+    var inp = document.getElementById('addr-search');
+    var box = document.getElementById('addr-results');
+    if (!inp || !box) return;
+    var timer = null, seq = 0, cache = {};
+    function hide() { box.classList.add('hidden'); box.innerHTML = ''; }
+    function showMsg(t) {
+      box.innerHTML = '';
+      var d = document.createElement('div');
+      d.className = 'px-3.5 py-2.5 text-[12px] text-on-surface-variant';
+      d.textContent = t;
+      box.appendChild(d);
+      box.classList.remove('hidden');
+    }
+    function render(list) {
+      box.innerHTML = '';
+      if (!list.length) { showMsg('نتیجه‌ای پیدا نشد'); return; }
+      list.forEach(function (it) {
+        var name = String(it.display_name || '').split(',').slice(0, 3).join('،');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'w-full text-right px-3.5 py-2.5 text-[12px] font-semibold text-on-surface hover:bg-white/60 transition-all block truncate';
+        b.textContent = name;
+        b.addEventListener('click', function () {
+          inp.value = name;
+          hide();
+          centerUnderPin([parseFloat(it.lat), parseFloat(it.lon)]);
+        });
+        box.appendChild(b);
+      });
+      box.classList.remove('hidden');
+    }
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim();
+      clearTimeout(timer);
+      if (q.length < 3) { hide(); return; }
+      timer = setTimeout(function () {
+        var key = uiLang() + ':' + q;
+        if (cache[key]) { render(cache[key]); return; }
+        var my = ++seq;
+        showMsg('در حال جستجو…');
+        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=' + encodeURIComponent(uiLang()) + '&q=' + encodeURIComponent(q))
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (list) { if (my !== seq) return; cache[key] = list || []; render(cache[key]); })
+          .catch(function () { if (my === seq) showMsg('جستجو انجام نشد. اتصال اینترنت را بررسی کنید.'); });
+      }, 600);
+    });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
+    document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== inp) hide(); });
+  })();
+})();
+</script>
+<script>
+// دسترس‌پذیری: وضعیت انتخاب گزینه‌ها برای صفحه‌خوان (aria-pressed)، و اعلام پیام‌ها
+(function () {
+  var GROUPS = ['.cat-chip', '.gender-btn', '#btn-mode-instant', '#btn-mode-scheduled'];
+  function sync() {
+    GROUPS.forEach(function (sel) {
+      document.querySelectorAll(sel).forEach(function (el) {
+        var on = el.classList.contains('neu-pressed') || (el.classList.contains('text-secondary') && el.classList.contains('font-bold'));
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  }
+  var queued = false;
+  var mo = new MutationObserver(function () {
+    if (queued) return; queued = true;
+    requestAnimationFrame(function () { queued = false; sync(); });
+  });
+  mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  // آیکون‌های متنی (material symbols) برای صفحه‌خوان پنهان می‌شوند؛ دکمه‌ی فقط‌آیکون نام می‌گیرد
+  document.querySelectorAll('.material-symbols-outlined').forEach(function (i) { i.setAttribute('aria-hidden', 'true'); });
+  document.querySelectorAll('button').forEach(function (b) { if (!b.getAttribute('aria-label') && b.textContent.trim() === 'close') b.setAttribute('aria-label', 'بستن'); });
+  var toast = document.getElementById('toast-pill');
+  if (toast) { toast.setAttribute('role', 'status'); toast.setAttribute('aria-live', 'polite'); }
+  sync();
+})();
+</script>
+<script>
+// دسترس‌پذیری: تله‌ی فوکوس و Esc برای مودال‌ها، بازگرداندن فوکوس، پیام خطا با role=alert، توضیح متنی نقشه
+(function () {
+  var MODALS = [
+    { id: 'modal-datepicker', close: 'btn-close-date-modal' },
+    { id: 'modal-timepicker', close: 'btn-close-time-modal' },
+    { id: 'modal-langpicker', close: 'btn-close-lang-modal' },
+    { id: 'bk-modal', close: null }
+  ];
+  function openModal() {
+    for (var i = 0; i < MODALS.length; i++) {
+      var el = document.getElementById(MODALS[i].id);
+      if (el && el.getClientRects().length > 0) return { el: el, def: MODALS[i] };
+    }
+    return null;
+  }
+  function focusables(root) {
+    return Array.prototype.filter.call(root.querySelectorAll('button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])'), function (e) {
+      return !e.disabled && e.getClientRects().length > 0;
+    });
+  }
+  function closeOpen(m) {
+    if (m.def.close) { var c = document.getElementById(m.def.close); if (c) c.click(); }
+    else if (m.el && m.el.parentNode) m.el.remove();
+  }
+  var lastFocus = null, wasOpen = false;
+  setInterval(function () {
+    var m = openModal();
+    if (m && !wasOpen) { lastFocus = document.activeElement; var f = focusables(m.el); if (f.length) f[0].focus(); }
+    if (!m && wasOpen && lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+    wasOpen = !!m;
+  }, 150);
+  document.addEventListener('keydown', function (e) {
+    var m = openModal();
+    if (!m) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeOpen(m); return; }
+    if (e.key !== 'Tab') return;
+    var f = focusables(m.el); if (!f.length) return;
+    var first = f[0], last = f[f.length - 1], a = document.activeElement;
+    if (!m.el.contains(a)) { e.preventDefault(); first.focus(); return; }
+    if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+  });
+
+  // پیام‌های خطا فوری و بقیه مؤدب اعلام شوند
+  var pill = document.getElementById('toast-pill'), txt = document.getElementById('toast-text');
+  if (pill && txt) {
+    var setRole = function () {
+      var t = txt.textContent || '';
+      var isErr = /نیست|معتبر|ممکن|خطا|لطفاً|حداکثر|حداقل|پیدا نشد|کسر نشده/.test(t);
+      pill.setAttribute('role', isErr ? 'alert' : 'status');
+    };
+    new MutationObserver(setRole).observe(txt, { childList: true, characterData: true, subtree: true });
+    setRole();
+  }
+
+  // توضیح متنی نقشه برای صفحه‌خوان (فهرست مترجمان به سرویس زنده وابسته است)
+  var sr = document.createElement('p');
+  sr.id = 'map-sr-summary';
+  sr.setAttribute('aria-live', 'polite');
+  sr.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;';
+  document.body.appendChild(sr);
+  var title = document.getElementById('selected-location-title');
+  function refreshSr() {
+    var place = title ? title.textContent.trim() : '';
+    sr.textContent = 'نقشه: محل ملاقات ' + (place || 'تنظیم نشده') + '.';
+  }
+  if (title) new MutationObserver(refreshSr).observe(title, { childList: true, characterData: true, subtree: true });
+  refreshSr();
+})();
+</script>
+<script>
+// ---- امکانات و شهرها از سرور (پنل مدیر) ----
+// هر امکان خاموش، در اپ پنهان یا غیرفعال می‌شود؛ اعمال اصلی همچنان روی سرور است.
+(function () {
+  var FEAT = null, CITIES = [];
+  window.HZ_FEAT = function (k) { return FEAT && Object.prototype.hasOwnProperty.call(FEAT, k) ? !!FEAT[k] : true; };
+  function show(id, on) { var el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; }
+  function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
+  // نزدیک‌ترین شهر فعال به محل ملاقات؛ اگر محل معلوم نیست، سرور شهر پیش‌فرض را می‌گذارد
+  window.HZ_NEAREST_CITY = function () {
+    var mp = window.meetingPoint;
+    if (!mp || !CITIES.length) return null;
+    var best = null, bestD = Infinity;
+    CITIES.forEach(function (c) {
+      var dLat = (c.lat - mp.lat) * Math.PI / 180, dLng = (c.lng - mp.lng) * Math.PI / 180;
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(mp.lat * Math.PI / 180) * Math.cos(c.lat * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      var d = 2 * 6371 * Math.asin(Math.sqrt(a));
+      if (d < bestD) { bestD = d; best = c; }
+    });
+    return best ? best.id : null;
+  };
+  window.HZ_APPLY_CFG = function (cfg) {
+    FEAT = cfg.features || {};
+    CITIES = cfg.cities || [];
+    var bookingOn = window.HZ_FEAT('traveler_booking');
+    var submit = document.getElementById('btn-main-submit');
+    if (submit) submit.disabled = !bookingOn || submit.getAttribute('aria-busy') === 'true';
+    if (!bookingOn) setText('txt-main-submit', 'رزرو فعلاً در دسترس نیست');
+    var instOn = window.HZ_FEAT('instant_booking'), schOn = window.HZ_FEAT('scheduled_booking');
+    show('btn-mode-instant', instOn); show('btn-mode-scheduled', schOn);
+    var bi = document.getElementById('btn-mode-instant'), bs = document.getElementById('btn-mode-scheduled');
+    if (!instOn && schOn && bs) bs.click();
+    else if (!schOn && instOn && bi) bi.click();
+    show('btn-toggle-car', window.HZ_FEAT('car_mode'));
+    show('btn-to-scheduled', window.HZ_FEAT('booking_convert'));
+    // زبانه‌ی ایمیل همیشه نمایش داده می‌شود (ظاهر نسخه‌ی قبلی)
+  };
+})();
+</script>
+</body></html>
