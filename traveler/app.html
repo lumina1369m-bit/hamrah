@@ -455,7 +455,7 @@
 <div class="neu-card rounded-2xl p-4 flex flex-col items-center gap-2 text-center">
 <span class="material-symbols-outlined text-[30px] text-outline">search_off</span>
 <span class="text-[13px] font-extrabold text-on-surface">در این لحظه مترجمی پیدا نشد</span>
-<p class="text-[11px] text-on-surface-variant">هیچ مبلغی کسر نشده است. می‌توانید دوباره تلاش کنید، رزرو زمان‌دار ثبت کنید یا درخواست را لغو کنید.</p>
+<p id="nomatch-copy" class="text-[11px] text-on-surface-variant">هیچ مبلغی کسر نشده است. می‌توانید دوباره تلاش کنید، رزرو زمان‌دار ثبت کنید یا درخواست را لغو کنید.</p>
 </div>
 <button id="btn-retry-search" type="button" class="w-full py-2.5 px-4 rounded-2xl bg-secondary text-on-secondary font-bold text-[12.5px] shadow cursor-pointer">تلاش دوباره</button>
 <button id="btn-to-scheduled" type="button" class="w-full py-2.5 px-4 rounded-2xl neu-flat text-secondary font-bold text-[12px] cursor-pointer">تبدیل به رزرو زمان‌دار</button>
@@ -1536,11 +1536,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (b.hoursNum) state.hours = b.hoursNum;
   }
   const pad2 = (n) => String(n).padStart(2, '0');
-  function showNoMatch() {
+  function showNoMatch(booking) {
+    const scheduled = !!(booking && booking.mode === 'scheduled');
     const s2 = document.getElementById('stage-2');
     if (s2) s2.classList.add('hidden');
     const nm = document.getElementById('nomatch-block');
     if (nm) nm.classList.remove('hidden');
+    const copy = document.getElementById('nomatch-copy');
+    if (copy) copy.textContent = scheduled
+      ? 'مترجمی تا ۱۵ دقیقه مانده به زمان قرار درخواست را نپذیرفت. می‌توانید جست‌وجو را دوباره آغاز کنید یا این رزرو را لغو کنید.'
+      : 'هیچ مبلغی کسر نشده است. می‌توانید دوباره تلاش کنید، رزرو زمان‌دار ثبت کنید یا درخواست را لغو کنید.';
+    const convert = document.getElementById('btn-to-scheduled');
+    if (convert) convert.classList.toggle('hidden', scheduled);
   }
   // کد امنیتی شروع خدمت را سرور هنگام ثبت رزرو صادر می‌کند؛ مرورگر فقط همان کد همگام‌شده را نمایش می‌دهد
   function setSecurityCode() {
@@ -1807,7 +1814,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (b.srvStatus === 'cancelled' && state.currentStage <= 4) { searchBookingId = null; goToStage(1); return; }
     if (state.currentStage === 2) {
       if (b.srvStatus === 'matched') { fillMatchedTranslator(b); goToStage(3); window.showAppToast('مترجم سفر را پذیرفت', 'check_circle'); }
-      else if (b.srvStatus === 'no_match' || b.srvStatus === 'unmatched_ask') showNoMatch();
+      else if (b.srvStatus === 'no_match' || b.srvStatus === 'unmatched_ask') showNoMatch(b);
     } else if (state.currentStage === 3) {
       fillMatchedTranslator(b);
     } else if (state.currentStage === 4 && b.serviceStarted) {

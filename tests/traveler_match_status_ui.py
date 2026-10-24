@@ -26,6 +26,26 @@ def assert_no_legacy_radius_translations():
     assert not found, f'obsolete radius-search translations remain in {catalog}: {found}'
 
 
+SCHEDULED_NOMATCH_COPY = {
+    'fa': 'مترجمی تا ۱۵ دقیقه مانده به زمان قرار درخواست را نپذیرفت. می‌توانید جست‌وجو را دوباره آغاز کنید یا این رزرو را لغو کنید.',
+    'en': 'No interpreter accepted this booking by 15 minutes before its scheduled time. You can retry the search or cancel the booking.',
+    'ar': 'لم يقبل أي مترجم هذا الحجز بحلول ١٥ دقيقة قبل الموعد. يمكنك إعادة البحث أو إلغاء الحجز.',
+}
+
+
+def assert_scheduled_no_match_actions_are_contextual():
+    root = Path(__file__).resolve().parents[1]
+    app = (root / 'traveler' / 'app.html').read_text(encoding='utf-8')
+    catalog = (root / 'traveler' / 'i18n.js').read_text(encoding='utf-8')
+    assert 'function showNoMatch(booking)' in app
+    assert "booking.mode === 'scheduled'" in app
+    assert "convert.classList.toggle('hidden', scheduled)" in app
+    assert 'id="nomatch-copy"' in app
+    assert SCHEDULED_NOMATCH_COPY['fa'] in app
+    for text in SCHEDULED_NOMATCH_COPY.values():
+        assert text in catalog, f'missing scheduled no-match translation: {text}'
+
+
 SEARCH_COPY = {
     'fa': {
         'pill': 'در حال جست‌وجو',
@@ -201,6 +221,7 @@ async def scenario(browser, width):
 
 async def main():
     assert_no_legacy_radius_translations()
+    assert_scheduled_no_match_actions_are_contextual()
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(args=['--no-sandbox'])
         try:
