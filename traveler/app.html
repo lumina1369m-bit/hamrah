@@ -171,8 +171,8 @@
 <!-- Full Map Canvas in Background -->
 <div class="fixed inset-0 z-0 overflow-hidden bg-gradient-to-b from-[#dae3ee] to-[#e4ecf6]">
 <div id="real-map" class="absolute inset-0 z-0" dir="ltr"></div>
-<!-- Map shows translator COUNT only (spec) -->
-<div class="absolute top-24 md:top-28 left-1/2 -translate-x-1/2 md:left-[35%] md:-translate-x-1/2 z-10 neu-card rounded-full px-3.5 py-1.5 text-[11px] font-bold text-primary flex items-center gap-1.5 whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>۴ مترجم آنلاین در محدوده</div>
+<!-- Interpreter availability depends on acceptance; no live count is shown here. -->
+<div id="map-availability-note" class="absolute top-24 md:top-28 left-1/2 -translate-x-1/2 md:left-[35%] md:-translate-x-1/2 z-10 neu-card rounded-full px-3.5 py-1.5 text-[11px] font-bold text-primary flex items-center gap-1.5 whitespace-nowrap"><span class="material-symbols-outlined text-[14px] text-outline" aria-hidden="true">info</span><span class="availability-copy">پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.</span></div>
 <!-- Center User Location Pin (Stage 1 Map Confirmation) -->
 <div class="absolute top-[28%] md:top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 md:left-[35%] flex flex-col items-center pointer-events-none z-20" id="center-location-pin">
 <div class="neu-card px-3.5 py-1.5 rounded-full mb-1.5 text-[11px] font-extrabold text-primary whitespace-nowrap shadow-md border border-white/70 flex items-center gap-1.5">
@@ -204,9 +204,9 @@
 <div class="flex flex-col text-right flex-1 min-w-0">
 <div class="flex items-center gap-1.5">
 <span class="text-[11px] text-on-surface-variant font-medium">محل ملاقات با مترجم:</span>
-<span class="text-[9.5px] text-emerald-600 font-bold bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/25">تعیین خودکار GPS</span>
+<span id="location-selection-badge" class="text-[9.5px] text-emerald-600 font-bold bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/25">قابل تغییر روی نقشه</span>
 </div>
-<span class="text-[13px] font-extrabold text-on-surface mt-1 truncate" id="selected-location-title">تهران، میدان ولیعصر، ضلع شمال غربی</span><span class="text-[10px] text-outline mt-0.5">برای پیشنهاد محل ملاقات و نزدیک‌ترین مترجم، موقعیت شما لازم است. موقعیت فقط هنگام استفاده از برنامه خوانده می‌شود.</span>
+<span class="text-[13px] font-extrabold text-on-surface mt-1 truncate" id="selected-location-title">تهران، میدان ولیعصر، ضلع شمال غربی</span><span id="location-guidance" class="text-[10px] text-outline mt-0.5">نقطهٔ ملاقات را روی نقشه انتخاب کنید یا نشانی را جست‌وجو کنید. موقعیت دستگاه فقط پس از اجازهٔ شما خوانده می‌شود.</span>
 </div>
 </div>
 <div class="relative">
@@ -214,8 +214,9 @@
 <div id="addr-results" class="hidden absolute left-0 right-0 bottom-full mb-1.5 z-50 neu-card rounded-2xl border border-white/70 shadow-xl overflow-hidden max-h-56 overflow-y-auto"></div>
 </div>
 <div class="flex items-center justify-between text-[11px] text-on-surface-variant px-1 font-medium bg-surface-container/50 py-1.5 rounded-xl border border-white/40">
-<span class="flex items-center gap-1.5 text-secondary font-bold">
-<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>مترجم آنلاین در محدوده: ۴
+<span id="location-availability-note" class="flex items-center gap-1.5 text-secondary font-bold">
+<span class="material-symbols-outlined text-[14px] text-outline" aria-hidden="true">info</span>
+<span class="availability-copy">پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.</span>
       </span>
 <span class="text-outline text-[10px]">یا آدرس را تایپ کنید</span>
 </div>
