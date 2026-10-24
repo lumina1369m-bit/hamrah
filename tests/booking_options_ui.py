@@ -20,6 +20,13 @@ SCHEDULE_SEARCH_COPY = {
     'en': 'For a scheduled booking, interpreter search starts one hour before the selected time. If no interpreter has accepted by the 15-minute mark, the app updates the booking status.',
     'ar': 'في الحجز المجدول، يبدأ البحث عن مترجم قبل الموعد المحدد بساعة. إذا لم يقبل أي مترجم قبل ۱۵ دقيقة من الموعد، يحدّث التطبيق حالة الحجز.',
 }
+TIME_SLOT_WINDOW_COPY = {
+    'fa': 'ساعت‌های فهرست‌شده: ۸ صبح تا ۹ شب',
+    'en': 'Listed time slots: 8:00 AM–9:00 PM',
+    'ar': 'الأوقات المدرجة: ٨:٠٠ صباحاً–٩:٠٠ مساءً',
+}
+TIME_SLOT_FIRST_COPY = {'fa': '۰۸:۰۰ صبح', 'en': '8:00 AM', 'ar': '٨:٠٠ صباحاً'}
+TIME_SLOT_LAST_COPY = {'fa': '۲۱:۰۰ شب', 'en': '9:00 PM', 'ar': '٩:٠٠ مساءً'}
 INSTANT_MODE_COPY = {
     'fa': 'درخواست مترجم (اکنون)',
     'en': 'Request an interpreter now',
@@ -104,6 +111,14 @@ async def scenario(browser, kind, preference, lang):
             await page.locator('#btn-mode-scheduled').click()
             await expect(page.locator('#scheduled-panel')).to_be_visible()
             await expect(page.locator('#scheduled-search-policy')).to_have_text(SCHEDULE_SEARCH_COPY[lang])
+            await page.locator('#btn-open-timepicker').click()
+            await expect(page.locator('#modal-timepicker')).to_be_visible()
+            await expect(page.locator('#time-selection-window-label')).to_have_text(TIME_SLOT_WINDOW_COPY[lang])
+            slots = await page.locator('#time-slots-container button').all_text_contents()
+            assert len(slots) == 27, (label, len(slots), slots)
+            await expect(page.locator('#time-slots-container button').first).to_have_text(TIME_SLOT_FIRST_COPY[lang])
+            await expect(page.locator('#time-slots-container button').last).to_have_text(TIME_SLOT_LAST_COPY[lang])
+            await page.locator('#btn-cancel-time').click()
             await page.locator('#btn-mode-instant').click()
             await expect(page.locator('#scheduled-panel')).to_be_hidden()
             await expect(page.locator('#txt-main-submit')).to_have_text(INSTANT_SUBMIT_COPY[lang])
