@@ -270,8 +270,8 @@ async function isolatedSecurityTests() {
     check('CSP با frame-ancestors تنظیم شده', /frame-ancestors/.test(hdr.headers.get('content-security-policy') || ''));
     check('CSP اجازه‌ی object-src ندارد', /object-src 'none'/.test(hdr.headers.get('content-security-policy') || ''));
     check('پاسخ API کش نمی‌شود', (hdr.headers.get('cache-control') || '') === 'no-store');
-    const page = await fetch(base + '/traveler/index.html');
-    check('صفحه‌ی ایستا هم CSP دارد', !!page.headers.get('content-security-policy'));
+    const page = await fetch(base + '/translator/index.html');
+    check('صفحه‌ی ایستای مترجم هم CSP دارد', page.status === 200 && !!page.headers.get('content-security-policy'));
     check('هدر Referrer-Policy سخت‌گیرانه است', page.headers.get('referrer-policy') === 'no-referrer');
     // تلاش کد OTP با IP محدود
     const a = await rawCall(PORT, 'POST', '/api/auth/request-code', { phone: '9121111111', role: 'traveler' });

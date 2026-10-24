@@ -934,7 +934,7 @@ async function main() {
   r = await call('GET', '/api/auth/me', null, tokT);
   check('پس از خروج توکن بی‌اعتبار است', r.status === 401);
   const f = await fetch(BASE + '/traveler/index.html');
-  check('فایل استاتیک مسافر سرو می‌شود', f.status === 200);
+  check('رابط استاتیک مسافر حذف شده است', f.status === 404);
   const t = await fetch(BASE + '/translator/index.html');
   check('فایل استاتیک مترجم سرو می‌شود', t.status === 200);
   const trav = await fetch(BASE + '/traveler/..%2fserver%2fserver.js');

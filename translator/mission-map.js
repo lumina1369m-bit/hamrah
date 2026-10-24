@@ -1,6 +1,6 @@
 /*
  * Interpreter mission map.
- * Uses the same Leaflet build and OpenStreetMap tile layer as traveler/app.html.
+ * Uses the locally served Leaflet build and OpenStreetMap tile layer.
  * No route, ETA, vehicle marker, or live device location is synthesized here.
  */
 (function (w, d) {

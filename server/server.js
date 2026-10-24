@@ -1,7 +1,7 @@
 'use strict';
 /*
- * سرور توسعه‌ی همراه (مسافر و مترجم)
- * - فایل‌های استاتیک هر دو اپ را سرو می‌کند: /traveler/ و /translator/
+ * سرور توسعه‌ی همراه (مترجم و پنل مدیر)
+ * - فایل‌های استاتیک اپ مترجم و پنل مدیر را سرو می‌کند؛ رابط PWA مسافر حذف شده است.
  * - API احراز هویت با کد پیامکی، وضعیت مترجم و ماموریت‌ها را با SQLite نگه می‌دارد
  *
  * وضعیت پیامک: هنوز سرویس پیامک انتخاب نشده است. تا وقتی HZ_DEV=1 باشد کد ثابت «123456»
@@ -21,7 +21,7 @@ const PORT = Number(process.env.PORT || 8080);
 const DEV = process.env.HZ_DEV === '1';
 const DB_PATH = process.env.HZ_DB || path.join(__dirname, 'data', 'hamzaban.sqlite');
 const APP_ROOT = path.resolve(__dirname, '..');
-const STATIC_ROOTS = { '/traveler/': path.join(APP_ROOT, 'traveler'), '/translator/': path.join(APP_ROOT, 'translator'), '/admin/': path.join(APP_ROOT, 'admin') };
+const STATIC_ROOTS = { '/translator/': path.join(APP_ROOT, 'translator'), '/admin/': path.join(APP_ROOT, 'admin') };
 
 // ثابت‌های پیکربندی (در پنل مدیریت یا قانون تعریف می‌شوند؛ اینجا فقط مقدار اولیه‌اند)
 const CONFIG = {
@@ -613,13 +613,12 @@ function serveStatic(req, res, pathname) {
     return;
   }
   if (pathname === '/') {
-    const page = `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>همراه — انتخاب بخش</title>
+    const page = `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>همراه — پنل‌های فعال</title>
 <style>body{font-family:system-ui,sans-serif;background:#eef2f6;margin:0;padding:24px;color:#161c23}h1{font-size:20px}
 .g{display:grid;gap:12px;max-width:420px}a{display:block;padding:16px;border-radius:14px;background:#006a61;color:#fff;text-decoration:none;font-weight:bold}
 a.s{background:#005182}p{font-size:13px;color:#555}</style></head><body>
-<h1>همراه — انتخاب بخش</h1>
+<h1>همراه — پنل‌های فعال</h1>
 <div class="g">
-<a href="/traveler/index.html">اپ مسافر</a>
 <a class="s" href="/translator/index.html">اپ مترجم</a>
 <a href="/admin/index.html">پنل مدیر</a>
 </div>
