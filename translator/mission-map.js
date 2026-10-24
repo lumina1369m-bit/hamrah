@@ -7,6 +7,8 @@
   'use strict';
 
   var mapEl = d.getElementById('translator-map');
+  var previewNote = d.getElementById('translator-map-preview-note');
+  var previewOpen = d.getElementById('translator-map-preview-open');
   var placeholder = d.getElementById('translator-map-placeholder');
   var titleEl = d.getElementById('translator-map-placeholder-title');
   var noteEl = d.getElementById('translator-map-placeholder-note');
@@ -27,6 +29,7 @@
     if (titleEl) titleEl.textContent = title || 'نقشهٔ محل ملاقات';
     if (noteEl) noteEl.textContent = note || 'پس از پذیرش مأموریت، اگر مختصات واقعی محل در سرور ثبت شده باشد، اینجا نمایش داده می‌شود.';
     if (placeholder) placeholder.hidden = false;
+    if (previewNote) previewNote.hidden = true;
     if (mapEl) mapEl.style.visibility = 'hidden';
     if (locationBox) locationBox.hidden = true;
     if (externalLink) externalLink.hidden = true;
@@ -58,13 +61,21 @@
     });
     mapEl.style.visibility = 'visible';
 
-    // Keep the exact same public map provider/configuration as the passenger map.
+    // Use the same OpenStreetMap tiles and referrer policy as the passenger app.
     if (w.origin !== 'null') {
       tileLayer = w.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         referrerPolicy: 'strict-origin-when-cross-origin',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
+    } else {
+      // OSM rejects sandboxed opaque-origin tile requests. Match the passenger
+      // app's fallback and offer a first-party page opened outside the iframe.
+      mapEl.style.background = '#e4ecf6';
+      if (previewOpen && w.location && typeof w.location.href === 'string') {
+        previewOpen.href = w.location.href;
+      }
+      if (previewNote) previewNote.hidden = false;
     }
     return map;
   }

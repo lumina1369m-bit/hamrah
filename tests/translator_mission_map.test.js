@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -14,10 +15,15 @@ const styleSource = fs.readFileSync(path.join(root, 'translator/code6.css'), 'ut
 const utilitySource = fs.readFileSync(path.join(root, 'translator/code6-utilities.css'), 'utf8');
 const serviceWorkerSource = fs.readFileSync(path.join(root, 'translator/sw.js'), 'utf8');
 const serverSource = fs.readFileSync(path.join(root, 'server/server.js'), 'utf8');
+const leafletCSS = fs.readFileSync(path.join(root, 'traveler/vendor/leaflet/leaflet.css'));
+const leafletJS = fs.readFileSync(path.join(root, 'traveler/vendor/leaflet/leaflet.js'));
+const sri = (content) => 'sha384-' + crypto.createHash('sha384').update(content).digest('base64');
 
 function createFixture(origin = 'https://preview.example') {
   const elements = {
     'translator-map': { style: {}, offsetWidth: 360, offsetHeight: 720 },
+    'translator-map-preview-note': { hidden: true },
+    'translator-map-preview-open': { hidden: false, href: '' },
     'translator-map-placeholder': { hidden: false },
     'translator-map-placeholder-title': { textContent: '' },
     'translator-map-placeholder-note': { textContent: '' },
@@ -58,6 +64,7 @@ function createFixture(origin = 'https://preview.example') {
   };
   const window = {
     origin,
+    location: { href: 'https://preview.example/translator/app.html' },
     L,
     requestAnimationFrame(callback) { callback(); },
     addEventListener() {}
@@ -87,6 +94,10 @@ test('uses the shared OpenStreetMap tiles and only the accepted mission point', 
   assert.deepEqual(Array.from(f.mapState.center), [mission.lat, mission.lng]);
   assert.equal(f.mapState.zoom, 16);
   assert.equal(f.mapState.layers[0].url, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+  assert.equal(f.mapState.layers[0].options.maxZoom, 19);
+  assert.equal(f.mapState.layers[0].options.referrerPolicy, 'strict-origin-when-cross-origin');
+  assert.match(f.mapState.layers[0].options.attribution, /OpenStreetMap/);
+  assert.equal(f.elements['translator-map-preview-note'].hidden, true);
   assert.equal(f.mapState.marker.latlng[0], mission.lat);
   assert.equal(f.mapState.marker.latlng[1], mission.lng);
   assert.equal(f.mapState.marker.tooltip.content, mission.place);
@@ -101,6 +112,20 @@ test('uses the shared OpenStreetMap tiles and only the accepted mission point', 
   assert.equal(f.mapState.zoom, 17);
   f.window.HZ_TRANSLATOR_MAP.reset();
   assert.equal(f.mapState.zoom, 16);
+});
+
+test('matches the passenger app in an opaque-origin preview and offers a top-level map view', () => {
+  const f = createFixture('null');
+  const mission = { reservation_id: 18, lat: 35.7, lng: 51.4, place: 'نشانی واقعی سرور' };
+  assert.equal(f.window.HZ_TRANSLATOR_MAP.setMission(mission), true);
+  assert.equal(f.mapCreated, 1);
+  assert.equal(f.mapState.layers.length, 0); // OSM blocks opaque-origin requests in the sandbox iframe.
+  assert.deepEqual(Array.from(f.mapState.center), [mission.lat, mission.lng]);
+  assert.equal(f.mapState.marker.latlng[0], mission.lat);
+  assert.equal(f.mapState.marker.latlng[1], mission.lng);
+  assert.equal(f.elements['translator-map-preview-note'].hidden, false);
+  assert.equal(f.elements['translator-map-preview-open'].href, f.window.location.href);
+  assert.equal(f.elements['translator-map-open'].hidden, false);
 });
 
 test('clears a previous pin and refuses invalid coordinates instead of leaving stale location data', () => {
@@ -123,6 +148,7 @@ test('clears a previous pin and refuses invalid coordinates instead of leaving s
 test('signed-in workspace replaces the previous shell with the code6 sheet and local production assets', () => {
   for (const id of ['translator-map-stage', 'mission-sheet', 'translator-sheet-toggle', 'sheet-scroll-area',
     'workspace-sheet-state', 'workspace-sheet-meta', 'offers-box', 'missions-list', 'payments-box',
+    'translator-map-preview-note', 'translator-map-preview-open',
     'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut', 'sos-chevron']) {
     assert.match(workspaceHTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
@@ -133,19 +159,22 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(workspaceHTML, /code6-map-placeholder/);
   assert.doesNotMatch(workspaceHTML, /translator-workspace-sheet|translator-header-capsule|translator-sheet-topline|translator-map-grid|id="mobile-nav"|id="desktop-nav"/);
   assert.doesNotMatch(workspaceHTML, /<svg\b|https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
-  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=47"/);
-  assert.match(workspaceHTML, /href="code6\.css\?v=47"/);
+  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=48"/);
+  assert.match(workspaceHTML, /href="code6\.css\?v=48"/);
+  assert.ok(workspaceHTML.includes(`href="/traveler/vendor/leaflet/leaflet.css" integrity="${sri(leafletCSS)}"`), 'Leaflet CSS SRI must match the real asset');
+  assert.ok(workspaceHTML.includes(`src="/traveler/vendor/leaflet/leaflet.js" integrity="${sri(leafletJS)}"`), 'Leaflet JS SRI must match the real asset');
   for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'app.js', 'config-features.js']) {
-    assert.ok(workspaceHTML.includes(`src="${asset}?v=47"`), `missing versioned local script ${asset}`);
+    assert.ok(workspaceHTML.includes(`src="${asset}?v=48"`), `missing versioned local script ${asset}`);
   }
   assert.match(styleSource, /#mission-sheet\.sheet-collapsed/);
   assert.match(styleSource, /\.translator-offer-card/);
+  assert.match(styleSource, /#translator-map \.leaflet-tile \{ max-width: none !important; max-height: none !important; \}/);
   assert.match(styleSource, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.match(utilitySource, /\.bg-outline/);
   assert.match(utilitySource, /\.bg-surface-container-high/);
-  assert.match(serviceWorkerSource, /hz-translator-v47/);
-  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=47/);
-  assert.match(serviceWorkerSource, /code6\.css\?v=47/);
+  assert.match(serviceWorkerSource, /hz-translator-v48/);
+  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=48/);
+  assert.match(serviceWorkerSource, /code6\.css\?v=48/);
   assert.doesNotMatch(serviceWorkerSource, /hz-translator-v46|app\.js\?v=46|workspace\.css\?v=46/);
   assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
   assert.match(appSource, /Number\.isSafeInteger\(m\.reservation_id\)/);

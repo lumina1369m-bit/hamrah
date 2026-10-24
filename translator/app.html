@@ -8,8 +8,8 @@
 <title>میزکار مترجم | همراه</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="vendor/fonts.css">
-<link rel="stylesheet" href="code6-utilities.css?v=47">
-<link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="">
+<link rel="stylesheet" href="code6-utilities.css?v=48">
+<link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="">
 <style>
 :root {
       --bg-color: #EDF2F7;
@@ -102,14 +102,18 @@
       border-radius: 4px;
     }
 </style>
-<link rel="stylesheet" href="code6.css?v=47">
+<link rel="stylesheet" href="code6.css?v=48">
 </head>
 <body class="w-full h-full relative bg-[#EDF2F7] text-[#171c21] overflow-hidden font-sans">
 <main id="view-workspace" class="relative w-full h-full overflow-hidden">
   <div class="absolute inset-0 w-full h-full overflow-hidden" id="map-wrapper" style="transform-origin: 50% 50%; transition: transform 0.25s ease-out;">
     <div id="translator-map-stage" class="absolute inset-0 w-full h-full" aria-label="نقشهٔ محل ملاقات مأموریت پذیرفته‌شده">
       <div class="absolute inset-0 w-full h-full bg-[#E8EEF4]" aria-hidden="true"></div>
-      <div id="translator-map" aria-label="نقشهٔ محل ملاقات"></div>
+      <div id="translator-map" aria-label="نقشهٔ محل ملاقات" dir="ltr"></div>
+      <div id="translator-map-preview-note" class="code6-map-preview-note" hidden role="status">
+        <span>کاشی‌های نقشه در پیش‌نمایش محدودشده نمایش داده نمی‌شوند.</span>
+        <a id="translator-map-preview-open" target="_blank" rel="noopener noreferrer">بازکردن میزکار در برگهٔ جدا</a>
+      </div>
       <div id="translator-map-placeholder" class="code6-map-placeholder neu-flat-sm" role="status" aria-live="polite">
         <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
         <div>
@@ -357,13 +361,13 @@
   }
 </script>
 <script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
-<script src="mission-map.js?v=47"></script>
-<script src="ui.js?v=47"></script>
-<script src="mission-actions.js?v=47"></script>
-<script src="presence.js?v=47"></script>
-<script src="support.js?v=47"></script>
-<script src="notifications.js?v=47"></script>
-<script src="app.js?v=47"></script>
-<script src="config-features.js?v=47"></script>
+<script src="mission-map.js?v=48"></script>
+<script src="ui.js?v=48"></script>
+<script src="mission-actions.js?v=48"></script>
+<script src="presence.js?v=48"></script>
+<script src="support.js?v=48"></script>
+<script src="notifications.js?v=48"></script>
+<script src="app.js?v=48"></script>
+<script src="config-features.js?v=48"></script>
 </body>
 </html>
