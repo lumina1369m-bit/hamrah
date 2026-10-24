@@ -936,7 +936,9 @@ async function main() {
   const f = await fetch(BASE + '/traveler/index.html');
   check('فایل استاتیک مسافر سرو می‌شود', f.status === 200);
   const t = await fetch(BASE + '/translator/index.html');
-  check('فایل استاتیک مترجم سرو می‌شود', t.status === 200);
+  check('صفحه ورود و ثبت‌نام مترجم سرو می‌شود', t.status === 200);
+  const tApp = await fetch(BASE + '/translator/app.html');
+  check('اپ مترجم پس از ورود حذف شده است', tApp.status === 404);
   const trav = await fetch(BASE + '/traveler/..%2fserver%2fserver.js');
   check('مسیر خارج از پوشه مسدود است', trav.status !== 200);
 
