@@ -17,8 +17,8 @@ ARTIFACTS = Path(__file__).parent / 'assets' / 'last_account_truth'
 COPY = {
     'fa': {
         'passport': 'بررسی گذرنامه هنوز فعال نیست؛ از این صفحه مدرکی برای بررسی ارسال نمی‌شود.',
-        'cards': 'هیچ کارت بانکی به این حساب متصل نشده است.',
-        'cards_note': 'ذخیره و اتصال کارت بانکی هنوز فعال نیست. پرداخت رزروها از بخش فاکتور انجام می‌شود.',
+        'cards': 'ذخیره و اتصال کارت بانکی در این نسخه فعال نیست.',
+        'cards_note': 'پرداخت رزروها از بخش فاکتور انجام می‌شود.',
         'disabled': 'فعلاً غیرفعال',
         'local': 'نام و عکس پروفایل فقط در همین مرورگر ذخیره می‌شوند.',
         'gender': 'تغییر جنسیت از این صفحه هنوز فعال نیست؛ درخواستی برای پشتیبانی ثبت نمی‌شود.',
@@ -28,8 +28,8 @@ COPY = {
     },
     'en': {
         'passport': 'Passport review is not available yet; no document is submitted for review from this page.',
-        'cards': 'No bank card is linked to this account.',
-        'cards_note': 'Saving or linking bank cards is not available yet. Pay for bookings from the invoice.',
+        'cards': 'Saving or linking bank cards is not available in this version.',
+        'cards_note': 'Pay for bookings from the invoice.',
         'disabled': 'Currently unavailable',
         'local': 'Your profile name and photo are saved only in this browser.',
         'gender': 'Gender changes are not available here yet; no request is sent to support.',
@@ -39,8 +39,8 @@ COPY = {
     },
     'ar': {
         'passport': 'مراجعة جواز السفر غير متاحة حالياً؛ لا تُرسل أي وثيقة للمراجعة من هذه الصفحة.',
-        'cards': 'لا توجد بطاقة بنكية مرتبطة بهذا الحساب.',
-        'cards_note': 'حفظ البطاقات البنكية أو ربطها غير متاح حالياً. يتم دفع الحجوزات من الفاتورة.',
+        'cards': 'حفظ البطاقات البنكية أو ربطها غير متاح في هذا الإصدار.',
+        'cards_note': 'يتم دفع الحجوزات من الفاتورة.',
         'disabled': 'غير متاح حالياً',
         'local': 'يُحفظ اسم ملفك الشخصي وصورتك في هذا المتصفح فقط.',
         'gender': 'تغيير الجنس غير متاح هنا حالياً؛ لا يُرسل أي طلب إلى الدعم.',
