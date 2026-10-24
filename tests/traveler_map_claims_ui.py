@@ -1,4 +1,4 @@
-"""Traveler map copy must not invent online counts or require automatic GPS access."""
+"""Traveler map copy must not invent counts, require GPS, or claim an inactive control succeeded."""
 import asyncio
 import os
 from pathlib import Path
@@ -9,6 +9,7 @@ ARTIFACTS = Path(__file__).parent / 'assets' / 'last_traveler_map_claims'
 COPY = {
     'fa': {
         'availability': 'پذیرش درخواست به در دسترس بودن مترجم بستگی دارد.',
+        'layer_unavailable': 'تغییر لایهٔ نقشه در این نسخه فعال نیست.',
         'selection_badge': 'قابل تغییر روی نقشه',
         'guidance': 'نقطهٔ ملاقات را روی نقشه انتخاب کنید یا نشانی را جست‌وجو کنید. موقعیت دستگاه فقط پس از اجازهٔ شما خوانده می‌شود.',
         'forbidden': ('۴ مترجم آنلاین در محدوده', 'مترجم آنلاین در محدوده: ۴',
@@ -16,6 +17,7 @@ COPY = {
     },
     'en': {
         'availability': 'Request acceptance depends on interpreter availability.',
+        'layer_unavailable': 'Map layer switching is not available in this version.',
         'selection_badge': 'Editable on the map',
         'guidance': 'Choose the meeting point on the map or search for an address. Your device location is read only with your permission.',
         'forbidden': ('4 online interpreters in range', 'Online interpreters in range: 4',
@@ -23,6 +25,7 @@ COPY = {
     },
     'ar': {
         'availability': 'يعتمد قبول الطلب على توفر المترجم.',
+        'layer_unavailable': 'تبديل طبقة الخريطة غير متاح في هذا الإصدار.',
         'selection_badge': 'قابلة للتغيير على الخريطة',
         'guidance': 'اختر نقطة اللقاء على الخريطة أو ابحث عن عنوان. لا يُقرأ موقع جهازك إلا بعد إذنك.',
         'forbidden': ('٤ مترجمين متصلين في النطاق', 'مترجمون متصلون في النطاق: ٤',
@@ -65,6 +68,12 @@ async def scenario(browser, width):
             await expect(page.locator('#location-selection-badge')).to_have_text(copy['selection_badge'])
             await expect(page.locator('#location-guidance')).to_have_text(copy['guidance'])
 
+            await page.evaluate("() => document.getElementById('toast-pill').classList.add('hidden')")
+            await page.locator('#btn-map-layers').click()
+            await expect(page.locator('#toast-pill')).to_be_visible()
+            await expect(page.locator('#toast-text')).to_have_text(copy['layer_unavailable'])
+            await page.locator('#toast-pill button').click()
+
             map_copy = (await page.locator('#map-availability-note').inner_text()) + '\n' + \
                        (await page.locator('#location-picker-bar').inner_text())
             for claim in copy['forbidden']:
@@ -75,7 +84,7 @@ async def scenario(browser, width):
                 '#map-availability-note .animate-pulse, '
                 '#location-availability-note .animate-pulse'
             ).count() == 0, 'a live-availability indicator remains beside the disclaimer'
-            print(f'PASS [{width}/{language}]: no fixed interpreter count or automatic-GPS claim')
+            print(f'PASS [{width}/{language}]: accurate availability/location copy; inactive map-layer control is disclosed')
         assert not errors, errors
     except Exception:
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
