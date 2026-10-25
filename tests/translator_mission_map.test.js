@@ -170,7 +170,9 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
     'workspace-sheet-state', 'workspace-sheet-meta', 'offers-box', 'missions-list', 'payments-box',
     'translator-map-preview-note', 'translator-map-preview-open',
     'shift-toggle-btn', 'header-profile-btn', 'header-financial-shortcut', 'sos-chevron',
-    'view-settings', 'translator-traveler-gender-pref', 'translator-gender-pref-save']) {
+    'view-settings', 'translator-traveler-gender-pref', 'translator-gender-pref-save',
+    'mission-extension-modal', 'mission-extension-accept', 'mission-finish-modal', 'mission-finish-confirm',
+    'mission-cash-modal', 'mission-cash-confirm', 'mission-cash-dispute']) {
     assert.match(workspaceHTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
   assert.match(workspaceHTML, /<main id="view-workspace" class="relative w-full h-full overflow-hidden">/);
@@ -185,12 +187,12 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.doesNotMatch(appSource, /نقشهٔ پیش‌فرض یا موقعیت ساختگی نمایش داده نمی‌شود|موقعیت ساختگی یا نقشهٔ پیش‌فرض نمایش داده نمی‌شود/);
   assert.doesNotMatch(workspaceHTML, /translator-workspace-sheet|translator-header-capsule|translator-sheet-topline|translator-map-grid|id="mobile-nav"|id="desktop-nav"/);
   assert.doesNotMatch(workspaceHTML, /<svg\b|https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
-  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=51"/);
-  assert.match(workspaceHTML, /href="code6\.css\?v=51"/);
+  assert.match(workspaceHTML, /href="code6-utilities\.css\?v=53"/);
+  assert.match(workspaceHTML, /href="code6\.css\?v=53"/);
   assert.ok(workspaceHTML.includes(`href="/traveler/vendor/leaflet/leaflet.css" integrity="${sri(leafletCSS)}"`), 'Leaflet CSS SRI must match the real asset');
   assert.ok(workspaceHTML.includes(`src="/traveler/vendor/leaflet/leaflet.js" integrity="${sri(leafletJS)}"`), 'Leaflet JS SRI must match the real asset');
   for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'settings.js', 'app.js', 'config-features.js']) {
-    assert.ok(workspaceHTML.includes(`src="${asset}?v=51"`), `missing versioned local script ${asset}`);
+    assert.ok(workspaceHTML.includes(`src="${asset}?v=53"`), `missing versioned local script ${asset}`);
   }
   assert.match(styleSource, /#mission-sheet\.sheet-collapsed/);
   assert.match(styleSource, /\.translator-offer-card/);
@@ -198,19 +200,24 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(styleSource, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.match(utilitySource, /\.bg-outline/);
   assert.match(utilitySource, /\.bg-surface-container-high/);
-  assert.match(serviceWorkerSource, /hz-translator-v51/);
-  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=51/);
-  assert.match(serviceWorkerSource, /code6\.css\?v=51/);
+  assert.match(serviceWorkerSource, /hz-translator-v53/);
+  assert.match(serviceWorkerSource, /code6-utilities\.css\?v=53/);
+  assert.match(serviceWorkerSource, /code6\.css\?v=53/);
   assert.doesNotMatch(serviceWorkerSource, /hz-translator-v46|app\.js\?v=46|workspace\.css\?v=46/);
   assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
   assert.match(appSource, /Number\.isSafeInteger\(m\.reservation_id\)/);
   assert.match(appSource, /window\.HZ_TRANSLATOR_MAP\.setMission\(selected/);
   assert.match(appSource, /data-service-clock/);
+  assert.match(appSource, /translator-otp-digit/);
+  assert.match(appSource, /translator-offer-countdown-svg/);
+  assert.match(appSource, /function settlementCard\(s\)/);
+  assert.match(appSource, /if \(!m\.started && m\.arrived_at && !futureAppointment\)/);
   assert.match(appSource, /serverClockOffset/);
   assert.match(appSource, /setInterval\(loadMissions, 5000\)/);
-  assert.match(appSource, /این درخواست خدمت را پایان نمی‌دهد/);
+  assert.match(appSource, /پایان خدمت را مسافر ثبت می‌کند/);
   assert.doesNotMatch(workspaceHTML + appSource, /الشيخ|احمد المنصور|اسپیناس|۳,۲۰۰,۰۰۰|۴,۸۰۰,۰۰۰|سارا رادمنش|M-1001|MAT-030|service_code/);
   assert.match(serverSource, /OR service_started_at IS NOT NULL/);
+  assert.match(serverSource, /if \(!r\.translator_arrived_at\) return send\(res, 409, \{ error: 'arrival_required' \}\)/);
   assert.match(serverSource, /server_time: new Date\(serverTime\)/);
 });
 

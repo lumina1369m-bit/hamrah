@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 import secrets
 from playwright.async_api import async_playwright, expect
-from finish_flow_ui import BASE, api, booking
+from finish_flow_ui import BASE, api, booking, arrive_and_start
 from booking_options_ui import translator
 from logout_sessions_ui import sign_in, seeded_context
 
@@ -129,7 +129,7 @@ async def scenario(browser, lang):
         await expect(page.locator('#toast-text')).to_have_text(NOT_STARTED[lang])
         await expect(page.locator('#stage-5')).to_be_hidden()
         assert len(posts) == count
-        await api(setup.request,'POST',f'/translator/missions/{bid}/verify-code',ttok,{'code':created['service_code']})
+        await arrive_and_start(setup.request, bid, ttok, created['service_code'])
         await expect(page.locator('#stage-5')).to_be_visible()
         started = (await booking(setup.request,token,bid))['service_started_at']
         await api(setup.request,'POST',f'/translator/missions/{bid}/cancel',ttok,status=409)
@@ -221,7 +221,7 @@ async def scenario(browser, lang):
                         {'kind':'instant','origin_lang':'ar','dest_lang':'fa','place':'late-service-response'},status=201)
         offers = await api(setup.request,'GET','/translator/offers',ttok)
         await api(setup.request,'POST',f"/translator/offers/{offers['offers'][0]['id']}/accept",ttok)
-        await api(setup.request,'POST',f"/translator/missions/{new['id']}/verify-code",ttok,{'code':new['service_code']})
+        await arrive_and_start(setup.request, new['id'], ttok, new['service_code'])
         await page.reload(); await expect(page.locator('#stage-5')).to_be_visible()
         replacement = await sign_in(setup.request,'9'+str(secrets.randbelow(900000000)+100000000))
         release.clear(); entered.clear()

@@ -182,6 +182,7 @@ for (const sql of [
   "ALTER TABLE reservations ADD COLUMN tax INTEGER",
   "ALTER TABLE reservations ADD COLUMN service_code TEXT",
   "ALTER TABLE reservations ADD COLUMN service_started_at INTEGER",
+  "ALTER TABLE reservations ADD COLUMN translator_arrived_at INTEGER",
   "ALTER TABLE reservations ADD COLUMN service_code_attempts INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE reservations ADD COLUMN finish_requested_at INTEGER",
   "ALTER TABLE reservations ADD COLUMN finished_by TEXT",
@@ -439,7 +440,7 @@ route('DELETE', '/api/auth/account', async (req, res) => {
   const openOffers = db.prepare("SELECT COUNT(*) AS n FROM offers WHERE translator_id = ? AND status = 'pending'").get(u.id).n;
   if (openAsTraveler + openAsTranslator + openOffers > 0) return send(res, 409, { error: 'active_items' });
   db.transaction(() => {
-    db.prepare('UPDATE reservations SET translator_id = NULL WHERE translator_id = ?').run(u.id);
+    db.prepare('UPDATE reservations SET translator_id = NULL, translator_arrived_at = NULL WHERE translator_id = ?').run(u.id);
     db.prepare("UPDATE interview_slots SET booked_user_id = NULL, status = 'open' WHERE booked_user_id = ? AND status = 'booked'").run(u.id);
     db.prepare('DELETE FROM users WHERE id = ?').run(u.id);
   })();
@@ -1337,6 +1338,7 @@ route('GET', '/api/translator/missions/:id', async (req, res, url, params) => {
   const r = id && db.prepare('SELECT * FROM reservations WHERE id = ? AND translator_id = ?').get(id, u.id);
   if (!r) return send(res, 404, { error: 'not_found' });
   send(res, 200, { reservation_id: r.id, status: r.status, started: !!r.service_started_at,
+    arrived_at: r.translator_arrived_at ? new Date(r.translator_arrived_at).toISOString() : null,
     service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null,
     finish_requested: !!r.finish_requested_at, hours: r.hours, total: r.total, net: r.net,
     pay_method: r.pay_method || null, pay_state: r.pay_state || null,
@@ -1345,15 +1347,33 @@ route('GET', '/api/translator/missions/:id', async (req, res, url, params) => {
       field: r.field, hours: r.hours, car: r.car, party: r.party, gender_pref: r.gender_pref, notes: r.notes } });
 });
 
+// Manual arrival receipt: this records the translator's report only; it never reads GPS or fabricates coordinates.
+route('POST', '/api/translator/missions/:id/arrive', async (req, res, url, params) => {
+  const u = requireUser(req, res, 'translator'); if (!u) return;
+  if (!activeTranslator(res, u)) return;
+  const id = parseId(params.id);
+  const r = id && db.prepare("SELECT id, status, scheduled_at, translator_arrived_at, service_started_at FROM reservations WHERE id = ? AND translator_id = ?").get(id, u.id);
+  if (!r) return send(res, 404, { error: 'not_found' });
+  if (r.status !== 'matched' || r.service_started_at || (r.scheduled_at && now() < r.scheduled_at)) return send(res, 409, { error: 'arrival_not_allowed' });
+  if (r.translator_arrived_at) return send(res, 200, { ok: true, already_arrived: true, arrived_at: new Date(r.translator_arrived_at).toISOString() });
+  const t = now();
+  const result = db.prepare("UPDATE reservations SET translator_arrived_at = ?, updated_at = ? WHERE id = ? AND translator_id = ? AND status = 'matched' AND translator_arrived_at IS NULL AND service_started_at IS NULL")
+    .run(t, t, id, u.id);
+  if (result.changes !== 1) return send(res, 409, { error: 'arrival_not_allowed' });
+  send(res, 200, { ok: true, already_arrived: false, arrived_at: new Date(t).toISOString() });
+});
+
 route('POST', '/api/translator/missions/:id/verify-code', async (req, res, url, params) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const id = parseId(params.id);
   const r = id && db.prepare("SELECT * FROM reservations WHERE id = ? AND translator_id = ? AND status = 'matched'").get(id, u.id);
   if (!r) return send(res, 404, { error: 'not_found' });
+  if (r.service_started_at) return send(res, 200, { ok: true, already_started: true });
+  if (!r.translator_arrived_at) return send(res, 409, { error: 'arrival_required' });
+  if (r.scheduled_at && now() < r.scheduled_at) return send(res, 409, { error: 'too_early' });
   const storedCode = plainServiceCode(r);
   if (!storedCode) return send(res, 409, { error: 'no_service_code' });
-  if (r.service_started_at) return send(res, 200, { ok: true, already_started: true });
   if ((r.service_code_attempts || 0) >= 5) return send(res, 423, { error: 'code_locked' });
   const b = await readJson(req);
   const code = String(b.code || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
@@ -1476,8 +1496,14 @@ route('GET', '/api/translator/payments', async (req, res) => {
   const u = requireUser(req, res, 'translator'); if (!u) return;
   if (!activeTranslator(res, u)) return;
   const rows = db.prepare("SELECT id, place, traveler_name, total, net, pay_method, pay_state, translator_confirmed FROM reservations WHERE translator_id = ? AND status = 'finished' AND (pay_state IS NULL OR pay_state != 'settled') ORDER BY finished_at").all(u.id);
-  send(res, 200, { payments: rows.map((r) => ({ reservation_id: r.id, place: r.place, travelerName: r.traveler_name, total: r.total, net: r.net,
-    pay_method: r.pay_method, pay_state: r.pay_state, confirmed: !!r.translator_confirmed })) });
+  const settlements = db.prepare("SELECT id, place, traveler_name, total, net, hours, pay_method, pay_state, translator_confirmed, traveler_paid, finished_at FROM reservations WHERE translator_id = ? AND status = 'done' AND pay_state = 'settled' ORDER BY finished_at DESC LIMIT 10").all(u.id);
+  send(res, 200, {
+    payments: rows.map((r) => ({ reservation_id: r.id, place: r.place, travelerName: r.traveler_name, total: r.total, net: r.net,
+      pay_method: r.pay_method, pay_state: r.pay_state, confirmed: !!r.translator_confirmed })),
+    settlements: settlements.map((r) => ({ reservation_id: r.id, place: r.place, travelerName: r.traveler_name, total: r.total, net: r.net,
+      hours: r.hours, pay_method: r.pay_method, pay_state: r.pay_state, confirmed: !!r.translator_confirmed,
+      traveler_paid: !!r.traveler_paid, finished_at: r.finished_at ? new Date(r.finished_at).toISOString() : null }))
+  });
 });
 
 // ---------- ثبت‌نام مترجم روی سرور (مراحل ۱ تا ۵) ----------
@@ -1646,25 +1672,27 @@ route('GET', '/api/translator/offers', async (req, res) => {
   if (!activeTranslator(res, u)) return;
   sweep();
   const t = db.prepare('SELECT online FROM translators WHERE user_id = ?').get(u.id);
-  const rows = db.prepare(`SELECT o.id AS offer_id, o.expires_at, r.* FROM offers o JOIN reservations r ON r.id = o.reservation_id
+  const serverTime = now();
+  const rows = db.prepare(`SELECT o.id AS offer_id, o.expires_at, o.created_at AS offer_created_at, r.* FROM offers o JOIN reservations r ON r.id = o.reservation_id
     WHERE o.translator_id = ? AND o.status = 'pending' ORDER BY o.created_at`).all(u.id);
   // قبل از پذیرش: فقط ساعت/تاریخ، مبدا-مقصد، نشانی ملاقات، نام مسافر، یادداشت و سهم خالص (بدون جنسیت)
   const changeRows = db.prepare(`SELECT c.id, c.reservation_id, c.changes, c.expires_at, r.place, r.traveler_name, r.net, r.kind, r.scheduled_at
     FROM change_requests c JOIN reservations r ON r.id = c.reservation_id
     WHERE r.translator_id = ? AND c.status = 'pending' AND c.expires_at > ?`).all(u.id, now());
-  const extRows = db.prepare(`SELECT e.id, e.reservation_id, e.extra_hours, e.extra_net, e.expires_at, r.place, r.traveler_name, r.net
+  const extRows = db.prepare(`SELECT e.id, e.reservation_id, e.extra_hours, e.extra_base, e.extra_tax, e.extra_net, e.expires_at, r.place, r.traveler_name, r.net
     FROM extension_requests e JOIN reservations r ON r.id = e.reservation_id
     WHERE r.translator_id = ? AND e.status = 'pending' AND e.expires_at > ?`).all(u.id, now());
-  send(res, 200, { online: !!(t && t.online),
+  send(res, 200, { online: !!(t && t.online), server_time: new Date(serverTime).toISOString(),
     extensions: extRows.map((e) => ({ id: e.id, reservation_id: e.reservation_id, place: e.place, traveler_name: e.traveler_name,
-      extra_hours: e.extra_hours, extra_net: e.extra_net, new_net: (e.net || 0) + e.extra_net, expires_at: new Date(e.expires_at).toISOString() })),
+      extra_hours: e.extra_hours, extra_total: e.extra_base + e.extra_tax, extra_net: e.extra_net,
+      new_net: (e.net || 0) + e.extra_net, expires_at: new Date(e.expires_at).toISOString() })),
     changes: changeRows.map((c) => ({ id: c.id, reservation_id: c.reservation_id, place: c.place, traveler_name: c.traveler_name,
     kind: c.kind, scheduled_at: c.scheduled_at ? new Date(c.scheduled_at).toISOString() : null, changes: JSON.parse(c.changes), expires_at: new Date(c.expires_at).toISOString() })),
     offers: rows.map((r) => ({
     id: r.offer_id, reservation_id: r.id, kind: r.kind, origin_lang: r.origin_lang, dest_lang: r.dest_lang, field: r.field,
-    place: r.place, traveler_name: r.traveler_name, notes: r.notes,
+    place: r.place, traveler_name: r.traveler_name, notes: r.notes, hours: r.hours, car: r.car, party: r.party,
     scheduled_at: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : null,
-    net: r.net, expires_at: new Date(r.expires_at).toISOString(),
+    net: r.net, created_at: new Date(r.offer_created_at).toISOString(), expires_at: new Date(r.expires_at).toISOString(),
   })) });
 });
 
@@ -1692,7 +1720,7 @@ route('POST', '/api/translator/offers/:id/accept', async (req, res, url, params)
   if (o.status !== 'pending' || o.expires_at <= now()) return send(res, 410, { error: 'offer_expired' });
   if (!SEARCHABLE.includes(r.status)) return send(res, 409, { error: 'no_longer_available' });
   db.transaction(() => {
-    db.prepare("UPDATE reservations SET status = 'matched', translator_id = ?, matched_at = ?, updated_at = ? WHERE id = ?").run(u.id, now(), now(), r.id);
+    db.prepare("UPDATE reservations SET status = 'matched', translator_id = ?, matched_at = ?, translator_arrived_at = NULL, updated_at = ? WHERE id = ?").run(u.id, now(), now(), r.id);
     db.prepare("UPDATE offers SET status = 'accepted', decided_at = ? WHERE id = ?").run(now(), o.id);
     db.prepare("UPDATE offers SET status = 'withdrawn', decided_at = ? WHERE reservation_id = ? AND status = 'pending'").run(now(), r.id);
   })();
@@ -1737,7 +1765,7 @@ route('POST', '/api/translator/missions/:id/cancel', async (req, res, url, param
   if (r.kind === 'scheduled') next = t >= r.scheduled_at - TIMING.SCHEDULE_MATCH_BEFORE_MS ? 'matching' : 'waiting_schedule';
   db.transaction(() => {
     db.prepare('INSERT INTO mission_cancellations (reservation_id, translator_id, created_at) VALUES (?, ?, ?)').run(r.id, u.id, t);
-    db.prepare(`UPDATE reservations SET status = ?, translator_id = NULL, matched_at = NULL, search_started_at = ?, updated_at = ? WHERE id = ?`)
+    db.prepare(`UPDATE reservations SET status = ?, translator_id = NULL, matched_at = NULL, translator_arrived_at = NULL, search_started_at = ?, updated_at = ? WHERE id = ?`)
       .run(next, t, t, r.id);
     db.prepare('UPDATE translators SET score = MAX(0, score - 5), updated_at = ? WHERE user_id = ?').run(t, u.id);
   })();
@@ -1755,9 +1783,12 @@ route('GET', '/api/translator/missions', async (req, res) => {
       AND (COALESCE(scheduled_at, matched_at) > ? OR service_started_at IS NOT NULL)
       ORDER BY COALESCE(scheduled_at, matched_at)`).all(u.id, from)
     .map((r) => ({ id: 'R' + r.id, reservation_id: r.id, code: 'R-' + r.id, purpose: r.field, travelerName: r.traveler_name, place: r.place,
+      kind: r.kind, origin_lang: r.origin_lang, dest_lang: r.dest_lang, car: r.car, party: r.party, notes: r.notes,
+      scheduled_at: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : null,
       lat: r.lat == null ? null : r.lat, lng: r.lng == null ? null : r.lng,
-      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted', started: !!r.service_started_at,
-      service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null, hours: r.hours,
+      startAt: new Date(r.scheduled_at || r.matched_at).toISOString(), total: r.total, net: r.net, status: 'accepted',
+      arrived_at: r.translator_arrived_at ? new Date(r.translator_arrived_at).toISOString() : null,
+      started: !!r.service_started_at, service_started_at: r.service_started_at ? new Date(r.service_started_at).toISOString() : null, hours: r.hours,
       finish_requested: !!r.finish_requested_at }));
   // ماموریت‌های آزمایشی تزریقی (فقط حالت توسعه)
   const fromDev = db.prepare(`SELECT id, code, purpose, traveler_name, place, start_at, total, net, status FROM missions
@@ -1802,7 +1833,9 @@ function applyChanges(r, changes) {
   const keys = Object.keys(changes);
   if (!keys.length) return;
   const sets = keys.map((k) => `${k} = ?`).join(', ');
-  db.prepare(`UPDATE reservations SET ${sets}, updated_at = ? WHERE id = ?`).run(...keys.map((k) => changes[k]), now(), r.id);
+  const clearArrival = keys.some((k) => k === 'place' || k === 'scheduled_at');
+  db.prepare(`UPDATE reservations SET ${sets}${clearArrival ? ', translator_arrived_at = NULL' : ''}, updated_at = ? WHERE id = ?`)
+    .run(...keys.map((k) => changes[k]), now(), r.id);
   const important = keys.some((k) => k in CHANGE_COLUMNS);
   if (!r.translator_id && important) {
     closeOffers(r.id);

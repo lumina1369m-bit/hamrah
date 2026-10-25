@@ -3,7 +3,7 @@ import asyncio
 import secrets
 from pathlib import Path
 from playwright.async_api import async_playwright, expect
-from finish_flow_ui import BASE, api, booking
+from finish_flow_ui import BASE, api, booking, arrive_and_start
 from booking_options_ui import login, translator
 from hz_api import LOGIN_JS
 
@@ -241,7 +241,7 @@ async def scenario(browser):
         await failed()
         await page.unroute(post, lost_receipt)
         assert (await booking(ctx.request, ptok, uncertain['id']))['status'] == 'matched'
-        await api(ctx.request, 'POST', f"/translator/missions/{uncertain['id']}/verify-code", token, {'code': uncertain['service_code']})
+        await arrive_and_start(ctx.request, uncertain['id'], token, uncertain['service_code'])
         await api(ctx.request, 'POST', f"/traveler/bookings/{uncertain['id']}/finish", ptok)
 
         real, pending = await create('پذیرش واقعی')

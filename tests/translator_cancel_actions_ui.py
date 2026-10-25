@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import secrets
 from playwright.async_api import async_playwright, expect
-from finish_flow_ui import BASE, api, booking
+from finish_flow_ui import BASE, api, booking, arrive_and_start
 from booking_options_ui import login, translator
 from hz_api import LOGIN_JS
 
@@ -46,6 +46,12 @@ async def scenario(browser):
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
             await expect(cancel()).to_be_visible()
+            mission = await api(ctx.request, 'GET', f'/translator/missions/{rid}', token)
+            if not mission['arrived_at']:
+                arrival = page.locator('#missions-list').get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
+                await expect(arrival).to_be_visible()
+                await arrival.click()
+                await expect(page.locator('#missions-list').get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True)).to_be_visible()
             await page.evaluate('''()=>{window.cancelToasts=[];const toast=HZ.toast;
                 HZ.toast=(s)=>{cancelToasts.push(s);toast(s)}}''')
 
@@ -109,7 +115,7 @@ async def scenario(browser):
         await cancel().click()
         await asyncio.wait_for(entered.wait(), 10)
         await expect(cancel()).to_be_disabled()
-        await expect(page.locator('#missions-list').get_by_role('button', name='ثبت کد و شروع خدمت', exact=True)).to_be_disabled()
+        await expect(page.locator('#missions-list').get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True)).to_be_disabled()
         await page.evaluate("()=>document.querySelector('#day-bar button').click()")
         assert await page.locator(f'[data-service-mission="{rid}"]:not(:disabled)').count() == 0
         await page.evaluate('()=>document.querySelectorAll("[data-service-mission]").forEach(b=>b.click())')
@@ -219,7 +225,7 @@ async def scenario(browser):
 
         b3 = await create('شروع در دستگاه دیگر')
         await open_app()
-        await api(ctx.request, 'POST', f"/translator/missions/{b3['id']}/verify-code", token, {'code': b3['service_code']})
+        await arrive_and_start(ctx.request, b3['id'], token, b3['service_code'])
         posts = 0
         await page.route(f"**/api/translator/missions/{b3['id']}/cancel", no_post)
         await clear()

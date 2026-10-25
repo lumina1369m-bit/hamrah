@@ -6,9 +6,11 @@
   function id(n) { return Number.isSafeInteger(n) && n > 0; }
   function money(n) { return typeof n === 'number' && Number.isFinite(n) && n >= 0; }
   function timestamp(s) { return typeof s === 'string' && Number.isFinite(Date.parse(s)); }
+  function serverNow(offset) { return Date.now() + (typeof offset === 'number' && Number.isFinite(offset) ? offset : 0); }
   function mission(m, rid) {
     if (!m || m.reservation_id !== rid || !id(rid) || !['matched', 'finished', 'done'].includes(m.status) ||
         typeof m.started !== 'boolean' || typeof m.finish_requested !== 'boolean' ||
+        (m.arrived_at !== null && !timestamp(m.arrived_at)) ||
         !money(m.total) || !money(m.net) || typeof m.hours !== 'number' || !Number.isFinite(m.hours) || m.hours < 1 || m.hours > 24 ||
         (m.started ? !timestamp(m.service_started_at) : m.service_started_at !== null) ||
         (m.finish_requested && !m.started)) throw new Error(ERROR);
@@ -117,7 +119,7 @@
           return offer(view.data, options.id, rid);
         }
         before = await readOffer();
-        if (before.status !== 'pending' || before.assigned || before.net !== options.net || Date.parse(before.expires_at) <= Date.now()) throw new Error(ERROR);
+        if (before.status !== 'pending' || before.assigned || before.net !== options.net || Date.parse(before.expires_at) <= serverNow(options.serverTimeOffset)) throw new Error(ERROR);
         var accepting = options.action === 'offer-accept';
         res = await request('POST', 'offers/' + options.id + (accepting ? '/accept' : '/decline'));
         if (res.status !== 200 || !res.data || res.data.ok !== true || (accepting && res.data.reservation_id !== rid)) throw new Error(ERROR);
@@ -156,7 +158,7 @@
           return change(view.data, options.id, rid);
         }
         e = await readChange();
-        if (e.status !== 'pending' || Date.parse(e.expires_at) <= Date.now() || !sameChanges(e.changes, options.changes)) throw new Error(ERROR);
+        if (e.status !== 'pending' || Date.parse(e.expires_at) <= serverNow(options.serverTimeOffset) || !sameChanges(e.changes, options.changes)) throw new Error(ERROR);
         var acceptingChange = options.action === 'change-accept';
         res = await request('POST', 'changes/' + options.id + (acceptingChange ? '/accept' : '/reject'));
         if (res.status !== 200 || !res.data || res.data.ok !== true) throw new Error(ERROR);
@@ -191,7 +193,16 @@
         return res.data.settled ? 'پرداخت تسویه شد.' : 'دریافت شما ثبت شد؛ منتظر تأیید مسافر.';
       }
       if (before.status !== 'matched') throw new Error(ERROR);
+      if (options.action === 'arrive') {
+        if (before.started) throw new Error(ERROR);
+        res = await request('POST', 'missions/' + rid + '/arrive');
+        if (res.status !== 200 || !res.data || res.data.ok !== true || typeof res.data.already_arrived !== 'boolean' || !timestamp(res.data.arrived_at)) throw new Error(ERROR);
+        after = await readMission();
+        if (after.started || after.arrived_at !== res.data.arrived_at) throw new Error(ERROR);
+        return 'رسیدن شما به‌صورت دستی در سرور ثبت شد.';
+      }
       if (options.action === 'start') {
+        if (!before.arrived_at) throw new Error('ابتدا رسیدن به محل ملاقات را ثبت کنید.');
         var code = String(options.code || '').trim().replace(/[۰-۹]/g, function (c) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(c); }).replace(/[٠-٩]/g, function (c) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(c); });
         if (!/^\d{5}$/.test(code)) throw new Error('کد امنیتی پنج‌رقمی مسافر را وارد کنید.');
         res = await request('POST', 'missions/' + rid + '/verify-code', { code: code });
@@ -210,7 +221,7 @@
       }
       if (!['accept', 'reject'].includes(options.action)) throw new Error(ERROR);
       e = await readExtension();
-      if (e.status !== 'pending' || Date.parse(e.expires_at) <= Date.now()) throw new Error(ERROR);
+      if (e.status !== 'pending' || Date.parse(e.expires_at) <= serverNow(options.serverTimeOffset)) throw new Error(ERROR);
       res = await request('POST', 'extensions/' + options.id + '/' + options.action);
       if (res.status !== 200 || res.data.ok !== true) throw new Error(ERROR);
       decided = await readExtension(); after = await readMission();
@@ -229,7 +240,7 @@
       var message = await Promise.race([work(), timeout]); current();
       window.HZ.toast(message);
     } catch (err) {
-      if (window.HZ.load().token === token) window.HZ.toast(err.message === 'کد نادرست است.' || err.message === 'کد امنیتی پنج‌رقمی مسافر را وارد کنید.' || err.message === 'کد این رزرو قفل شده است؛ با پشتیبانی هماهنگ کنید.' ? err.message : ERROR);
+      if (window.HZ.load().token === token) window.HZ.toast(err.message === 'کد نادرست است.' || err.message === 'کد امنیتی پنج‌رقمی مسافر را وارد کنید.' || err.message === 'کد این رزرو قفل شده است؛ با پشتیبانی هماهنگ کنید.' || err.message === 'ابتدا رسیدن به محل ملاقات را ثبت کنید.' ? err.message : ERROR);
     } finally {
       clearTimeout(timer); controller.abort(); busy.delete(lock); update();
       if (window.HZ.load().token === token && options.refresh) options.refresh();

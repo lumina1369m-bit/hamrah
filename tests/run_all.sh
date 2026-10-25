@@ -30,6 +30,7 @@ run node "$SERVER_DIR/test/sms.test.js"
 run env BASE=http://127.0.0.1:8081 node "$SERVER_DIR/test/api.test.js"
 run env BASE=http://127.0.0.1:8081 node "$SERVER_DIR/test/features_cities_security.test.js"
 run node --test translator_mission_map.test.js
+run node --test translator_mission_actions.test.js
 run node --test translator_session_headers.test.js
 run node --test translator_settings.test.js
 run node --test traveler_session_headers.test.js

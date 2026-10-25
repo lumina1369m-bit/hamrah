@@ -5,7 +5,7 @@ import asyncio
 from pathlib import Path
 import secrets
 from playwright.async_api import async_playwright, expect
-from finish_flow_ui import BASE, api, booking
+from finish_flow_ui import BASE, api, booking, arrive_and_start
 from booking_options_ui import login, translator
 from hz_api import LOGIN_JS
 
@@ -33,7 +33,7 @@ async def scenario(browser):
             offers = await api(ctx.request, 'GET', '/translator/offers', token)
             offer = next(o for o in offers['offers'] if o['place'] == label)
             await api(ctx.request, 'POST', f"/translator/offers/{offer['id']}/accept", token)
-            await api(ctx.request, 'POST', f"/translator/missions/{b['id']}/verify-code", token, {'code': b['service_code']})
+            await arrive_and_start(ctx.request, b['id'], token, b['service_code'])
             await api(ctx.request, 'POST', f"/traveler/bookings/{b['id']}/finish", ptok)
             await api(ctx.request, 'POST', f"/traveler/bookings/{b['id']}/payment", ptok, {'method': 'cash'})
             return b
@@ -49,11 +49,17 @@ async def scenario(browser):
             return page.locator(f'[data-payment-reservation="{bid}"]')
 
         def button(action, bid=rid):
-            return card(bid).get_by_role('button', name='دریافت وجه را تأیید می‌کنم' if action == 'cash-confirm' else 'اختلاف دارم', exact=True)
+            label = 'تأیید دریافت وجه' if action == 'cash-confirm' else 'ثبت اختلاف'
+            return page.locator('#mission-cash-modal').get_by_role('button', name=label, exact=True)
+
+        async def prepare_payment_action(action, bid=rid):
+            trigger = card(bid).get_by_role('button', name='دریافت وجه را تأیید می‌کنم' if action == 'cash-confirm' else 'اختلاف دارم', exact=True)
+            await trigger.click()
+            await expect(page.locator('#mission-cash-modal')).to_be_visible()
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
-            await expect(button('cash-confirm')).to_be_visible()
+            await expect(card().get_by_role('button', name='دریافت وجه را تأیید می‌کنم', exact=True)).to_be_visible()
             await page.evaluate('''() => {window.cashToasts=[]; const toast=HZ.toast;
                 HZ.toast=(s)=>{cashToasts.push(s);toast(s)};}''')
 
@@ -71,6 +77,7 @@ async def scenario(browser):
             assert private['confirmed'] is False
 
         await open_app()
+        await expect(page.locator('[data-settlement-reservation]')).to_have_count(0)
         for action in ('cash-confirm', 'cash-dispute'):
             for mode in ('network', 'http', 'html', 'empty', 'partial', 'contradictory', 'typed', 'wrong_status'):
                 async def fault(route, request, *, mode=mode, action=action):
@@ -85,6 +92,7 @@ async def scenario(browser):
                 post = pattern + '/' + action
                 await page.route(post, fault)
                 await clear()
+                await prepare_payment_action(action)
                 await button(action).click()
                 await failed()
                 await page.unroute(post, fault)
@@ -108,6 +116,7 @@ async def scenario(browser):
                 await route.fulfill(json=data)
             await page.route(pattern, bad_state)
             await clear()
+            await prepare_payment_action('cash-confirm')
             await button('cash-confirm').click()
             await failed()
             await expect(button('cash-confirm')).to_be_enabled()
@@ -126,6 +135,7 @@ async def scenario(browser):
         await page.route(confirm_pattern, held)
         await clear()
         await card().evaluate('(e)=>e.dataset.beforePoll="1"')
+        await prepare_payment_action('cash-confirm')
         await button('cash-confirm').click()
         await asyncio.wait_for(entered.wait(), 10)
         await expect(button('cash-confirm')).to_be_disabled()
@@ -145,6 +155,7 @@ async def scenario(browser):
             String(url).endsWith('/cash-confirm') && opts.method==='POST'
             ? (window.cashStalled=true,new Promise(()=>{})) : originalFetch(url,opts)}''')
         await clear()
+        await prepare_payment_action('cash-confirm')
         await button('cash-confirm').click()
         await page.wait_for_function('() => window.cashStalled === true')
         await page.clock.run_for(10001)
@@ -163,6 +174,7 @@ async def scenario(browser):
             await route.fulfill(json={'ok': True, 'settled': True, 'waiting_traveler': False})
         await page.route(confirm_pattern, late)
         await clear()
+        await prepare_payment_action('cash-confirm')
         await button('cash-confirm').click()
         await asyncio.wait_for(entered.wait(), 10)
         await page.evaluate('(token)=>{let s=HZ.load();s.token=token;HZ.save(s)}', other)
@@ -172,6 +184,7 @@ async def scenario(browser):
         await page.unroute(confirm_pattern, late)
         posts = 0
         await page.route(confirm_pattern, forbidden_post)
+        await prepare_payment_action('cash-confirm')
         await button('cash-confirm').click()
         await page.evaluate('() => new Promise(resolve=>requestAnimationFrame(resolve))')
         assert posts == 0 and await page.evaluate('() => cashToasts.length') == 0
@@ -207,9 +220,14 @@ async def scenario(browser):
         await page.route('**/api/translator/payments', old_list)
         await asyncio.wait_for(entered.wait(), 10)
         await clear()
+        await prepare_payment_action('cash-confirm')
         await button('cash-confirm').click()
         await page.wait_for_function("() => cashToasts.includes('پرداخت تسویه شد.')")
         await expect(card()).to_have_count(0)
+        settlement_card = page.locator(f'[data-settlement-reservation="{rid}"]')
+        await expect(settlement_card).to_be_visible()
+        await expect(settlement_card).to_contain_text('نهایی و تأییدشده در سرور')
+        await expect(settlement_card).to_contain_text('نقدی')
         async with page.expect_response(lambda r: r.headers.get('x-cash-stale') == '1'):
             release.set()
         await page.evaluate('() => new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
@@ -219,10 +237,12 @@ async def scenario(browser):
         assert settled['status'] == 'done' and settled['pay_state'] == 'settled' and settled['total'] == b['total']
 
         await clear()
+        await prepare_payment_action('cash-dispute', second['id'])
         await button('cash-dispute', second['id']).click()
         await page.wait_for_function("() => cashToasts.includes('اختلاف پرداخت ثبت شد.')")
         await expect(card(second['id'])).to_contain_text('اختلاف پرداخت ثبت شده')
         await expect(card(second['id']).get_by_role('button')).to_have_count(0)
+        await expect(page.locator(f'[data-settlement-reservation="{second["id"]}"]')).to_have_count(0)
         disputed = await booking(ctx.request, ptok, second['id'])
         assert disputed['status'] == 'finished' and disputed['pay_state'] == 'disputed' and disputed['total'] == second['total']
         assert not errors, errors

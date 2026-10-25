@@ -8,7 +8,7 @@
 <title>میزکار مترجم | همراه</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="vendor/fonts.css">
-<link rel="stylesheet" href="code6-utilities.css?v=51">
+<link rel="stylesheet" href="code6-utilities.css?v=53">
 <link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="">
 <style>
 :root {
@@ -102,7 +102,7 @@
       border-radius: 4px;
     }
 </style>
-<link rel="stylesheet" href="code6.css?v=51">
+<link rel="stylesheet" href="code6.css?v=53">
 </head>
 <body class="w-full h-full relative bg-[#EDF2F7] text-[#171c21] overflow-hidden font-sans">
 <main id="view-workspace" class="relative w-full h-full overflow-hidden">
@@ -257,6 +257,69 @@
   </aside>
 </main>
 
+<div id="mission-extension-modal" class="translator-action-modal" hidden aria-hidden="true">
+  <div class="translator-action-modal-card" role="dialog" aria-modal="true" aria-labelledby="mission-extension-title" tabindex="-1">
+    <div class="translator-action-modal-heading">
+      <span class="material-symbols-outlined" aria-hidden="true">more_time</span>
+      <h2 id="mission-extension-title">درخواست تمدید خدمت توسط مسافر</h2>
+      <button type="button" class="translator-modal-close" data-modal-close aria-label="بستن پنجره"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </div>
+    <p id="mission-extension-copy" class="translator-action-modal-copy"></p>
+    <div class="translator-modal-summary">
+      <div><span>تمدید درخواستی</span><strong id="mission-extension-hours"></strong></div>
+      <div><span>مبلغ اضافهٔ توافق</span><strong id="mission-extension-extra"></strong></div>
+      <div class="translator-modal-total"><span>سهم خالص پس از پذیرش</span><strong id="mission-extension-net"></strong></div>
+      <div><span>مهلت پاسخ</span><strong id="mission-extension-expiry" data-exp></strong></div>
+    </div>
+    <p class="translator-action-modal-note">تمدید فقط پس از تأیید شما اعمال می‌شود؛ رد یا انقضای درخواست، ساعت و مبلغ قبلی را تغییر نمی‌دهد.</p>
+    <div class="translator-action-modal-actions">
+      <button id="mission-extension-reject" type="button" class="translator-modal-secondary">رد تمدید</button>
+      <button id="mission-extension-accept" type="button" class="translator-modal-primary">پذیرش تمدید</button>
+    </div>
+  </div>
+</div>
+
+<div id="mission-finish-modal" class="translator-action-modal" hidden aria-hidden="true">
+  <div class="translator-action-modal-card" role="dialog" aria-modal="true" aria-labelledby="mission-finish-title" tabindex="-1">
+    <div class="translator-action-modal-heading translator-finish-modal-heading">
+      <span class="material-symbols-outlined" aria-hidden="true">flag</span>
+      <h2 id="mission-finish-title">درخواست پایان مأموریت</h2>
+      <button type="button" class="translator-modal-close" data-modal-close aria-label="بستن پنجره"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </div>
+    <p id="mission-finish-copy" class="translator-action-modal-copy">این یک درخواست برای مسافر است؛ خدمت فقط پس از تصمیم مسافر پایان می‌یابد.</p>
+    <div class="translator-modal-summary">
+      <div><span>مدت توافق‌شده</span><strong id="mission-finish-hours"></strong></div>
+      <div><span>مبلغ کل توافق</span><strong id="mission-finish-total"></strong></div>
+      <div class="translator-modal-total"><span>سهم خالص مترجم</span><strong id="mission-finish-net"></strong></div>
+    </div>
+    <p class="translator-action-modal-note">درخواست پایان، مبلغ توافق‌شده را تغییر نمی‌دهد و به معنی تسویه یا واریز وجه نیست.</p>
+    <div class="translator-action-modal-actions">
+      <button type="button" class="translator-modal-secondary" data-modal-close>ادامهٔ خدمت</button>
+      <button id="mission-finish-confirm" type="button" class="translator-modal-danger">ارسال درخواست پایان</button>
+    </div>
+  </div>
+</div>
+
+<div id="mission-cash-modal" class="translator-action-modal" hidden aria-hidden="true">
+  <div class="translator-action-modal-card" role="dialog" aria-modal="true" aria-labelledby="mission-cash-title" tabindex="-1">
+    <div class="translator-action-modal-heading translator-cash-modal-heading">
+      <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+      <h2 id="mission-cash-title">تسویهٔ نقدی با مسافر</h2>
+      <button type="button" class="translator-modal-close" data-modal-close aria-label="بستن پنجره"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </div>
+    <p id="mission-cash-copy" class="translator-action-modal-copy"></p>
+    <div class="translator-modal-summary">
+      <div><span>مبلغ توافق‌شده</span><strong id="mission-cash-total"></strong></div>
+      <div class="translator-modal-total"><span>سهم خالص شما</span><strong id="mission-cash-net"></strong></div>
+    </div>
+    <p class="translator-action-modal-note">این فقط رسید نقدی واقعی را ثبت می‌کند؛ تسویه نهایی پس از تأیید دوطرفه در سرور انجام می‌شود. درگاه آنلاین یا کیف پول فعال نیست.</p>
+    <div class="translator-action-modal-actions">
+      <button id="mission-cash-dispute" type="button" class="translator-modal-secondary translator-modal-dispute">ثبت اختلاف</button>
+      <button id="mission-cash-confirm" type="button" class="translator-modal-primary">تأیید دریافت وجه</button>
+    </div>
+  </div>
+</div>
+
 <section id="view-earnings" class="translator-alt-view hidden" aria-labelledby="earnings-heading">
   <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
     <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><h1 id="earnings-heading" class="text-[15px] font-black">گزارش مالی</h1></div>
@@ -382,14 +445,14 @@
   }
 </script>
 <script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
-<script src="mission-map.js?v=51"></script>
-<script src="ui.js?v=51"></script>
-<script src="mission-actions.js?v=51"></script>
-<script src="presence.js?v=51"></script>
-<script src="support.js?v=51"></script>
-<script src="notifications.js?v=51"></script>
-<script src="settings.js?v=51"></script>
-<script src="app.js?v=51"></script>
-<script src="config-features.js?v=51"></script>
+<script src="mission-map.js?v=53"></script>
+<script src="ui.js?v=53"></script>
+<script src="mission-actions.js?v=53"></script>
+<script src="presence.js?v=53"></script>
+<script src="support.js?v=53"></script>
+<script src="notifications.js?v=53"></script>
+<script src="settings.js?v=53"></script>
+<script src="app.js?v=53"></script>
+<script src="config-features.js?v=53"></script>
 </body>
 </html>

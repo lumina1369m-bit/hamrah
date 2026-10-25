@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from playwright.async_api import async_playwright, expect
-from finish_flow_ui import BASE, api, booking
+from finish_flow_ui import BASE, api, booking, arrive_and_start
 from booking_options_ui import login, translator
 
 ARTIFACTS = Path(__file__).parent / 'assets' / 'last_payment_methods'
@@ -38,7 +38,7 @@ async def main():
             bid = created['id']
             offers = await api(ctx.request, 'GET', '/translator/offers', ttok)
             await api(ctx.request, 'POST', f"/translator/offers/{offers['offers'][0]['id']}/accept", ttok)
-            await api(ctx.request, 'POST', f'/translator/missions/{bid}/verify-code', ttok, {'code': created['service_code']})
+            await arrive_and_start(ctx.request, bid, ttok, created['service_code'])
             await api(ctx.request, 'POST', f'/traveler/bookings/{bid}/finish', ptok)
             user = {'name': 'علی', 'last': 'رضایی', 'gender': 'مرد', 'phone': phone}
             await ctx.add_init_script(

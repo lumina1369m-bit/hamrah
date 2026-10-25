@@ -44,6 +44,9 @@ jobs:
       - name: تست واحد میزکار مترجم و نقشه
         run: node --test tests/translator_mission_map.test.js
 
+      - name: تست انقضای عملیات مترجم با ساعت سرور
+        run: node --test tests/translator_mission_actions.test.js
+
       - name: تست تنظیمات پذیرش جنسیت مسافر توسط مترجم
         run: node --test tests/translator_settings.test.js
 

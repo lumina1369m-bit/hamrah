@@ -41,9 +41,22 @@ async def scenario(browser):
         def button(action, change_id=cid):
             return card(change_id).get_by_role('button', name='پذیرش' if action == 'accept' else 'رد', exact=True)
 
+        def start_button():
+            return page.locator('#missions-list').get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True)
+
+        async def fill_code(code):
+            for index, digit in enumerate(code):
+                await page.locator('#missions-list input').nth(index).fill(digit)
+
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
             await expect(button('accept')).to_be_visible()
+            mission = await api(ctx.request, 'GET', f'/translator/missions/{rid}', token)
+            if not mission['arrived_at']:
+                arrival = page.locator('#missions-list').get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
+                await expect(arrival).to_be_visible()
+                await arrival.click()
+                await expect(start_button()).to_be_visible()
             await page.evaluate('''()=>{window.changeToasts=[]; const toast=HZ.toast;
                 HZ.toast=(s)=>{changeToasts.push(s);toast(s)}}''')
 
@@ -135,7 +148,7 @@ async def scenario(browser):
         await button('accept').click()
         await asyncio.wait_for(entered.wait(), 10)
         await expect(button('reject')).to_be_disabled()
-        await expect(page.locator('#missions-list').get_by_role('button', name='ثبت کد و شروع خدمت', exact=True)).to_be_disabled()
+        await expect(start_button()).to_be_disabled()
         await expect(page.locator('[data-before-poll]')).to_have_count(0)
         await expect(button('reject')).to_be_disabled()
         await card().evaluate('(e)=>e.querySelectorAll("button").forEach(b=>b.click())')
@@ -245,8 +258,8 @@ async def scenario(browser):
         assert (await api(ctx.request, 'GET', f'/translator/missions/{rid}', token))['details'] == accepted['details']
 
         # Existing allowed 20-hour change must not strand subsequent service controls.
-        await page.locator('#missions-list input').fill(b['service_code'])
-        await page.locator('#missions-list').get_by_role('button', name='ثبت کد و شروع خدمت', exact=True).click()
+        await fill_code(b['service_code'])
+        await page.locator('#missions-list').get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True).click()
         await page.wait_for_function("()=>changeToasts.includes('خدمت شروع شد.')")
         result = await booking(ctx.request, ptok, rid)
         assert result['hours'] == 20 and result['service_started'] and result['total'] == before['total']

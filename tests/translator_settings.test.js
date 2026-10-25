@@ -27,7 +27,7 @@ test('settings read and save the selected preference through authenticated serve
   assert.match(settingsSource, /window\.HZ\.authHeaders\(actor/);
   assert.match(settingsSource, /traveler_gender_pref: value/);
   assert.match(settingsSource, /تنظیم ذخیره شد و برای پیشنهادهای جدید اعمال می‌شود/);
-  assert.match(appHTML, /<script src="settings\.js\?v=51"><\/script>/);
+  assert.match(appHTML, /<script src="settings\.js\?v=53"><\/script>/);
 });
 
 test('the server validates, persists, and applies the translator preference to new matching', () => {
