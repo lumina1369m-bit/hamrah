@@ -76,8 +76,8 @@ async def main():
         await P.evaluate(API, ['POST', f'/traveler/bookings/{bid}/payment', {'method': 'cash'}, ptok])
         await T.wait_for_timeout(5500)
         check('بخش پرداخت منتظر تأیید نمایش داده می‌شود', await T.evaluate("()=>!!document.getElementById('payments-box') && document.getElementById('payments-box').textContent.includes('دریافت وجه را تأیید می‌کنم')"))
-        await T.evaluate("()=>{const b=[...document.querySelectorAll('#payments-box button')].find(x=>x.textContent.trim()==='دریافت وجه را تأیید می‌کنم'); b && b.click();}")
-        await T.get_by_role('button', name='تأیید دریافت وجه', exact=True).click()
+        await T.locator('#payments-box').get_by_role('button', name='دریافت وجه را تأیید می‌کنم', exact=True).click()
+        await T.locator('#mission-cash-modal').get_by_role('button', name='تأیید دریافت وجه', exact=True).click()
         await T.wait_for_timeout(1500)
         st = (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings']
         bk = next(x for x in st if x['id'] == bid)
