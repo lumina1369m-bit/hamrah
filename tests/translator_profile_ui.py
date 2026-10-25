@@ -28,7 +28,7 @@ async def scenario(browser, width):
         await profile_button.click()
         panel = page.locator('#inline-profile-panel')
         await expect(panel).to_be_visible()
-        await expect(panel.locator('#profile-title')).to_have_text('نمایه مترجم')
+        await expect(panel.locator('#profile-title')).to_have_text('نمایهٔ مترجم')
         await expect(panel.locator('[data-tr-name]')).to_have_text('علی رضایی')
         note = panel.locator('#profile-data-note')
         await expect(note).to_contain_text('همین مرورگر')
