@@ -203,7 +203,7 @@ async def scenario(browser):
         await expect(page.locator('#offers-box')).to_contain_text('دریافت درخواست‌ها انجام نشد')
         await expect(card()).to_have_count(0)
         await page.unroute_all(behavior='wait')
-        await page.get_by_role('button', name='دریافت دوبارهٔ درخواست‌ها', exact=True).click()
+        await page.get_by_role('button', name='تلاش دوباره', exact=True).click()
         await expect(button('accept')).to_be_enabled()
 
         # Keep one old pending list in flight across real acceptance.
