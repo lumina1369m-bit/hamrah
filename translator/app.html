@@ -8,7 +8,7 @@
 <title>میزکار مترجم | همراه</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="vendor/fonts.css">
-<link rel="stylesheet" href="code6-utilities.css?v=49">
+<link rel="stylesheet" href="code6-utilities.css?v=53">
 <link rel="stylesheet" href="/traveler/vendor/leaflet/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="">
 <style>
 :root {
@@ -102,7 +102,7 @@
       border-radius: 4px;
     }
 </style>
-<link rel="stylesheet" href="code6.css?v=49">
+<link rel="stylesheet" href="code6.css?v=53">
 </head>
 <body class="w-full h-full relative bg-[#EDF2F7] text-[#171c21] overflow-hidden font-sans">
 <main id="view-workspace" class="relative w-full h-full overflow-hidden">
@@ -216,6 +216,10 @@
           <span class="text-[10px] font-bold text-on-surface">برنامهٔ مأموریت‌ها</span>
           <button type="button" class="neu-flat px-3 py-2 rounded-xl text-[10px] font-bold" data-target="schedule" aria-controls="view-schedule" onclick="switchView('schedule')">بازکردن برنامه</button>
         </section>
+        <section class="neu-flat-sm p-3 rounded-xl flex items-center justify-between gap-2">
+          <span class="text-[10px] font-bold text-on-surface">تنظیمات دریافت درخواست</span>
+          <button type="button" class="neu-flat px-3 py-2 rounded-xl text-[10px] font-bold" data-target="settings" aria-controls="view-settings" onclick="switchView('settings')">تنظیمات</button>
+        </section>
         <section class="neu-flat-sm p-3 rounded-xl">
           <button id="notifications-btn" class="flex items-center gap-2 text-[10px] font-bold text-on-surface" type="button" aria-controls="inline-notifications-panel" aria-expanded="false" onclick="toggleInlinePanel('notifications')">
             <span class="material-symbols-outlined text-primary" aria-hidden="true">notifications</span>اعلان‌های حساب
@@ -253,6 +257,69 @@
   </aside>
 </main>
 
+<div id="mission-extension-modal" class="translator-action-modal" hidden aria-hidden="true">
+  <div class="translator-action-modal-card" role="dialog" aria-modal="true" aria-labelledby="mission-extension-title" tabindex="-1">
+    <div class="translator-action-modal-heading">
+      <span class="material-symbols-outlined" aria-hidden="true">more_time</span>
+      <h2 id="mission-extension-title">درخواست تمدید خدمت توسط مسافر</h2>
+      <button type="button" class="translator-modal-close" data-modal-close aria-label="بستن پنجره"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </div>
+    <p id="mission-extension-copy" class="translator-action-modal-copy"></p>
+    <div class="translator-modal-summary">
+      <div><span>تمدید درخواستی</span><strong id="mission-extension-hours"></strong></div>
+      <div><span>مبلغ اضافهٔ توافق</span><strong id="mission-extension-extra"></strong></div>
+      <div class="translator-modal-total"><span>سهم خالص پس از پذیرش</span><strong id="mission-extension-net"></strong></div>
+      <div><span>مهلت پاسخ</span><strong id="mission-extension-expiry" data-exp></strong></div>
+    </div>
+    <p class="translator-action-modal-note">تمدید فقط پس از تأیید شما اعمال می‌شود؛ رد یا انقضای درخواست، ساعت و مبلغ قبلی را تغییر نمی‌دهد.</p>
+    <div class="translator-action-modal-actions">
+      <button id="mission-extension-reject" type="button" class="translator-modal-secondary">رد تمدید</button>
+      <button id="mission-extension-accept" type="button" class="translator-modal-primary">پذیرش تمدید</button>
+    </div>
+  </div>
+</div>
+
+<div id="mission-finish-modal" class="translator-action-modal" hidden aria-hidden="true">
+  <div class="translator-action-modal-card" role="dialog" aria-modal="true" aria-labelledby="mission-finish-title" tabindex="-1">
+    <div class="translator-action-modal-heading translator-finish-modal-heading">
+      <span class="material-symbols-outlined" aria-hidden="true">flag</span>
+      <h2 id="mission-finish-title">درخواست پایان مأموریت</h2>
+      <button type="button" class="translator-modal-close" data-modal-close aria-label="بستن پنجره"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </div>
+    <p id="mission-finish-copy" class="translator-action-modal-copy">این یک درخواست برای مسافر است؛ خدمت فقط پس از تصمیم مسافر پایان می‌یابد.</p>
+    <div class="translator-modal-summary">
+      <div><span>مدت توافق‌شده</span><strong id="mission-finish-hours"></strong></div>
+      <div><span>مبلغ کل توافق</span><strong id="mission-finish-total"></strong></div>
+      <div class="translator-modal-total"><span>سهم خالص مترجم</span><strong id="mission-finish-net"></strong></div>
+    </div>
+    <p class="translator-action-modal-note">درخواست پایان، مبلغ توافق‌شده را تغییر نمی‌دهد و به معنی تسویه یا واریز وجه نیست.</p>
+    <div class="translator-action-modal-actions">
+      <button type="button" class="translator-modal-secondary" data-modal-close>ادامهٔ خدمت</button>
+      <button id="mission-finish-confirm" type="button" class="translator-modal-danger">ارسال درخواست پایان</button>
+    </div>
+  </div>
+</div>
+
+<div id="mission-cash-modal" class="translator-action-modal" hidden aria-hidden="true">
+  <div class="translator-action-modal-card" role="dialog" aria-modal="true" aria-labelledby="mission-cash-title" tabindex="-1">
+    <div class="translator-action-modal-heading translator-cash-modal-heading">
+      <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+      <h2 id="mission-cash-title">تسویهٔ نقدی با مسافر</h2>
+      <button type="button" class="translator-modal-close" data-modal-close aria-label="بستن پنجره"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </div>
+    <p id="mission-cash-copy" class="translator-action-modal-copy"></p>
+    <div class="translator-modal-summary">
+      <div><span>مبلغ توافق‌شده</span><strong id="mission-cash-total"></strong></div>
+      <div class="translator-modal-total"><span>سهم خالص شما</span><strong id="mission-cash-net"></strong></div>
+    </div>
+    <p class="translator-action-modal-note">این فقط رسید نقدی واقعی را ثبت می‌کند؛ تسویه نهایی پس از تأیید دوطرفه در سرور انجام می‌شود. درگاه آنلاین یا کیف پول فعال نیست.</p>
+    <div class="translator-action-modal-actions">
+      <button id="mission-cash-dispute" type="button" class="translator-modal-secondary translator-modal-dispute">ثبت اختلاف</button>
+      <button id="mission-cash-confirm" type="button" class="translator-modal-primary">تأیید دریافت وجه</button>
+    </div>
+  </div>
+</div>
+
 <section id="view-earnings" class="translator-alt-view hidden" aria-labelledby="earnings-heading">
   <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
     <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><h1 id="earnings-heading" class="text-[15px] font-black">گزارش مالی</h1></div>
@@ -278,6 +345,22 @@
     <div class="mt-3"><h2 class="text-[11px] font-black">اعلان‌های پرونده</h2><div id="notif-box" class="flex flex-col gap-2 mt-2" aria-live="polite"></div></div>
     <div id="iv-box" class="mt-3"></div>
     <button type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
+  </div>
+</section>
+<section id="view-settings" class="translator-alt-view hidden" aria-labelledby="settings-heading">
+  <div class="neu-flat p-5 rounded-3xl w-full max-w-sm code6-alt-card">
+    <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined" aria-hidden="true">tune</span><h1 id="settings-heading" class="text-[15px] font-black">تنظیمات دریافت درخواست</h1></div>
+    <p class="text-[10px] text-on-surface-variant mt-2">جنسیت مسافرانی را انتخاب کنید که درخواست‌های جدیدشان برای شما فرستاده شود. این تنظیم با ترجیح مسافر دربارهٔ جنسیت مترجم فرق دارد.</p>
+    <label for="translator-traveler-gender-pref" class="block text-[11px] font-bold mt-4 mb-2">چه کسانی بتوانند برای شما درخواست بفرستند؟</label>
+    <select id="translator-traveler-gender-pref" class="w-full neu-pressed px-3 py-3 rounded-xl text-[12px] font-bold text-on-surface" disabled>
+      <option value="any">فرقی نمی‌کند؛ مرد یا زن</option>
+      <option value="male">فقط مسافران مرد</option>
+      <option value="female">فقط مسافران زن</option>
+    </select>
+    <p class="text-[9.5px] text-on-surface-variant mt-2">اگر جنسیت مسافر در رزرو ثبت نشده باشد، درخواست با انتخاب محدودِ مرد یا زن تطبیق داده نمی‌شود. تغییر فقط روی پیشنهادهای جدید اعمال می‌شود؛ پیشنهادهای قبلی باقی می‌مانند.</p>
+    <p id="translator-gender-pref-status" class="text-[10px] text-on-surface-variant mt-3" role="status" aria-live="polite">در حال دریافت تنظیم از سرور…</p>
+    <button id="translator-gender-pref-save" type="button" class="translator-alt-back neu-btn-primary px-4 py-2 rounded-xl mt-3 text-[11px] font-bold" disabled>ذخیرهٔ تنظیم</button>
+    <button type="button" class="translator-alt-back neu-flat-sm px-4 py-2 rounded-xl mt-2 text-[11px] font-bold" data-target="workspace" onclick="switchView('workspace')">بازگشت به میزکار</button>
   </div>
 </section>
 <section id="inline-profile-panel" class="neu-flat p-4 rounded-2xl fixed z-50 top-24 right-3 left-3 hidden code6-overlay-card" aria-labelledby="profile-title">
@@ -341,11 +424,12 @@
     if (sheet) { sheet.classList.remove('sheet-collapsed'); sheet.classList.add('sheet-expanded'); }
   }
   function switchView(target) {
-    ['workspace', 'schedule', 'earnings', 'credentials'].forEach(function (name) {
+    ['workspace', 'schedule', 'earnings', 'credentials', 'settings'].forEach(function (name) {
       var panel = document.getElementById(name === 'workspace' ? 'view-workspace' : 'view-' + name);
       if (panel) panel.classList.toggle('hidden', name !== target);
     });
     if (target === 'workspace' && window.HZ_TRANSLATOR_MAP) requestAnimationFrame(function () { window.HZ_TRANSLATOR_MAP.invalidateSize(); });
+    if (target === 'settings' && window.HZ_TRANSLATOR_SETTINGS) window.HZ_TRANSLATOR_SETTINGS.refresh();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function toggleSosInline() { if (window.HZ_TRANSLATOR_SUPPORT) window.HZ_TRANSLATOR_SUPPORT.toggle(); }
@@ -361,13 +445,14 @@
   }
 </script>
 <script src="/traveler/vendor/leaflet/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin=""></script>
-<script src="mission-map.js?v=49"></script>
-<script src="ui.js?v=49"></script>
-<script src="mission-actions.js?v=49"></script>
-<script src="presence.js?v=49"></script>
-<script src="support.js?v=49"></script>
-<script src="notifications.js?v=49"></script>
-<script src="app.js?v=49"></script>
-<script src="config-features.js?v=49"></script>
+<script src="mission-map.js?v=53"></script>
+<script src="ui.js?v=53"></script>
+<script src="mission-actions.js?v=53"></script>
+<script src="presence.js?v=53"></script>
+<script src="support.js?v=53"></script>
+<script src="notifications.js?v=53"></script>
+<script src="settings.js?v=53"></script>
+<script src="app.js?v=53"></script>
+<script src="config-features.js?v=53"></script>
 </body>
 </html>

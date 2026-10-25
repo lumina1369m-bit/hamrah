@@ -53,6 +53,16 @@
   }
   function save(state) { localStorage.setItem(KEY, JSON.stringify(state)); }
 
+  // Same-origin preview proxies can strip Authorization; keep the server-supported fallback too.
+  function authHeaders(token, extra) {
+    const headers = Object.assign({}, extra || {});
+    if (typeof token === 'string' && token.length) {
+      headers.Authorization = 'Bearer ' + token;
+      headers['X-Auth-Token'] = token;
+    }
+    return headers;
+  }
+
   // ---------- تاریخ و عدد ----------
   const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
   const toFa = (v) => String(v).replace(/[0-9]/g, (d) => FA_DIGITS[d]);
@@ -159,5 +169,5 @@
       .sort(function (a, b) { return Date.parse(a.startAt) - Date.parse(b.startAt); });
   }
 
-  w.HZ = { acceptedMissions, CONFIG, KEY, load, save, defaultState, toFa, toEn, money, jFull, jDate, clock, pad2, jalToGreg, ageFrom, validNationalId, validSheba, toast, countdown, requireSession, STATUS_LABEL };
+  w.HZ = { acceptedMissions, authHeaders, CONFIG, KEY, load, save, defaultState, toFa, toEn, money, jFull, jDate, clock, pad2, jalToGreg, ageFrom, validNationalId, validSheba, toast, countdown, requireSession, STATUS_LABEL };
 })(window);

@@ -29,7 +29,7 @@ async def scenario(browser, width):
         note = page.locator('#workspace-metrics-note')
         await expect(note).to_be_visible()
         await expect(note.locator('#workspace-metrics-title')).to_have_text('خلاصهٔ عملکرد')
-        await expect(note).to_contain_text('از سرور دریافت نمی‌شوند')
+        await expect(note).to_contain_text('از سرور دریافت نمی‌شود')
         await expect(note).to_contain_text('عدد نمونه نمایش داده نمی‌شود')
         text = await workspace.inner_text()
         for value in FORBIDDEN:

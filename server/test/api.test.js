@@ -9,9 +9,9 @@ function check(name, ok, extra = '') {
   if (ok) { passed++; console.log('  ok   ' + name); }
   else { failed++; console.log('  FAIL ' + name + (extra ? '  [' + extra + ']' : '')); }
 }
-async function call(method, p, body, token) {
+async function call(method, p, body, token, authHeader = 'Authorization') {
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = 'Bearer ' + token;
+  if (token) headers[authHeader] = authHeader === 'Authorization' ? 'Bearer ' + token : token;
   const r = await fetch(BASE + p, { method, headers, body: body ? JSON.stringify(body) : undefined });
   let data = null; try { data = await r.json(); } catch (e) { /* non-json */ }
   return { status: r.status, data };
@@ -31,6 +31,8 @@ async function makeTranslator(n) {
 // شروع خدمت با کد امنیتی‌ای که سرور برای همان رزرو صادر کرده است
 async function startService(bid, ttok, ptok) {
   const bk = (await call('GET', '/api/traveler/bookings', null, ptok)).data.bookings.find((b) => b.id === bid);
+  const arrived = await call('POST', `/api/translator/missions/${bid}/arrive`, null, ttok);
+  if (arrived.status !== 200 && arrived.status !== 409) return arrived;
   return call('POST', `/api/translator/missions/${bid}/verify-code`, { code: bk && bk.service_code }, ttok);
 }
 
@@ -73,6 +75,8 @@ async function main() {
   check('مترجم غیرفعال ماموریت نمی‌بیند', r.status === 403);
   r = await call('POST', '/api/dev/approve-translator', null, tokT);
   check('تأیید آزمایشی مترجم را فعال می‌کند', r.status === 200 && r.data.status === 'active_general');
+  r = await call('GET', '/api/translator/missions', null, tokT, 'X-Auth-Token');
+  check('هدر جایگزین X-Auth-Token نشست مترجم را برای فهرست مأموریت می‌پذیرد', r.status === 200 && Array.isArray(r.data.missions), JSON.stringify(r));
   const soon = new Date(Date.now() + 5 * 86400000).toISOString();
   const later = new Date(Date.now() + 6 * 86400000).toISOString();
   const past = new Date(Date.now() - 5 * 86400000).toISOString();
@@ -134,6 +138,8 @@ async function main() {
   const mine = [...off1.data.offers, ...off2.data.offers].find((o) => o.place === 'بیمارستان امام');
   check('یک مترجم پیشنهاد می‌گیرد', !!mine, JSON.stringify([off1.data, off2.data]).slice(0, 200));
   check('پیشنهاد فیلد جنسیت ندارد', mine && !('gender' in mine) && !('total' in mine) && mine.net > 0);
+  check('پیشنهاد جزئیات لازم کارت را دارد، بدون کد محرمانه', mine && mine.hours === 1 && mine.car === 0 && mine.party === 1 && mine.notes === 'طبقه ۲' && !('service_code' in mine));
+  check('زمان‌سنج پیشنهاد به زمان‌های معتبر سرور متکی است', mine && Number.isFinite(Date.parse(mine.created_at)) && Number.isFinite(Date.parse(mine.expires_at)) && Date.parse(mine.expires_at) > Date.parse(mine.created_at));
   const tokOffer = mine && (off1.data.offers.find((o) => o.id === mine.id) ? T1 : T2);
   check('پیشنهاد به شناسه همان رزرو متصل است', mine.reservation_id === bid);
   const privateOffer = await call('GET', `/api/translator/offers/${mine.id}`, null, tokOffer);
@@ -187,8 +193,36 @@ async function main() {
   await call('PATCH', '/api/translator/online', { online: false }, T2);
   const T3 = await makeTranslator(base + 20);
   const T4 = await makeTranslator(base + 21);
-  await call('PATCH', '/api/translator/online', { online: true, gender: 'female', accept_any: false }, T3);
+  await call('PATCH', '/api/translator/online', { online: true, gender: 'female' }, T3);
+  const searchCancelResult = await call('POST', `/api/traveler/bookings/${bid2}/cancel`, null, tokP); // درخواست آزمایشِ باز پاک می‌شود تا پیشنهاد کهنه تنظیم تازه را مسدود نکند
   await call('PATCH', '/api/translator/online', { online: true, gender: 'male' }, T4);
+  r = await call('GET', '/api/translator/preferences', null, T3);
+  check('تنظیم جنسیت مسافر برای مترجم تازه‌فعال‌شده «فرقی نمی‌کند» است', r.status === 200 && r.data.traveler_gender_pref === 'any');
+  r = await call('PATCH', '/api/translator/preferences', { traveler_gender_pref: 'female' }, T3);
+  check('مترجم می‌تواند فقط مسافران زن را انتخاب کند', r.status === 200 && r.data.traveler_gender_pref === 'female');
+  r = await call('GET', '/api/translator/preferences', null, T3);
+  check('ترجیح جنسیت مسافر از سرور بازخوانی می‌شود', r.status === 200 && r.data.traveler_gender_pref === 'female');
+  r = await call('PATCH', '/api/translator/preferences', { traveler_gender_pref: 'other' }, T3);
+  check('مقدار نامعتبر ترجیح جنسیت رد و مقدار قبلی حفظ می‌شود', r.status === 400 && (await call('GET', '/api/translator/preferences', null, T3)).data.traveler_gender_pref === 'female');
+  r = await call('PATCH', '/api/translator/preferences', { traveler_gender_pref: 'any' }, T3);
+  check('تنظیم بدون ترجیح ذخیره می‌شود', r.status === 200 && r.data.traveler_gender_pref === 'any');
+  const anyGenderBooking = (await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'هر جنسیت مسافر', traveler_name: 'A', traveler_gender: 'male', gender_pref: 'any' }, tokP)).data;
+  r = await call('GET', '/api/translator/offers', null, T3);
+  const anyGenderOffer = r.data.offers.find((o) => o.place === 'هر جنسیت مسافر');
+  check('تنظیم بدون ترجیح، مسافر با جنسیت دیگر را هم می‌پذیرد', !!anyGenderOffer);
+  if (anyGenderOffer) await call('POST', `/api/translator/offers/${anyGenderOffer.id}/decline`, null, T3);
+  await call('POST', `/api/traveler/bookings/${anyGenderBooking.id}/cancel`, null, tokP);
+  r = await call('PATCH', '/api/translator/preferences', { traveler_gender_pref: 'male' }, T3);
+  check('انتخاب فقط مسافران مرد هم ذخیره می‌شود', r.status === 200 && r.data.traveler_gender_pref === 'male');
+  const maleOnlyBooking = (await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'فقط مسافر مرد', traveler_name: 'A', traveler_gender: 'male', gender_pref: 'any' }, tokP)).data;
+  r = await call('GET', '/api/translator/offers', null, T3);
+  const maleOnlyOffer = r.data.offers.find((o) => o.place === 'فقط مسافر مرد');
+  check('انتخاب مرد، درخواست مرد را حتی با جنسیت متفاوت مترجم می‌پذیرد', !!maleOnlyOffer, JSON.stringify({ booking: maleOnlyBooking, offers: r.data }));
+  if (maleOnlyOffer) await call('POST', `/api/translator/offers/${maleOnlyOffer.id}/decline`, null, T3);
+  await call('POST', `/api/traveler/bookings/${maleOnlyBooking.id}/cancel`, null, tokP);
+  await call('PATCH', '/api/translator/preferences', { traveler_gender_pref: 'female' }, T3);
+  // حتی پذیرش قدیمیِ هر جنسیت هم محدودیت سروریِ انتخاب تازه را دور نمی‌زند.
+  await call('PATCH', '/api/translator/online', { online: true, accept_any: true }, T3);
   r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'جنسیت', traveler_name: 'A', traveler_gender: 'male', gender_pref: 'same_gender' }, tokP);
   const g1 = r.data.id;
   r = await call('GET', '/api/translator/offers', null, T3);
@@ -204,13 +238,21 @@ async function main() {
   r = await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'مختلط', traveler_name: 'A', traveler_gender: 'male', gender_pref: 'any' }, tokP);
   const g3 = r.data.id;
   r = await call('GET', '/api/translator/offers', null, T3);
-  check('مترجم بدون پذیرش هر جنسیت، مسافر مخالف را نمی‌گیرد', !r.data.offers.some((o) => o.place === 'مختلط'));
+  check('تنظیم «فقط مسافر زن» پیشنهاد مسافر مرد را فیلتر می‌کند', !r.data.offers.some((o) => o.place === 'مختلط'));
+  const femaleBooking = (await call('POST', '/api/traveler/bookings', { kind: 'instant', origin_lang: 'ar', dest_lang: 'fa', place: 'فقط مسافر زن', traveler_name: 'A', traveler_gender: 'female', gender_pref: 'any' }, tokP)).data;
+  r = await call('GET', '/api/translator/offers', null, T3);
+  const femaleOffer = r.data.offers.find((o) => o.place === 'فقط مسافر زن');
+  check('تنظیم «فقط مسافر زن» پیشنهاد مسافر زن را دریافت می‌کند', !!femaleOffer, JSON.stringify({ booking: femaleBooking, offers: r.data }));
+  if (femaleOffer) await call('POST', `/api/translator/offers/${femaleOffer.id}/decline`, null, T3);
+  await call('POST', `/api/traveler/bookings/${femaleBooking.id}/cancel`, null, tokP);
   const cancelBefore = (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T4)).data;
   check('وضعیت خصوصی پیش از لغو به همان مأموریت وصل است', cancelBefore.reservation_id === g1 && cancelBefore.cancelled === false && cancelBefore.cancelled_at === null && cancelBefore.assigned === true);
   check('تاریخچهٔ لغو بدون نشست خصوصی است', (await call('GET', `/api/translator/missions/${g1}/cancellation`)).status === 401);
   check('مسافر تاریخچهٔ خصوصی لغو مترجم را نمی‌خواند', (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, tokP)).status === 403);
   check('مترجم دیگر تاریخچهٔ لغو را نمی‌خواند', (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T3)).status === 404);
   const cancelPrice = (await call('GET', '/api/traveler/bookings', null, tokP)).data.bookings.find(b => b.id === g1).total;
+  const previousArrival = await call('POST', `/api/translator/missions/${g1}/arrive`, null, T4);
+  check('مترجمِ در حال لغو، حضور مأموریت را قبلاً ثبت کرده است', previousArrival.status === 200 && previousArrival.data.already_arrived === false);
   r = await call('POST', `/api/translator/missions/${g1}/cancel`, null, T4);
   check('مترجم می‌تواند ماموریت پذیرفته‌شده را لغو کند', r.status === 200, JSON.stringify(r));
   const cancelReceipt = r.data;
@@ -224,12 +266,26 @@ async function main() {
 
   r = await call('GET', '/api/translator/offers', null, T4);
   check('پس از لغو، رزرو آزاد به همین مترجم (که آزاد شده) پیشنهاد می‌شود', r.data.offers.some((o) => o.place === 'تداخل'));
+  const T6 = await makeTranslator(base + 22);
+  await call('PATCH', '/api/translator/online', { online: true, gender: 'male' }, T6);
+  const reassignmentOffers = await call('GET', '/api/translator/offers', null, T6);
+  const g1Reassignment = reassignmentOffers.data.offers.find((o) => o.reservation_id === g1);
+  check('پس از لغو، مترجم دیگری پیشنهاد همان مأموریت را می‌گیرد', !!g1Reassignment, JSON.stringify(reassignmentOffers.data.offers));
+  if (g1Reassignment) {
+    await call('POST', `/api/translator/offers/${g1Reassignment.id}/accept`, null, T6);
+    const reassignedMission = (await call('GET', `/api/translator/missions/${g1}`, null, T6)).data;
+    check('مترجم بعدی حضور مترجم قبلی را به ارث نمی‌برد', reassignedMission.arrived_at === null);
+    const reassignedCode = (await call('GET', '/api/traveler/bookings', null, tokP)).data.bookings.find((b) => b.id === g1).service_code;
+    const beforeRearrival = await call('POST', `/api/translator/missions/${g1}/verify-code`, { code: reassignedCode }, T6);
+    check('شروع رزرو واگذارشده تا ثبت حضور مترجم جدید مسدود است', beforeRearrival.status === 409 && beforeRearrival.data.error === 'arrival_required');
+  }
   r = await call('POST', `/api/translator/missions/${g1}/cancel`, null, T4);
   check('لغو دوباره همان ماموریت ممنوع است', r.status === 404);
   check('تلاش تکراری، زمان ثبت لغو را عوض نمی‌کند', (await call('GET', `/api/translator/missions/${g1}/cancellation`, null, T4)).data.cancelled_at === cancelReceipt.cancelled_at);
   for (const id of [g1, g2, g3]) await call('POST', `/api/traveler/bookings/${id}/cancel`, null, tokP);
   await call('PATCH', '/api/translator/online', { online: false }, T3);
   await call('PATCH', '/api/translator/online', { online: false }, T4);
+  await call('PATCH', '/api/translator/online', { online: false }, T6);
 
   console.log('== تغییر رزرو پس از پذیرش');
   const T5 = await makeTranslator(base + 30);
@@ -239,6 +295,8 @@ async function main() {
   r = await call('GET', '/api/translator/offers', null, T5);
   const oc = r.data.offers.find((o) => o.place === 'مبدأ اولیه');
   await call('POST', `/api/translator/offers/${oc.id}/accept`, null, T5);
+  const arrivalBeforeChange = await call('POST', `/api/translator/missions/${cr}/arrive`, null, T5);
+  check('ثبت حضور پیش از تغییر مکان موفق است', arrivalBeforeChange.status === 200);
   r = await call('POST', `/api/traveler/bookings/${cr}/change`, { place: 'مقصد جدید' }, tokP);
   check('تغییر مکان پس از پذیرش، رضایت مترجم می‌خواهد (۲۰۲)', r.status === 202 && r.data.pending === true, JSON.stringify(r));
   r = await call('POST', `/api/traveler/bookings/${cr}/change`, { place: 'دوباره' }, tokP);
@@ -253,7 +311,7 @@ async function main() {
   check('مترجم دیگر درخواست تغییر را نمی‌بیند', (await call('GET', `/api/translator/changes/${ch.id}`, null, T1)).status === 404);
   check('نمای تغییر کد مسافر یا شماره تماس را افشا نمی‌کند', !('service_code' in privateChange.data) && !('phone' in privateChange.data));
   const priorChangeMission = (await call('GET', `/api/translator/missions/${cr}`, null, T5)).data;
-  check('نمای خصوصی مأموریت، مشخصات پیش از تغییر را دارد', priorChangeMission.details.place === 'مبدأ اولیه' && priorChangeMission.details.hours === priorChangeMission.hours);
+  check('نمای خصوصی مأموریت، مشخصات پیش از تغییر و حضور ثبت‌شده را دارد', priorChangeMission.details.place === 'مبدأ اولیه' && priorChangeMission.details.hours === priorChangeMission.hours && !!priorChangeMission.arrived_at);
   r = await call('POST', `/api/translator/changes/${ch.id}/reject`, null, T5);
   check('مترجم تغییر را رد می‌کند', r.status === 200);
   check('رد در تاریخچه همان تغییر ثبت شده است', (await call('GET', `/api/translator/changes/${ch.id}`, null, T5)).data.status === 'rejected');
@@ -265,7 +323,7 @@ async function main() {
   const ch2 = (r.data.changes || []).find((c) => c.changes.place === 'مقصد نهایی');
   await call('POST', `/api/translator/changes/${ch2.id}/accept`, null, T5);
   const appliedChangeMission = (await call('GET', `/api/translator/missions/${cr}`, null, T5)).data;
-  check('پذیرش واقعاً مشخصات مأموریت را تغییر می‌دهد', appliedChangeMission.details.place === 'مقصد نهایی' && (await call('GET', `/api/translator/changes/${ch2.id}`, null, T5)).data.status === 'accepted');
+  check('پذیرش تغییر محل، حضور قبلی را پاک و گزارش تازه را الزامی می‌کند', appliedChangeMission.details.place === 'مقصد نهایی' && appliedChangeMission.arrived_at === null && (await call('GET', `/api/translator/changes/${ch2.id}`, null, T5)).data.status === 'accepted');
   check('رضایت تغییر، قیمت نمونهٔ رزرو را بازنویسی نمی‌کند', appliedChangeMission.total === priorChangeMission.total && appliedChangeMission.net === priorChangeMission.net);
   check('پذیرش تکراری تغییر موفق اعلام نمی‌شود', (await call('POST', `/api/translator/changes/${ch2.id}/accept`, null, T5)).status === 410);
 
@@ -306,8 +364,7 @@ async function main() {
   check('لغو رزرو قبل از تطبیق رایگان است', r.status === 200 && r.data.fee_percent === 0);
   r = await call('POST', `/api/traveler/bookings/${bid}/cancel`, null, tokP);
   check('لغو رزرو تطبیق‌یافته کارمزد دارد', r.status === 200 && r.data.fee_percent > 0, JSON.stringify(r));
-  r = await call('POST', `/api/traveler/bookings/${bid2}/cancel`, null, tokP);
-  check('لغو رزرو در جستجو و بستن پیشنهادهای باز', r.status === 200);
+  check('لغو رزرو در جستجو و بستن پیشنهادهای باز', searchCancelResult.status === 200, JSON.stringify(searchCancelResult));
   r = await call('GET', '/api/translator/offers', null, nextT);
   check('پس از لغو، پیشنهادی نمانده', !r.data.offers.some((o) => o.place === 'مترو'));
   r = await call('POST', `/api/traveler/bookings/${bid2}/cancel`, null, tokP);
@@ -342,6 +399,18 @@ async function main() {
   check('رزرو برای پایان خدمت پذیرفته شد', !!pid);
   const missionView = (await call('GET', '/api/translator/missions', null, T9)).data.missions.find((m) => m.reservation_id === pid);
   check('مختصات محل در نمای مأموریت مترجم هست', !!missionView && missionView.lat === 35.72 && missionView.lng === 51.41, JSON.stringify(missionView));
+  check('کارت مأموریت جزئیات واقعی زبان، خودرو، همراهان و یادداشت را دارد', !!missionView && missionView.origin_lang === 'ar' && missionView.dest_lang === 'fa' && missionView.car === 0 && missionView.party === 1 && typeof missionView.notes === 'string' && missionView.arrived_at === null);
+  r = await call('POST', `/api/translator/missions/${pid}/verify-code`, { code: '12345' }, T9);
+  check('شروع خدمت پیش از ثبت حضور دستی در سرور رد می‌شود', r.status === 409 && r.data.error === 'arrival_required');
+  check('گزارش رسیدن بدون نشست ممنوع است', (await call('POST', `/api/translator/missions/${pid}/arrive`)).status === 401);
+  check('مسافر نمی‌تواند گزارش رسیدن مترجم را ثبت کند', (await call('POST', `/api/translator/missions/${pid}/arrive`, null, tokP9)).status === 403);
+  r = await call('POST', `/api/translator/missions/${pid}/arrive`, null, T9);
+  check('مترجم می‌تواند رسیدن را با ثبت دستی به سرور گزارش کند', r.status === 200 && r.data.ok === true && Number.isFinite(Date.parse(r.data.arrived_at)) && r.data.already_arrived === false, JSON.stringify(r));
+  const arrivedAt = r.data.arrived_at;
+  r = await call('POST', `/api/translator/missions/${pid}/arrive`, null, T9);
+  check('گزارش رسیدن تکراری همان زمان را نگه می‌دارد', r.status === 200 && r.data.already_arrived === true && r.data.arrived_at === arrivedAt);
+  const arrivalPrivateView = await call('GET', `/api/translator/missions/${pid}`, null, T9);
+  check('زمان رسیدن در نمای خصوصی مأموریت پایدار است', arrivalPrivateView.status === 200 && arrivalPrivateView.data.arrived_at === arrivedAt);
   const matchedView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('نمای مسافر پس از تطبیق مشخصات مترجم را دارد', !!matchedView && 'translator_name' in matchedView && 'translator_car' in matchedView && matchedView.service_started === false, JSON.stringify(matchedView));
   check('پیش از شروع، زمان شروع و پایان در نمای مسافر خالی است', matchedView.service_started_at === null && matchedView.finished_at === null);
@@ -356,6 +425,7 @@ async function main() {
   check('کد امنیتی اشتباه پذیرفته نمی‌شود', r.status === 401 && r.data.error === 'wrong_code' && r.data.attempts_left === 4, JSON.stringify(r));
   r = await startService(pid, T9, tokP9);
   check('شروع خدمت با کد صادرشده‌ی سرور ثبت می‌شود', r.status === 200 && r.data.started === true, JSON.stringify(r));
+  check('پس از شروع خدمت، ثبت حضور دوباره مجاز نیست', (await call('POST', `/api/translator/missions/${pid}/arrive`, null, T9)).status === 409);
   const liveTravelerBooking = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('مسافر شروع خدمت را در نمای رزرو می‌بیند', liveTravelerBooking.service_started === true);
   const liveMissionList = (await call('GET', '/api/translator/missions', null, T9)).data;
@@ -392,7 +462,7 @@ async function main() {
   const pendingView = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('تمدید در نمای مسافر «منتظر تأیید مترجم» است', !!pendingView.pending_extension && pendingView.pending_extension.id === extId && pendingView.hours === beforeExt.hours, JSON.stringify(pendingView.pending_extension));
   const extOffer = (await call('GET', '/api/translator/offers', null, T9)).data.extensions.find((e) => e.id === extId);
-  check('درخواست تمدید به مترجم می‌رسد', !!extOffer && extOffer.extra_hours === 1 && extOffer.new_net > 0, JSON.stringify(extOffer));
+  check('درخواست تمدید به مترجم می‌رسد', !!extOffer && extOffer.extra_hours === 1 && extOffer.extra_total === pendingView.pending_extension.extra_total && extOffer.new_net > 0 && Number.isFinite(Date.parse(extOffer.expires_at)), JSON.stringify(extOffer));
   const canonicalExtension = await call('GET', `/api/translator/extensions/${extId}`, null, T9);
   check('نمای خصوصی تمدید به همان مأموریت و نرخ توافق‌شده اشاره می‌کند', canonicalExtension.status === 200 && canonicalExtension.data.id === extId && canonicalExtension.data.reservation_id === pid && canonicalExtension.data.status === 'pending' && canonicalExtension.data.extra_hours === 1 && canonicalExtension.data.extra_total > 0 && Number.isFinite(Date.parse(canonicalExtension.data.expires_at)));
   check('نمای تمدید بدون نشست ممنوع است', (await call('GET', `/api/translator/extensions/${extId}`)).status === 401);
@@ -447,6 +517,9 @@ async function main() {
   const privateSettled = (await call('GET', `/api/translator/missions/${pid}`, null, T9)).data;
   check('نمای خصوصی پس از تسویه همچنان قابل تطبیق است', privateSettled.status === 'done' && privateSettled.pay_state === 'settled' && privateSettled.confirmed === true && privateSettled.traveler_paid === true && privateSettled.total === privateCash.total && privateSettled.net === privateCash.net);
   check('نمای نقدی کد امنیتی یا اطلاعات بانکی افشا نمی‌کند', !('service_code' in privateSettled) && !('bank_account' in privateSettled));
+  const settledList = await call('GET', '/api/translator/payments', null, T9);
+  const settlement = settledList.data.settlements.find((item) => item.reservation_id === pid);
+  check('خلاصهٔ تسویهٔ نهایی از سرور به همان مأموریت و مبلغ متصل است', settledList.status === 200 && settlement && settlement.pay_state === 'settled' && settlement.confirmed && settlement.traveler_paid && settlement.hours === privateSettled.hours && settlement.total === privateSettled.total && settlement.net === privateSettled.net && Number.isFinite(Date.parse(settlement.finished_at)));
 
   const view = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === pid);
   check('زمان پایان ثبت می‌شود و زمان شروع پس از پایان و تسویه محفوظ است', Number.isFinite(Date.parse(view.finished_at)) && Date.parse(view.finished_at) >= Date.parse(view.service_started_at) && view.service_started_at === beforeExt.service_started_at);
@@ -491,6 +564,7 @@ async function main() {
   // قفل کد امنیتی پس از ۵ تلاش اشتباه و بازشدن آن از پنل مدیریت
   const lid = await matchOne('قفل کد امنیتی');
   if (lid) {
+    await call('POST', `/api/translator/missions/${lid}/arrive`, null, T9);
     const lCode = (await call('GET', '/api/traveler/bookings', null, tokP9)).data.bookings.find((b) => b.id === lid).service_code;
     const wrong = lCode === '11111' ? '22222' : '11111';
     for (let i = 0; i < 5; i++) r = await call('POST', `/api/translator/missions/${lid}/verify-code`, { code: wrong }, T9);
@@ -915,6 +989,8 @@ async function main() {
   check('نشست دوم پس از خروج تکی معتبر است', r.status === 200);
   r = await call('GET', '/api/auth/me', null, sessionC.token);
   check('نشست سوم پس از خروج تکی معتبر است', r.status === 200);
+  const fallbackBookings = await fetch(BASE + '/api/traveler/bookings', { headers: { 'X-Auth-Token': sessionC.token } });
+  check('دریافت رزروهای مسافر با سرصفحه جایگزین معتبر است', fallbackBookings.status === 200);
   r = await call('POST', '/api/auth/logout', null, sessionA.token);
   check('خروج تکی تکراری بی‌خطر است', r.status === 200 && r.data.ok === true);
   // A supplied target is deliberately ignored: only the caller's account is affected.

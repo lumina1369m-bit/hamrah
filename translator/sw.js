@@ -1,13 +1,14 @@
 // مترجم همراه: کش پوسته‌ی برنامه برای کار آفلاین و نصب PWA
-const CACHE = 'hz-translator-v49';
+const CACHE = 'hz-translator-v53';
 const SHELL = [
   './', 'index.html', 'app.html',
-  'ui.css', 'ui.css?v=49', 'ui.js', 'ui.js?v=49',
-  'app.js', 'app.js?v=49', 'config-features.js', 'config-features.js?v=49',
-  'mission-map.js', 'mission-map.js?v=49', 'mission-actions.js', 'mission-actions.js?v=49',
-  'presence.js', 'presence.js?v=49', 'support.js', 'support.js?v=49',
-  'notifications.js', 'notifications.js?v=49',
-  'code6-utilities.css', 'code6-utilities.css?v=49', 'code6.css', 'code6.css?v=49',
+  'ui.css', 'ui.css?v=53', 'ui.js', 'ui.js?v=53',
+  'app.js', 'app.js?v=53', 'config-features.js', 'config-features.js?v=53',
+  'mission-map.js', 'mission-map.js?v=53', 'mission-actions.js', 'mission-actions.js?v=53',
+  'presence.js', 'presence.js?v=53', 'support.js', 'support.js?v=53',
+  'notifications.js', 'notifications.js?v=53',
+  'settings.js', 'settings.js?v=53',
+  'code6-utilities.css', 'code6-utilities.css?v=53', 'code6.css', 'code6.css?v=53',
   'manifest.webmanifest', 'icon.svg', 'vendor/tailwind.css', 'vendor/theme.css', 'vendor/fonts.css',
   '/traveler/vendor/leaflet/leaflet.css', '/traveler/vendor/leaflet/leaflet.js',
   '/traveler/vendor/leaflet/images/marker-icon.png', '/traveler/vendor/leaflet/images/marker-icon-2x.png',

@@ -31,6 +31,12 @@ async def booking(request, token, bid):
     return next(b for b in body['bookings'] if b['id'] == bid)
 
 
+async def arrive_and_start(request, bid, translator_token, code):
+    await api(request, 'POST', f'/translator/missions/{bid}/arrive', translator_token)
+    return await api(request, 'POST', f'/translator/missions/{bid}/verify-code',
+                     translator_token, {'code': code})
+
+
 async def scenario(browser, own_finish):
     label = 'traveler-early-finish' if own_finish else 'reject-then-approve'
     category = 'business' if own_finish else 'general'
@@ -95,8 +101,7 @@ async def scenario(browser, own_finish):
         await expect(traveler.locator('#stage-3')).to_be_visible()
         await traveler.locator('#btn-arrived').click()
         await expect(traveler.locator('#stage-4')).to_be_visible()
-        await api(translator_ctx.request, 'POST', f'/translator/missions/{bid}/verify-code', ttok,
-                  {'code': created['service_code']})
+        await arrive_and_start(translator_ctx.request, bid, ttok, created['service_code'])
         await expect(traveler.locator('#stage-5')).to_be_visible()
         await expect(traveler.locator('#extension-card')).to_be_visible()
         await expect(traveler.locator('#finish-request-banner')).to_be_hidden()
@@ -106,10 +111,12 @@ async def scenario(browser, own_finish):
             await translator.goto(BASE + '/translator/app.html')
             # The signed-in landing view is the mission map and its bottom sheet.
             await expect(translator.locator('#missions-list').get_by_role('button', name='لغو ماموریت', exact=True)).to_have_count(0)
-            button = translator.locator('#missions-list').get_by_role('button', name='درخواست پایان خدمت', exact=True)
+            button = translator.locator('#missions-list').get_by_role('button', name='درخواست پایان مأموریت', exact=True)
+            await button.click()
+            confirm = translator.locator('#mission-finish-confirm')
             async with translator.expect_response(lambda r: r.url.endswith(f'/missions/{bid}/finish')
                                                    and r.request.method == 'POST') as result:
-                await button.click()
+                await confirm.click()
             response = await result.value
             assert response.status == 202, await response.text()
             await expect(traveler.locator('#finish-request-banner')).to_be_visible()

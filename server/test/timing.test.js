@@ -145,6 +145,8 @@ async function main() {
       check('پذیرش در پنجره ممکن است', acc.status === 200, JSON.stringify(acc));
       const fin = await call('POST', `/api/translator/missions/${rs.data.id}/finish`, null, owner);
       check('پایان خدمت پیش از زمان قرار: ۴۰۹', fin.status === 409 && fin.data.error === 'too_early', JSON.stringify(fin));
+      const earlyArrival = await call('POST', `/api/translator/missions/${rs.data.id}/arrive`, null, owner);
+      check('گزارش حضور مترجم پیش از زمان قرار رد می‌شود', earlyArrival.status === 409 && earlyArrival.data.error === 'arrival_not_allowed', JSON.stringify(earlyArrival));
       const newTime = new Date(Date.now() + 90 * 1000).toISOString();
       const timeChange = await call('POST', `/api/traveler/bookings/${rs.data.id}/change`, { scheduled_at: newTime }, P);
       check('تغییر زمان قرار هم رضایت می‌خواهد', timeChange.status === 202);
@@ -168,6 +170,7 @@ async function main() {
     const ob = (await call('GET', '/api/translator/offers', null, B)).data.offers;
     const [owner, offer] = oa.some(o => o.place === 'تمدید منقضی') ? [A, oa.find(o => o.place === 'تمدید منقضی')] : [B, ob.find(o => o.place === 'تمدید منقضی')];
     await call('POST', `/api/translator/offers/${offer.id}/accept`, null, owner);
+    await call('POST', `/api/translator/missions/${created.data.id}/arrive`, null, owner);
     await call('POST', `/api/translator/missions/${created.data.id}/verify-code`, { code: created.data.service_code }, owner);
     const before = (await call('GET', `/api/translator/missions/${created.data.id}`, null, owner)).data;
     const e = await call('POST', `/api/traveler/bookings/${created.data.id}/extend`, { extra_hours: 1 }, P);

@@ -47,13 +47,20 @@ async def main():
         check('مترجم در میز کار پیشنهاد را پذیرفت', ok_btn)
         await T.wait_for_timeout(1500)
         await T.reload(); await T.wait_for_timeout(1200)
-        # شروع خدمت با کد امنیتی مسافر از روی کارت ماموریت
+        # حضور دستی را ثبت می‌کنیم؛ سپس کد اعلام‌شدهٔ مسافر را در پنج خانه وارد می‌کنیم.
         scode = next(x['service_code'] for x in (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings'] if x['id'] == bid)
-        started = await T.evaluate("""(code)=>{const inp=document.querySelector('#missions-list input'); if(!inp) return false; inp.value=code; const b=[...document.querySelectorAll('#missions-list button')].find(x=>x.textContent.trim()==='ثبت کد و شروع خدمت'); if(!b) return false; b.click(); return true;}""", scode)
-        check('شروع خدمت با کد امنیتی از میز کار', started)
+        await T.get_by_role('button', name='رسیدم به محل ملاقات', exact=True).click()
+        await T.get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True).wait_for()
+        for index, digit in enumerate(scode):
+            await T.locator('#missions-list input').nth(index).fill(digit)
+        await T.get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True).click()
+        await T.locator('#missions-list [data-service-clock]').wait_for()
+        started_booking = next(x for x in (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings'] if x['id'] == bid)
+        check('شروع خدمت با کد امنیتی از میز کار', started_booking['service_started'])
         await T.wait_for_timeout(1500); await T.reload(); await T.wait_for_timeout(1200)
-        check('دکمه‌ی «درخواست پایان خدمت» روی ماموریت است', await T.evaluate("()=>[...document.querySelectorAll('#missions-list button')].some(x=>x.textContent.trim()==='درخواست پایان خدمت')"))
-        await T.evaluate("()=>{const b=[...document.querySelectorAll('#missions-list button')].find(x=>x.textContent.trim()==='درخواست پایان خدمت'); b && b.click();}")
+        check('دکمهٔ درخواست پایان روی مأموریت است', await T.evaluate("()=>[...document.querySelectorAll('#missions-list button')].some(x=>x.textContent.includes('درخواست پایان مأموریت'))"))
+        await T.get_by_role('button', name='درخواست پایان مأموریت', exact=True).click()
+        await T.get_by_role('button', name='ارسال درخواست پایان', exact=True).click()
         await T.wait_for_timeout(1500)
         await T.reload(); await T.wait_for_timeout(1200)
         pending = next(x for x in (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings'] if x['id'] == bid)
@@ -65,6 +72,7 @@ async def main():
         await T.wait_for_timeout(5500)
         check('بخش پرداخت منتظر تأیید نمایش داده می‌شود', await T.evaluate("()=>!!document.getElementById('payments-box') && document.getElementById('payments-box').textContent.includes('دریافت وجه را تأیید می‌کنم')"))
         await T.evaluate("()=>{const b=[...document.querySelectorAll('#payments-box button')].find(x=>x.textContent.trim()==='دریافت وجه را تأیید می‌کنم'); b && b.click();}")
+        await T.get_by_role('button', name='تأیید دریافت وجه', exact=True).click()
         await T.wait_for_timeout(1500)
         st = (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings']
         bk = next(x for x in st if x['id'] == bid)

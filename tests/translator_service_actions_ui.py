@@ -42,8 +42,23 @@ async def scenario(browser):
         def mission_button(name):
             return page.locator('#missions-list').get_by_role('button', name=name, exact=True)
 
+        def extension_review():
+            return page.locator('#missions-list .translator-extension-card').get_by_role('button', name='بررسی درخواست تمدید', exact=True)
+
         def extension_button(name):
-            return page.locator('#offers-box > div').filter(has_text='درخواست تمدید خدمت').get_by_role('button', name=name, exact=True)
+            label = 'پذیرش تمدید' if name in ('پذیرش', 'accept') else 'رد تمدید'
+            return page.locator('#mission-extension-modal').get_by_role('button', name=label, exact=True)
+
+        def finish():
+            return page.locator('#mission-finish-confirm')
+
+        async def prepare_finish():
+            await mission_button('درخواست پایان مأموریت').click()
+            await expect(finish()).to_be_visible()
+
+        async def prepare_extension():
+            await extension_review().click()
+            await expect(page.locator('#mission-extension-modal')).to_be_visible()
 
         async def clear():
             await page.evaluate('() => {window.actionToasts=[]}')
@@ -52,7 +67,7 @@ async def scenario(browser):
             await page.wait_for_function('(s) => window.actionToasts.includes(s)', arg=ERROR)
             assert not await page.evaluate("() => actionToasts.some(s=>s==='خدمت شروع شد.' || s==='تمدید رد شد.' || s.startsWith('تمدید پذیرفته شد') || s.startsWith('درخواست پایان برای مسافر'))")
 
-        async def faults(button, path, receipt, status):
+        async def faults(button, path, receipt, status, prepare=None):
             for mode in ('network', 'http', 'html', 'empty', 'partial', 'contradictory'):
                 async def handler(route, request, *, mode=mode):
                     if mode == 'network':
@@ -65,6 +80,8 @@ async def scenario(browser):
                         await route.fulfill(status=status, json={} if mode == 'empty' else {'ok': True} if mode == 'partial' else receipt)
                 await page.route('**/api/translator/' + path, handler)
                 await clear()
+                if prepare:
+                    await prepare()
                 await button().click()
                 await failed()
                 await page.unroute('**/api/translator/' + path, handler)
@@ -74,7 +91,18 @@ async def scenario(browser):
                 print('PASS', path, mode)
 
         await open_app()
-        start = lambda: mission_button('ثبت کد و شروع خدمت')
+        arrive = lambda: mission_button('رسیدم به محل ملاقات')
+        await faults(arrive, f'missions/{rid}/arrive',
+                     {'ok': True, 'already_arrived': False, 'arrived_at': '2026-10-24T12:00:00.000Z'}, 200)
+        await clear()
+        await arrive().click()
+        await page.wait_for_function("() => actionToasts.includes('رسیدن شما به‌صورت دستی در سرور ثبت شد.')")
+        assert (await api(ctx.request, 'GET', f'/translator/missions/{rid}', token))['arrived_at']
+
+        start = lambda: mission_button('تأیید کد و آغاز همراهی')
+        async def fill_code():
+            for index, digit in enumerate(b['service_code']):
+                await page.locator('#missions-list input').nth(index).fill(digit)
         # Security-code input is re-created after each canonical refresh.
         for mode in ('network', 'http', 'html', 'empty', 'partial', 'contradictory'):
             async def handler(route, request, *, mode=mode):
@@ -85,7 +113,7 @@ async def scenario(browser):
             pattern = f'**/api/translator/missions/{rid}/verify-code'
             await page.route(pattern, handler)
             await clear()
-            await page.locator('#missions-list input').fill(b['service_code'])
+            await fill_code()
             await start().click()
             await failed()
             await page.unroute(pattern, handler)
@@ -106,7 +134,7 @@ async def scenario(browser):
         await page.route(pattern, malformed)
         await page.route(post_pattern, no_post)
         await clear()
-        await page.locator('#missions-list input').fill(b['service_code'])
+        await fill_code()
         await start().click()
         await failed()
         assert count == 0
@@ -131,7 +159,7 @@ async def scenario(browser):
         await page.route(pattern, bad_started_snapshot)
         await page.route(post_pattern, fake_started)
         await clear()
-        await page.locator('#missions-list input').fill(b['service_code'])
+        await fill_code()
         await start().click()
         await failed()
         assert read_count == 2
@@ -150,7 +178,7 @@ async def scenario(browser):
             await route.fulfill(json={})
         await page.route(post_pattern, held)
         await clear()
-        await page.locator('#missions-list input').fill(b['service_code'])
+        await fill_code()
         await start().click()
         await asyncio.wait_for(entered.wait(), 10)
         await expect(start()).to_be_disabled()
@@ -170,7 +198,7 @@ async def scenario(browser):
             window.fetch=(url,opts)=>String(url).endsWith('/verify-code') && opts.method==='POST'
               ? (window.postStalled=true, new Promise(()=>{})) : originalFetch(url,opts); }''')
         await clear()
-        await page.locator('#missions-list input').fill(b['service_code'])
+        await fill_code()
         await start().click()
         await expect(start()).to_be_disabled()
         await page.wait_for_function('() => window.postStalled === true')
@@ -182,14 +210,13 @@ async def scenario(browser):
 
         # Actual start via the UI; timer origin must remain server-owned.
         await clear()
-        await page.locator('#missions-list input').fill(b['service_code'])
+        await fill_code()
         await start().click()
         await page.wait_for_function("() => actionToasts.includes('خدمت شروع شد.')")
         before = await booking(ctx.request, ptok, rid)
         assert before['service_started'] and before['total'] == total
-        finish = lambda: mission_button('درخواست پایان خدمت')
-        await expect(finish()).to_be_visible()
-        await faults(finish, f'missions/{rid}/finish', {'ok': True, 'pending_finish': True}, 202)
+        await expect(mission_button('درخواست پایان مأموریت')).to_be_visible()
+        await faults(finish, f'missions/{rid}/finish', {'ok': True, 'pending_finish': True}, 202, prepare=prepare_finish)
         assert not (await booking(ctx.request, ptok, rid))['finish_requested']
 
         # Late response from the previous account cannot toast or refresh the
@@ -203,6 +230,7 @@ async def scenario(browser):
         finish_pattern = f'**/api/translator/missions/{rid}/finish'
         await page.route(finish_pattern, late)
         await clear()
+        await prepare_finish()
         await finish().click()
         await asyncio.wait_for(entered.wait(), 10)
         await page.evaluate('(token) => {let s=HZ.load();s.token=token;HZ.save(s)}', other)
@@ -214,6 +242,7 @@ async def scenario(browser):
         await open_app()
 
         # Finish remains a request, not a completed or payable service.
+        await prepare_finish()
         await finish().click()
         await page.wait_for_function("() => actionToasts.some(s=>s.startsWith('درخواست پایان برای مسافر'))")
         pending = await booking(ctx.request, ptok, rid)
@@ -227,8 +256,8 @@ async def scenario(browser):
         for decision, label in [('reject', 'رد'), ('accept', 'پذیرش')]:
             e = await api(ctx.request, 'POST', f'/traveler/bookings/{rid}/extend', ptok, {'extra_hours': 1}, status=202)
             button = lambda: extension_button(label)
-            await expect(button()).to_be_visible()
-            await faults(button, f"extensions/{e['id']}/{decision}", {'ok': True}, 200)
+            await expect(extension_review()).to_be_visible()
+            await faults(button, f"extensions/{e['id']}/{decision}", {'ok': True}, 200, prepare=prepare_extension)
             pending = await booking(ctx.request, ptok, rid)
             assert pending['hours'] == before['hours'] and pending['pending_extension']['id'] == e['id']
             if decision == 'reject':
@@ -243,17 +272,18 @@ async def scenario(browser):
                     response = await route.fetch()
                     data = await response.json()
                     for item in data.get('extensions', []):
-                        item['place'] = 'بازسازی کارت حین پاسخ'
+                        item['extra_hours'] = 2
                     await route.fulfill(json=data)
                 decision_pattern = f"**/api/translator/extensions/{e['id']}/reject"
                 await page.route(decision_pattern, held_decision)
                 await page.route('**/api/translator/offers', changed_offer)
                 await clear()
+                await prepare_extension()
                 await button().click()
                 await asyncio.wait_for(entered.wait(), 10)
                 await expect(finish()).to_be_disabled()
                 await expect(extension_button('پذیرش')).to_be_disabled()
-                await expect(page.locator('#offers-box')).to_contain_text('بازسازی کارت حین پاسخ')
+                await expect(page.locator('#missions-list')).to_contain_text('تمدید درخواستی: ۲ ساعت')
                 await expect(extension_button('پذیرش')).to_be_disabled()
                 await expect(button()).to_be_disabled()
                 release.set()
@@ -277,13 +307,14 @@ async def scenario(browser):
             await page.route('**/api/translator/offers', stale_offer)
             await asyncio.wait_for(stale_entered.wait(), 10)
             await clear()
+            await prepare_extension()
             await button().click()
             await page.wait_for_function('(decision) => actionToasts.some(s=>decision==="reject" ? s==="تمدید رد شد." : s.startsWith("تمدید پذیرفته شد"))', arg=decision)
-            await expect(extension_button(label)).to_have_count(0)
+            await expect(extension_review()).to_have_count(0)
             async with page.expect_response(lambda r: r.headers.get('x-offer-stale') == '1'):
                 stale_release.set()
             await page.evaluate('() => new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
-            await expect(extension_button(label)).to_have_count(0)
+            await expect(extension_review()).to_have_count(0)
             await page.unroute('**/api/translator/offers', stale_offer)
             after = await booking(ctx.request, ptok, rid)
             assert after['hours'] == before['hours'] + (1 if decision == 'accept' else 0)
