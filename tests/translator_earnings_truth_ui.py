@@ -36,10 +36,9 @@ async def scenario(browser, width):
         note = page.locator('#earnings-data-note')
         await expect(view).to_be_visible()
         await expect(note).to_be_visible()
-        await expect(note.locator('#earnings-data-title')).to_have_text('گزارش مالی در دسترس نیست')
-        await expect(note).to_contain_text('از سرور دریافت نمی‌شوند')
-        await expect(note).to_contain_text('عدد، نمودار یا نتیجهٔ تسویهٔ نمونه نمایش داده نمی‌شود')
-        await expect(note).to_contain_text('پرداخت‌های منتظر تأیید در میزکار')
+        await expect(note.locator('#earnings-data-title')).to_have_text('گزارش تجمیعی در دسترس نیست')
+        await expect(note).to_contain_text('موجودی کیف پول، نمودار یا تسویهٔ نمونه نمایش داده نمی‌شود')
+        await expect(note).to_contain_text('پرداخت‌های واقعیِ نیازمند پیگیری در میزکار می‌آیند')
         text = await view.inner_text()
         for value in FORBIDDEN:
             assert value not in text, f'fabricated earnings or settlement data remains: {value}'
