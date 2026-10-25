@@ -397,7 +397,9 @@
         arrivalCard.appendChild(el('div', 'translator-mission-state-copy', 'پس از رسیدن، حضور را ثبت کنید. ثبت حضور دستی است و موقعیت دستگاه خوانده نمی‌شود.'));
         var arrivalButton = el('button', 'translator-offer-accept translator-mission-primary-action');
         arrivalButton.type = 'button';
-        arrivalButton.appendChild(el('span', 'material-symbols-outlined', 'where_to_vote'));
+        var arrivalIcon = el('span', 'material-symbols-outlined', 'where_to_vote');
+        arrivalIcon.setAttribute('aria-hidden', 'true');
+        arrivalButton.appendChild(arrivalIcon);
         arrivalButton.appendChild(el('span', '', 'رسیدم به محل ملاقات'));
         HZ_MISSION_ACTION.bind(arrivalButton, m.reservation_id);
         arrivalButton.onclick = function () { serviceAction('arrive', m, undefined, actor); };
@@ -454,7 +456,9 @@
       otpCard.appendChild(codeInputs);
       var verify = el('button', 'translator-offer-accept translator-mission-primary-action');
       verify.type = 'button';
-      verify.appendChild(el('span', 'material-symbols-outlined', 'lock_open'));
+      var verifyIcon = el('span', 'material-symbols-outlined', 'lock_open');
+      verifyIcon.setAttribute('aria-hidden', 'true');
+      verify.appendChild(verifyIcon);
       verify.appendChild(el('span', '', 'تأیید کد و آغاز همراهی'));
       HZ_MISSION_ACTION.bind(verify, m.reservation_id);
       verify.onclick = function () { serviceAction('start', m, inputs.map(function (input) { return input.value; }).join(''), actor); };
@@ -499,7 +503,9 @@
     if (!m.started) {
       var cancelButton = el('button', 'translator-mission-cancel neu-flat-sm');
       cancelButton.type = 'button';
-      cancelButton.appendChild(el('span', 'material-symbols-outlined', 'close'));
+      var cancelIcon = el('span', 'material-symbols-outlined', 'close');
+      cancelIcon.setAttribute('aria-hidden', 'true');
+      cancelButton.appendChild(cancelIcon);
       cancelButton.appendChild(el('span', '', 'لغو مأموریت'));
       HZ_MISSION_ACTION.bind(cancelButton, m.reservation_id);
       cancelButton.onclick = function () { serviceAction('cancel', m, undefined, actor); };
