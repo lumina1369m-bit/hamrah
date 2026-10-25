@@ -67,7 +67,7 @@ async def scenario(browser):
             await page.wait_for_function('(s) => window.actionToasts.includes(s)', arg=ERROR)
             assert not await page.evaluate("() => actionToasts.some(s=>s==='خدمت شروع شد.' || s==='تمدید رد شد.' || s.startsWith('تمدید پذیرفته شد') || s.startsWith('درخواست پایان برای مسافر'))")
 
-        async def faults(button, path, receipt, status, prepare=None):
+        async def faults(button, path, receipt, status, prepare=None, retry=None):
             for mode in ('network', 'http', 'html', 'empty', 'partial', 'contradictory'):
                 async def handler(route, request, *, mode=mode):
                     if mode == 'network':
@@ -85,7 +85,7 @@ async def scenario(browser):
                 await button().click()
                 await failed()
                 await page.unroute('**/api/translator/' + path, handler)
-                await expect(button()).to_be_enabled()
+                await expect(retry() if retry else button()).to_be_enabled()
                 unchanged = await booking(ctx.request, ptok, rid)
                 assert unchanged['status'] == 'matched' and unchanged['total'] == total
                 print('PASS', path, mode)
@@ -182,7 +182,7 @@ async def scenario(browser):
         await start().click()
         await asyncio.wait_for(entered.wait(), 10)
         await expect(start()).to_be_disabled()
-        await expect(mission_button('لغو ماموریت')).to_be_disabled()
+        await expect(mission_button('لغو مأموریت')).to_be_disabled()
         await page.evaluate("() => document.querySelector('#day-bar button').click()")
         assert await page.locator(f'[data-service-mission="{rid}"]:not(:disabled)').count() == 0
         await page.evaluate("() => document.querySelectorAll('[data-service-mission]').forEach(b=>b.click())")
@@ -216,7 +216,8 @@ async def scenario(browser):
         before = await booking(ctx.request, ptok, rid)
         assert before['service_started'] and before['total'] == total
         await expect(mission_button('درخواست پایان مأموریت')).to_be_visible()
-        await faults(finish, f'missions/{rid}/finish', {'ok': True, 'pending_finish': True}, 202, prepare=prepare_finish)
+        await faults(finish, f'missions/{rid}/finish', {'ok': True, 'pending_finish': True}, 202,
+                     prepare=prepare_finish, retry=lambda: mission_button('درخواست پایان مأموریت'))
         assert not (await booking(ctx.request, ptok, rid))['finish_requested']
 
         # Late response from the previous account cannot toast or refresh the
@@ -257,7 +258,8 @@ async def scenario(browser):
             e = await api(ctx.request, 'POST', f'/traveler/bookings/{rid}/extend', ptok, {'extra_hours': 1}, status=202)
             button = lambda: extension_button(label)
             await expect(extension_review()).to_be_visible()
-            await faults(button, f"extensions/{e['id']}/{decision}", {'ok': True}, 200, prepare=prepare_extension)
+            await faults(button, f"extensions/{e['id']}/{decision}", {'ok': True}, 200,
+                         prepare=prepare_extension, retry=extension_review)
             pending = await booking(ctx.request, ptok, rid)
             assert pending['hours'] == before['hours'] and pending['pending_extension']['id'] == e['id']
             if decision == 'reject':
@@ -281,16 +283,15 @@ async def scenario(browser):
                 await prepare_extension()
                 await button().click()
                 await asyncio.wait_for(entered.wait(), 10)
-                await expect(finish()).to_be_disabled()
-                await expect(extension_button('پذیرش')).to_be_disabled()
+                await expect(mission_button('درخواست پایان مأموریت')).to_be_disabled()
+                await expect(extension_review()).to_be_disabled()
                 await expect(page.locator('#missions-list')).to_contain_text('تمدید درخواستی: ۲ ساعت')
-                await expect(extension_button('پذیرش')).to_be_disabled()
-                await expect(button()).to_be_disabled()
+                await expect(extension_review()).to_be_disabled()
                 release.set()
                 await failed()
                 # Do not remove a polling route while route.fetch/fulfill is active.
                 await page.unroute_all(behavior='wait')
-                await expect(button()).to_be_enabled()
+                await expect(extension_review()).to_be_enabled()
             stale_entered, stale_release = asyncio.Event(), asyncio.Event()
             held_once = False
             async def stale_offer(route):

@@ -188,7 +188,7 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.doesNotMatch(workspaceHTML, /translator-workspace-sheet|translator-header-capsule|translator-sheet-topline|translator-map-grid|id="mobile-nav"|id="desktop-nav"/);
   assert.doesNotMatch(workspaceHTML, /<svg\b|https:\/\/(?:cdn\.|unpkg\.com|fonts\.googleapis)/);
   assert.match(workspaceHTML, /href="code6-utilities\.css\?v=53"/);
-  assert.match(workspaceHTML, /href="code6\.css\?v=53"/);
+  assert.match(workspaceHTML, /href="code6\.css\?v=54"/);
   assert.ok(workspaceHTML.includes(`href="/traveler/vendor/leaflet/leaflet.css" integrity="${sri(leafletCSS)}"`), 'Leaflet CSS SRI must match the real asset');
   assert.ok(workspaceHTML.includes(`src="/traveler/vendor/leaflet/leaflet.js" integrity="${sri(leafletJS)}"`), 'Leaflet JS SRI must match the real asset');
   for (const asset of ['mission-map.js', 'mission-actions.js', 'presence.js', 'support.js', 'notifications.js', 'settings.js', 'app.js', 'config-features.js']) {
@@ -200,9 +200,9 @@ test('signed-in workspace replaces the previous shell with the code6 sheet and l
   assert.match(styleSource, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   assert.match(utilitySource, /\.bg-outline/);
   assert.match(utilitySource, /\.bg-surface-container-high/);
-  assert.match(serviceWorkerSource, /hz-translator-v53/);
+  assert.match(serviceWorkerSource, /hz-translator-v54/);
   assert.match(serviceWorkerSource, /code6-utilities\.css\?v=53/);
-  assert.match(serviceWorkerSource, /code6\.css\?v=53/);
+  assert.match(serviceWorkerSource, /code6\.css\?v=54/);
   assert.doesNotMatch(serviceWorkerSource, /hz-translator-v46|app\.js\?v=46|workspace\.css\?v=46/);
   assert.match(appSource, /Object\.prototype\.hasOwnProperty\.call\(m, 'reservation_id'\)/);
   assert.match(appSource, /Number\.isSafeInteger\(m\.reservation_id\)/);

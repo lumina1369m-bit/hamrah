@@ -39,7 +39,7 @@ async def scenario(browser):
             return page.locator(f'[data-offer-id="{offer_id}"]')
 
         def button(action, offer_id=oid):
-            return card(offer_id).get_by_role('button', name='پذیرش' if action == 'accept' else 'رد', exact=True)
+            return card(offer_id).get_by_role('button', name='پذیرش مأموریت و اعزام' if action == 'accept' else 'رد درخواست', exact=True)
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
@@ -197,7 +197,7 @@ async def scenario(browser):
         await expect(page.locator('#offers-box')).to_contain_text('دریافت درخواست‌ها انجام نشد')
         await expect(card()).to_have_count(0)
         await page.unroute('**/api/translator/offers', bad_list)
-        await page.get_by_role('button', name='دریافت دوبارهٔ درخواست‌ها', exact=True).click()
+        await page.get_by_role('button', name='تلاش دوباره', exact=True).click()
         await expect(button('accept')).to_be_enabled()
 
         # A delayed old pending-list response may not undo a real decline.

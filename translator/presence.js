@@ -6,7 +6,7 @@
   function token() { return window.HZ.load().token || null; }
   function controls() {
     document.querySelectorAll('[data-presence-control]').forEach(function (b) {
-      b.disabled = busy || enabled === false;
+      b.disabled = busy || enabled !== true;
       b.setAttribute('aria-busy', busy ? 'true' : 'false');
     });
     var retry = document.getElementById('presence-retry');
@@ -19,8 +19,7 @@
     document.getElementById('shift-status-desc').textContent = ERROR;
     document.getElementById('header-shift-text').textContent = 'وضعیت نامشخص';
     document.getElementById('shift-toggle-btn').setAttribute('aria-pressed', 'mixed');
-    var notice = document.getElementById('shift-paused-notice');
-    if (notice) notice.classList.add('hidden');
+    // Keep the explicit unknown-state notice visible; its retry action is the only safe next step.
     var state = HZ.load(); state.shift = null; HZ.save(state); controls();
   }
   function apply(data, actor) {
