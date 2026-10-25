@@ -203,7 +203,7 @@ async def scenario(browser):
         await expect(page.locator('#offers-box')).to_contain_text('دریافت درخواست‌ها انجام نشد')
         await expect(card()).to_have_count(0)
         await page.unroute_all(behavior='wait')
-        await page.get_by_role('button', name='دریافت دوبارهٔ درخواست‌ها', exact=True).click()
+        await page.get_by_role('button', name='تلاش دوباره', exact=True).click()
         await expect(button('accept')).to_be_enabled()
 
         # Keep one old pending list in flight across real acceptance.
@@ -257,9 +257,15 @@ async def scenario(browser):
         assert (await api(ctx.request, 'GET', f"/translator/changes/{third['id']}", token))['status'] == 'rejected'
         assert (await api(ctx.request, 'GET', f'/translator/missions/{rid}', token))['details'] == accepted['details']
 
-        # Existing allowed 20-hour change must not strand subsequent service controls.
+        # A changed meeting place clears old arrival; the translator must record presence again.
+        current = await api(ctx.request, 'GET', f'/translator/missions/{rid}', token)
+        assert current['arrived_at'] is None and current['hours'] == 20
+        arrival = page.locator('#missions-list').get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
+        await expect(arrival).to_be_visible()
+        await arrival.click()
+        await expect(start_button()).to_be_visible()
         await fill_code(b['service_code'])
-        await page.locator('#missions-list').get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True).click()
+        await start_button().click()
         await page.wait_for_function("()=>changeToasts.includes('خدمت شروع شد.')")
         result = await booking(ctx.request, ptok, rid)
         assert result['hours'] == 20 and result['service_started'] and result['total'] == before['total']

@@ -37,7 +37,7 @@ async def scenario(browser, width):
         await shortcut.locator('button').click()
         credentials = page.locator('#view-credentials')
         await expect(credentials).to_be_visible()
-        await expect(credentials.locator('h2')).to_have_text('وضعیت مدارک و صلاحیت')
+        await expect(credentials.locator('#credentials-heading')).to_have_text('وضعیت مدارک و صلاحیت')
         await expect(page.locator('#cap-box')).to_contain_text('احراز هویت و صلاحیت امنیتی')
         live_text = await page.locator('#cap-box').inner_text()
         for claim in ('CAP-100', 'گواهی زبان C1', 'پژو ۲۰۷ تشریفات', 'بیمه مأموریت فعال'):

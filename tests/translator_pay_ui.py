@@ -42,11 +42,16 @@ async def main():
         place = 'میز کار پرداخت ' + str(random.randint(100, 999))
         bid = (await P.evaluate(API, ['POST', '/traveler/bookings', {'kind': 'instant', 'origin_lang': 'ar', 'dest_lang': 'fa', 'place': place, 'traveler_name': 'علی رضایی'}, ptok]))['data']['id']
         # مترجم در میز کار: پذیرش پیشنهاد
-        await T.goto(BASE + '/translator/app.html'); await T.wait_for_timeout(4500)
-        ok_btn = await T.evaluate("()=>{const box=document.getElementById('offers-box'); const b=[...box.querySelectorAll('button')].find(x=>x.textContent.trim()==='پذیرش'); if(b){b.click(); return true;} return false;}")
-        check('مترجم در میز کار پیشنهاد را پذیرفت', ok_btn)
-        await T.wait_for_timeout(1500)
-        await T.reload(); await T.wait_for_timeout(1200)
+        await T.goto(BASE + '/translator/app.html')
+        accept = T.locator('#offers-box').get_by_role('button', name='پذیرش مأموریت و اعزام', exact=True)
+        await accept.wait_for(timeout=15000)
+        await accept.click()
+        check('مترجم در میز کار پیشنهاد را پذیرفت', True)
+        # Wait for the accepted mission to be server-confirmed and rendered before reloading.
+        arrival = T.get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
+        await arrival.wait_for(timeout=15000)
+        await T.reload()
+        await T.get_by_role('button', name='رسیدم به محل ملاقات', exact=True).wait_for(timeout=15000)
         # حضور دستی را ثبت می‌کنیم؛ سپس کد اعلام‌شدهٔ مسافر را در پنج خانه وارد می‌کنیم.
         scode = next(x['service_code'] for x in (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings'] if x['id'] == bid)
         await T.get_by_role('button', name='رسیدم به محل ملاقات', exact=True).click()
@@ -71,8 +76,8 @@ async def main():
         await P.evaluate(API, ['POST', f'/traveler/bookings/{bid}/payment', {'method': 'cash'}, ptok])
         await T.wait_for_timeout(5500)
         check('بخش پرداخت منتظر تأیید نمایش داده می‌شود', await T.evaluate("()=>!!document.getElementById('payments-box') && document.getElementById('payments-box').textContent.includes('دریافت وجه را تأیید می‌کنم')"))
-        await T.evaluate("()=>{const b=[...document.querySelectorAll('#payments-box button')].find(x=>x.textContent.trim()==='دریافت وجه را تأیید می‌کنم'); b && b.click();}")
-        await T.get_by_role('button', name='تأیید دریافت وجه', exact=True).click()
+        await T.locator('#payments-box').get_by_role('button', name='دریافت وجه را تأیید می‌کنم', exact=True).click()
+        await T.locator('#mission-cash-modal').get_by_role('button', name='تأیید دریافت وجه', exact=True).click()
         await T.wait_for_timeout(1500)
         st = (await P.evaluate(API, ['GET', '/traveler/bookings', None, ptok]))['data']['bookings']
         bk = next(x for x in st if x['id'] == bid)

@@ -219,8 +219,15 @@
     showMissionModal('mission-finish-modal');
   }
   function openCashModal(p, source) {
+    var token = tok();
     if (!p || !Number.isSafeInteger(p.reservation_id)) return;
-    cashModalContext = { payment: p, token: tok() };
+    if (!token || paymentOwnerToken !== token) {
+      paymentOwnerToken = null; PAYMENTS_LIST = []; SETTLEMENTS_LIST = [];
+      paymentsState = token ? 'loading' : 'error'; renderPayments();
+      if (token) loadPayments(true);
+      return;
+    }
+    cashModalContext = { payment: p, token: token };
     document.getElementById('mission-cash-copy').textContent = p.confirmed
       ? 'دریافت وجه شما ثبت شده است؛ منتظر تأیید نهایی مسافر هستید.'
       : 'مسافر دریافت نقدی را ثبت کرده است. فقط اگر وجه کامل را واقعاً دریافت کرده‌اید، تأیید کنید.';
@@ -397,7 +404,9 @@
         arrivalCard.appendChild(el('div', 'translator-mission-state-copy', 'پس از رسیدن، حضور را ثبت کنید. ثبت حضور دستی است و موقعیت دستگاه خوانده نمی‌شود.'));
         var arrivalButton = el('button', 'translator-offer-accept translator-mission-primary-action');
         arrivalButton.type = 'button';
-        arrivalButton.appendChild(el('span', 'material-symbols-outlined', 'where_to_vote'));
+        var arrivalIcon = el('span', 'material-symbols-outlined', 'where_to_vote');
+        arrivalIcon.setAttribute('aria-hidden', 'true');
+        arrivalButton.appendChild(arrivalIcon);
         arrivalButton.appendChild(el('span', '', 'رسیدم به محل ملاقات'));
         HZ_MISSION_ACTION.bind(arrivalButton, m.reservation_id);
         arrivalButton.onclick = function () { serviceAction('arrive', m, undefined, actor); };
@@ -454,7 +463,9 @@
       otpCard.appendChild(codeInputs);
       var verify = el('button', 'translator-offer-accept translator-mission-primary-action');
       verify.type = 'button';
-      verify.appendChild(el('span', 'material-symbols-outlined', 'lock_open'));
+      var verifyIcon = el('span', 'material-symbols-outlined', 'lock_open');
+      verifyIcon.setAttribute('aria-hidden', 'true');
+      verify.appendChild(verifyIcon);
       verify.appendChild(el('span', '', 'تأیید کد و آغاز همراهی'));
       HZ_MISSION_ACTION.bind(verify, m.reservation_id);
       verify.onclick = function () { serviceAction('start', m, inputs.map(function (input) { return input.value; }).join(''), actor); };
@@ -487,7 +498,9 @@
       } else {
         var finishButton = el('button', 'translator-offer-reject translator-mission-danger-action');
         finishButton.type = 'button';
-        finishButton.appendChild(el('span', 'material-symbols-outlined', 'flag'));
+        var finishIcon = el('span', 'material-symbols-outlined', 'flag');
+        finishIcon.setAttribute('aria-hidden', 'true');
+        finishButton.appendChild(finishIcon);
         finishButton.appendChild(el('span', '', 'درخواست پایان مأموریت'));
         HZ_MISSION_ACTION.bind(finishButton, m.reservation_id);
         finishButton.onclick = function () { openFinishModal(m, finishButton); };
@@ -499,7 +512,9 @@
     if (!m.started) {
       var cancelButton = el('button', 'translator-mission-cancel neu-flat-sm');
       cancelButton.type = 'button';
-      cancelButton.appendChild(el('span', 'material-symbols-outlined', 'close'));
+      var cancelIcon = el('span', 'material-symbols-outlined', 'close');
+      cancelIcon.setAttribute('aria-hidden', 'true');
+      cancelButton.appendChild(cancelIcon);
       cancelButton.appendChild(el('span', '', 'لغو مأموریت'));
       HZ_MISSION_ACTION.bind(cancelButton, m.reservation_id);
       cancelButton.onclick = function () { serviceAction('cancel', m, undefined, actor); };
@@ -510,11 +525,11 @@
   }
 
   // ---------- پرداخت‌های منتظر تأیید (سند ۷.۳) ----------
-  var PAYMENTS_LIST = [], SETTLEMENTS_LIST = [], paymentsState = 'loading';
+  var PAYMENTS_LIST = [], SETTLEMENTS_LIST = [], paymentsState = 'loading', paymentOwnerToken = null;
   var paymentRead = 0, paymentApplied = 0, paymentRevision = 0;
   function loadPayments(invalidate) {
     var token = tok(), read = ++paymentRead, revision = invalidate ? ++paymentRevision : paymentRevision;
-    if (!token) { PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments(); return; }
+    if (!token) { paymentOwnerToken = null; PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments(); return; }
     fetch('/api/translator/payments', { headers: H.authHeaders(token), cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('payments'); return r.json(); })
       .then(function (d) {
@@ -534,11 +549,11 @@
             (s.place == null || typeof s.place === 'string') && (s.travelerName == null || typeof s.travelerName === 'string');
         }) || new Set(d.payments.map(function (p) { return p.reservation_id; })).size !== d.payments.length ||
           new Set(d.settlements.map(function (s) { return s.reservation_id; })).size !== d.settlements.length) throw new Error('payments');
-        paymentApplied = read; PAYMENTS_LIST = d.payments; SETTLEMENTS_LIST = d.settlements; paymentsState = 'ok'; renderPayments();
+        paymentOwnerToken = token; paymentApplied = read; PAYMENTS_LIST = d.payments; SETTLEMENTS_LIST = d.settlements; paymentsState = 'ok'; renderPayments();
       })
       .catch(function () {
         if (tok() !== token || revision !== paymentRevision || read < paymentApplied) return;
-        paymentApplied = read; PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments();
+        paymentOwnerToken = token; paymentApplied = read; PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments();
       });
   }
   function paymentsBox() {
@@ -554,6 +569,10 @@
   function renderPayments() {
     var box = paymentsBox(); if (!box) return;
     box.innerHTML = '';
+    if (paymentsState === 'loading') {
+      box.appendChild(el('span', 'translator-empty-offers', 'در حال دریافت وضعیت پرداخت‌ها از سرور…'));
+      return;
+    }
     if (paymentsState === 'error') {
       box.appendChild(el('span', 'text-[12px] text-error', 'وضعیت پرداخت‌ها دریافت نشد؛ اتصال را بررسی کنید و دوباره تلاش کنید.'));
       var retry = el('button', 'text-[12px] font-bold text-primary', 'دریافت دوبارهٔ پرداخت‌ها');
@@ -622,12 +641,18 @@
     if (p.pay_method === 'cash' && p.pay_state === 'awaiting_cash' && !p.confirmed) {
       var row = el('div', 'translator-offer-actions translator-payment-actions');
       var ok = el('button', 'translator-offer-accept');
-      ok.type = 'button'; ok.appendChild(el('span', 'material-symbols-outlined', 'payments'));
+      ok.type = 'button';
+      var paymentIcon = el('span', 'material-symbols-outlined', 'payments');
+      paymentIcon.setAttribute('aria-hidden', 'true');
+      ok.appendChild(paymentIcon);
       ok.appendChild(el('span', '', 'دریافت وجه را تأیید می‌کنم'));
       HZ_MISSION_ACTION.bind(ok, p.reservation_id);
       ok.onclick = function () { openCashModal(p, ok); };
       var no = el('button', 'translator-offer-reject');
-      no.type = 'button'; no.appendChild(el('span', 'material-symbols-outlined', 'report_problem'));
+      no.type = 'button';
+      var disputeIcon = el('span', 'material-symbols-outlined', 'report_problem');
+      disputeIcon.setAttribute('aria-hidden', 'true');
+      no.appendChild(disputeIcon);
       no.appendChild(el('span', '', 'اختلاف دارم'));
       HZ_MISSION_ACTION.bind(no, p.reservation_id);
       no.onclick = function () { openCashModal(p, no); };
@@ -873,7 +898,10 @@
       details.appendChild(el('strong', '', 'سهم پس از پذیرش: ' + HZ.money(request.new_net) + ' تومان'));
       card.appendChild(details);
       var open = el('button', 'translator-extension-review');
-      open.type = 'button'; open.appendChild(el('span', 'material-symbols-outlined', 'fact_check'));
+      open.type = 'button';
+      var reviewIcon = el('span', 'material-symbols-outlined', 'fact_check');
+      reviewIcon.setAttribute('aria-hidden', 'true');
+      open.appendChild(reviewIcon);
       open.appendChild(el('span', '', 'بررسی درخواست تمدید'));
       HZ_MISSION_ACTION.bind(open, m.reservation_id);
       open.onclick = function () { openExtensionModal(request, open); };
