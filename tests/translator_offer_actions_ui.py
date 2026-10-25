@@ -39,7 +39,7 @@ async def scenario(browser):
             return page.locator(f'[data-offer-id="{offer_id}"]')
 
         def button(action, offer_id=oid):
-            return card(offer_id).get_by_role('button', name='پذیرش' if action == 'accept' else 'رد', exact=True)
+            return card(offer_id).get_by_role('button', name='پذیرش مأموریت و اعزام' if action == 'accept' else 'رد درخواست', exact=True)
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
