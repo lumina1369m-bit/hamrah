@@ -40,18 +40,26 @@ async def scenario(browser):
         canonical = f'**/api/translator/missions/{rid}/cancellation'
         receipt = {'ok': True, 'reservation_id': rid, 'cancelled_at': datetime.now(timezone.utc).isoformat(), 'reassigned': True}
 
-        def cancel():
-            return page.locator('#missions-list').get_by_role('button', name='لغو مأموریت', exact=True)
+        active_rid = rid
 
-        async def open_app():
+        def mission_card():
+            return page.locator(f'#missions-list [data-mission-reservation="{active_rid}"]')
+
+        def cancel():
+            return mission_card().get_by_role('button', name='لغو مأموریت', exact=True)
+
+        async def open_app(reservation_id=None):
+            nonlocal active_rid
+            if reservation_id is not None:
+                active_rid = reservation_id
             await page.goto(BASE + '/translator/app.html')
             await expect(cancel()).to_be_visible()
-            mission = await api(ctx.request, 'GET', f'/translator/missions/{rid}', token)
+            mission = await api(ctx.request, 'GET', f'/translator/missions/{active_rid}', token)
             if not mission['arrived_at']:
-                arrival = page.locator('#missions-list').get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
+                arrival = mission_card().get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
                 await expect(arrival).to_be_visible()
                 await arrival.click()
-                await expect(page.locator('#missions-list').get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True)).to_be_visible()
+                await expect(mission_card().get_by_role('button', name='تأیید کد و آغاز همراهی', exact=True)).to_be_visible()
             await page.evaluate('''()=>{window.cancelToasts=[];const toast=HZ.toast;
                 HZ.toast=(s)=>{cancelToasts.push(s);toast(s)}}''')
 
@@ -211,7 +219,7 @@ async def scenario(browser):
         await api(ctx.request, 'PATCH', '/translator/online', other, {'online': False})
 
         b2 = await create('پاسخ لغو گم‌شده')
-        await open_app()
+        await open_app(b2['id'])
         async def lost_receipt(route):
             await route.fetch()
             await route.abort()
@@ -224,7 +232,7 @@ async def scenario(browser):
         assert not (await booking(ctx.request, ptok, b2['id']))['matched']
 
         b3 = await create('شروع در دستگاه دیگر')
-        await open_app()
+        await open_app(b3['id'])
         await arrive_and_start(ctx.request, b3['id'], token, b3['service_code'])
         posts = 0
         await page.route(f"**/api/translator/missions/{b3['id']}/cancel", no_post)
