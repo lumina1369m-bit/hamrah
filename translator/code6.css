@@ -310,6 +310,10 @@ button:disabled { cursor: not-allowed !important; opacity: .64; }
 
 @media (max-width: 767px) {
   #mission-sheet { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .code6-header { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .code6-profile { flex: 0 0 auto; }
+  #shift-toggle-btn, #header-financial-shortcut { padding-left: 8px; padding-right: 8px; }
+  #header-wallet-balance { display: none; }
   .translator-offer-card { padding: 11px; gap: 8px; }
   .translator-offer-primary { grid-template-columns: minmax(0,1fr) 42px max-content; gap: 6px; }
   .translator-offer-compensation { min-width: 94px; padding: 7px 8px; }
