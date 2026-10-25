@@ -43,7 +43,7 @@ async def scenario(browser, width):
         for value in FORBIDDEN:
             assert value not in text, f'fabricated earnings or settlement data remains: {value}'
         buttons = await view.locator('button').all_text_contents()
-        assert len(buttons) == 1 and 'بازگشت به میز کار' in buttons[0], buttons
+        assert len(buttons) == 1 and 'بازگشت به میزکار' in buttons[0], buttons
         assert not payment_posts, f'opening the report must not initiate payment: {payment_posts}'
         await page.locator('#view-earnings .translator-alt-back').click()
         await expect(page.locator('#view-workspace')).to_be_visible()
