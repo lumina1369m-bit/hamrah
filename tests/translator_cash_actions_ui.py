@@ -52,9 +52,12 @@ async def scenario(browser):
             label = 'تأیید دریافت وجه' if action == 'cash-confirm' else 'ثبت اختلاف'
             return page.locator('#mission-cash-modal').get_by_role('button', name=label, exact=True)
 
+        def trigger(action, bid=rid):
+            label = 'دریافت وجه را تأیید می‌کنم' if action == 'cash-confirm' else 'اختلاف دارم'
+            return card(bid).get_by_role('button', name=label, exact=True)
+
         async def prepare_payment_action(action, bid=rid):
-            trigger = card(bid).get_by_role('button', name='دریافت وجه را تأیید می‌کنم' if action == 'cash-confirm' else 'اختلاف دارم', exact=True)
-            await trigger.click()
+            await trigger(action, bid).click()
             await expect(page.locator('#mission-cash-modal')).to_be_visible()
 
         async def open_app():
@@ -96,7 +99,7 @@ async def scenario(browser):
                 await button(action).click()
                 await failed()
                 await page.unroute(post, fault)
-                await expect(button(action)).to_be_enabled()
+                await expect(trigger(action)).to_be_enabled()
                 await unchanged()
                 print('PASS', action, mode)
 
@@ -119,7 +122,7 @@ async def scenario(browser):
             await prepare_payment_action('cash-confirm')
             await button('cash-confirm').click()
             await failed()
-            await expect(button('cash-confirm')).to_be_enabled()
+            await expect(trigger('cash-confirm')).to_be_enabled()
             await page.unroute(pattern, bad_state)
         assert posts == 0
         await page.unroute(confirm_pattern, forbidden_post)
@@ -138,16 +141,16 @@ async def scenario(browser):
         await prepare_payment_action('cash-confirm')
         await button('cash-confirm').click()
         await asyncio.wait_for(entered.wait(), 10)
-        await expect(button('cash-confirm')).to_be_disabled()
-        await expect(button('cash-dispute')).to_be_disabled()
+        await expect(trigger('cash-confirm')).to_be_disabled()
+        await expect(trigger('cash-dispute')).to_be_disabled()
         await expect(page.locator('[data-before-poll]')).to_have_count(0)
-        await expect(button('cash-dispute')).to_be_disabled()
+        await expect(trigger('cash-dispute')).to_be_disabled()
         await card().evaluate('(e)=>e.querySelectorAll("button").forEach(b=>b.click())')
         assert posts == 1
         release.set()
         await failed()
         await page.unroute(confirm_pattern, held)
-        await expect(button('cash-confirm')).to_be_enabled()
+        await expect(trigger('cash-confirm')).to_be_enabled()
 
         # Whole-operation timeout, even if a transport ignores AbortSignal.
         await page.clock.install()
@@ -162,7 +165,7 @@ async def scenario(browser):
         await failed()
         await page.evaluate('() => {window.fetch=originalFetch}')
         await page.clock.resume()
-        await expect(button('cash-confirm')).to_be_enabled()
+        await expect(trigger('cash-confirm')).to_be_enabled()
         await unchanged()
 
         # A previous account's late response and old card cannot act as the next user.
@@ -200,7 +203,7 @@ async def scenario(browser):
         await expect(card()).to_have_count(0)
         await page.unroute('**/api/translator/payments', bad_list)
         await page.get_by_role('button', name='دریافت دوبارهٔ پرداخت‌ها', exact=True).click()
-        await expect(button('cash-confirm')).to_be_enabled()
+        await expect(trigger('cash-confirm')).to_be_enabled()
 
         # Hold an old list response across a real confirm. It must not resurrect
         # the already-settled payment card once the action refresh has applied.
