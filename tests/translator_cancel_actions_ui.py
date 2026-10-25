@@ -41,7 +41,7 @@ async def scenario(browser):
         receipt = {'ok': True, 'reservation_id': rid, 'cancelled_at': datetime.now(timezone.utc).isoformat(), 'reassigned': True}
 
         def cancel():
-            return page.locator('#missions-list').get_by_role('button', name='لغو ماموریت', exact=True)
+            return page.locator('#missions-list').get_by_role('button', name='لغو مأموریت', exact=True)
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
