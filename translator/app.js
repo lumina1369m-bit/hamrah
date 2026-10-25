@@ -491,7 +491,9 @@
       } else {
         var finishButton = el('button', 'translator-offer-reject translator-mission-danger-action');
         finishButton.type = 'button';
-        finishButton.appendChild(el('span', 'material-symbols-outlined', 'flag'));
+        var finishIcon = el('span', 'material-symbols-outlined', 'flag');
+        finishIcon.setAttribute('aria-hidden', 'true');
+        finishButton.appendChild(finishIcon);
         finishButton.appendChild(el('span', '', 'درخواست پایان مأموریت'));
         HZ_MISSION_ACTION.bind(finishButton, m.reservation_id);
         finishButton.onclick = function () { openFinishModal(m, finishButton); };
@@ -628,12 +630,18 @@
     if (p.pay_method === 'cash' && p.pay_state === 'awaiting_cash' && !p.confirmed) {
       var row = el('div', 'translator-offer-actions translator-payment-actions');
       var ok = el('button', 'translator-offer-accept');
-      ok.type = 'button'; ok.appendChild(el('span', 'material-symbols-outlined', 'payments'));
+      ok.type = 'button';
+      var paymentIcon = el('span', 'material-symbols-outlined', 'payments');
+      paymentIcon.setAttribute('aria-hidden', 'true');
+      ok.appendChild(paymentIcon);
       ok.appendChild(el('span', '', 'دریافت وجه را تأیید می‌کنم'));
       HZ_MISSION_ACTION.bind(ok, p.reservation_id);
       ok.onclick = function () { openCashModal(p, ok); };
       var no = el('button', 'translator-offer-reject');
-      no.type = 'button'; no.appendChild(el('span', 'material-symbols-outlined', 'report_problem'));
+      no.type = 'button';
+      var disputeIcon = el('span', 'material-symbols-outlined', 'report_problem');
+      disputeIcon.setAttribute('aria-hidden', 'true');
+      no.appendChild(disputeIcon);
       no.appendChild(el('span', '', 'اختلاف دارم'));
       HZ_MISSION_ACTION.bind(no, p.reservation_id);
       no.onclick = function () { openCashModal(p, no); };
@@ -879,7 +887,10 @@
       details.appendChild(el('strong', '', 'سهم پس از پذیرش: ' + HZ.money(request.new_net) + ' تومان'));
       card.appendChild(details);
       var open = el('button', 'translator-extension-review');
-      open.type = 'button'; open.appendChild(el('span', 'material-symbols-outlined', 'fact_check'));
+      open.type = 'button';
+      var reviewIcon = el('span', 'material-symbols-outlined', 'fact_check');
+      reviewIcon.setAttribute('aria-hidden', 'true');
+      open.appendChild(reviewIcon);
       open.appendChild(el('span', '', 'بررسی درخواست تمدید'));
       HZ_MISSION_ACTION.bind(open, m.reservation_id);
       open.onclick = function () { openExtensionModal(request, open); };

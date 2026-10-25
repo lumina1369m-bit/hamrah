@@ -182,7 +182,7 @@ async def scenario(browser):
         await start().click()
         await asyncio.wait_for(entered.wait(), 10)
         await expect(start()).to_be_disabled()
-        await expect(mission_button('لغو ماموریت')).to_be_disabled()
+        await expect(mission_button('لغو مأموریت')).to_be_disabled()
         await page.evaluate("() => document.querySelector('#day-bar button').click()")
         assert await page.locator(f'[data-service-mission="{rid}"]:not(:disabled)').count() == 0
         await page.evaluate("() => document.querySelectorAll('[data-service-mission]').forEach(b=>b.click())")
