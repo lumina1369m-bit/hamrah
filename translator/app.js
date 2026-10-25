@@ -219,8 +219,15 @@
     showMissionModal('mission-finish-modal');
   }
   function openCashModal(p, source) {
+    var token = tok();
     if (!p || !Number.isSafeInteger(p.reservation_id)) return;
-    cashModalContext = { payment: p, token: tok() };
+    if (!token || paymentOwnerToken !== token) {
+      paymentOwnerToken = null; PAYMENTS_LIST = []; SETTLEMENTS_LIST = [];
+      paymentsState = token ? 'loading' : 'error'; renderPayments();
+      if (token) loadPayments(true);
+      return;
+    }
+    cashModalContext = { payment: p, token: token };
     document.getElementById('mission-cash-copy').textContent = p.confirmed
       ? 'دریافت وجه شما ثبت شده است؛ منتظر تأیید نهایی مسافر هستید.'
       : 'مسافر دریافت نقدی را ثبت کرده است. فقط اگر وجه کامل را واقعاً دریافت کرده‌اید، تأیید کنید.';
@@ -518,11 +525,11 @@
   }
 
   // ---------- پرداخت‌های منتظر تأیید (سند ۷.۳) ----------
-  var PAYMENTS_LIST = [], SETTLEMENTS_LIST = [], paymentsState = 'loading';
+  var PAYMENTS_LIST = [], SETTLEMENTS_LIST = [], paymentsState = 'loading', paymentOwnerToken = null;
   var paymentRead = 0, paymentApplied = 0, paymentRevision = 0;
   function loadPayments(invalidate) {
     var token = tok(), read = ++paymentRead, revision = invalidate ? ++paymentRevision : paymentRevision;
-    if (!token) { PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments(); return; }
+    if (!token) { paymentOwnerToken = null; PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments(); return; }
     fetch('/api/translator/payments', { headers: H.authHeaders(token), cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('payments'); return r.json(); })
       .then(function (d) {
@@ -542,11 +549,11 @@
             (s.place == null || typeof s.place === 'string') && (s.travelerName == null || typeof s.travelerName === 'string');
         }) || new Set(d.payments.map(function (p) { return p.reservation_id; })).size !== d.payments.length ||
           new Set(d.settlements.map(function (s) { return s.reservation_id; })).size !== d.settlements.length) throw new Error('payments');
-        paymentApplied = read; PAYMENTS_LIST = d.payments; SETTLEMENTS_LIST = d.settlements; paymentsState = 'ok'; renderPayments();
+        paymentOwnerToken = token; paymentApplied = read; PAYMENTS_LIST = d.payments; SETTLEMENTS_LIST = d.settlements; paymentsState = 'ok'; renderPayments();
       })
       .catch(function () {
         if (tok() !== token || revision !== paymentRevision || read < paymentApplied) return;
-        paymentApplied = read; PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments();
+        paymentOwnerToken = token; paymentApplied = read; PAYMENTS_LIST = []; SETTLEMENTS_LIST = []; paymentsState = 'error'; renderPayments();
       });
   }
   function paymentsBox() {
@@ -562,6 +569,10 @@
   function renderPayments() {
     var box = paymentsBox(); if (!box) return;
     box.innerHTML = '';
+    if (paymentsState === 'loading') {
+      box.appendChild(el('span', 'translator-empty-offers', 'در حال دریافت وضعیت پرداخت‌ها از سرور…'));
+      return;
+    }
     if (paymentsState === 'error') {
       box.appendChild(el('span', 'text-[12px] text-error', 'وضعیت پرداخت‌ها دریافت نشد؛ اتصال را بررسی کنید و دوباره تلاش کنید.'));
       var retry = el('button', 'text-[12px] font-bold text-primary', 'دریافت دوبارهٔ پرداخت‌ها');

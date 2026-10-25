@@ -187,8 +187,9 @@ async def scenario(browser):
         await page.unroute(confirm_pattern, late)
         posts = 0
         await page.route(confirm_pattern, forbidden_post)
-        await prepare_payment_action('cash-confirm')
-        await button('cash-confirm').click()
+        await trigger('cash-confirm').click()
+        await expect(page.locator('#mission-cash-modal')).to_be_hidden()
+        await expect(card()).to_have_count(0)
         await page.evaluate('() => new Promise(resolve=>requestAnimationFrame(resolve))')
         assert posts == 0 and await page.evaluate('() => cashToasts.length') == 0
         await page.unroute(confirm_pattern, forbidden_post)
