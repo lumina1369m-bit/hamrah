@@ -1,5 +1,6 @@
 """Pre-start cancellation needs an explicit receipt and private committed history."""
 import asyncio
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 import secrets
@@ -45,7 +46,28 @@ async def scenario(browser):
 
         async def open_app():
             await page.goto(BASE + '/translator/app.html')
-            await expect(cancel()).to_be_visible()
+            try:
+                await expect(cancel()).to_be_visible()
+            except AssertionError as error:
+                debug = await page.evaluate('''async()=>{
+                    const state=window.HZ&&HZ.load();
+                    const out={path:location.pathname,title:document.title,hasTranslatorSession:!!(state&&state.token),
+                        translatorStatus:state&&state.status,missionListText:document.querySelector('#missions-list')?.innerText||null,
+                        pageErrors:window.__pageErrors||[]};
+                    if(state&&state.token){
+                        try{const r=await fetch('/api/translator/missions',{headers:HZ.authHeaders(state.token),cache:'no-store'});
+                            const d=await r.json();out.apiStatus=r.status;out.missions=Array.isArray(d.missions)?d.missions.map(m=>({
+                                reservation_id:m.reservation_id,kind:m.kind,started:m.started,finish_requested:m.finish_requested,
+                                hours:m.hours,total:m.total,net:m.net,arrived_at:m.arrived_at,startAt:m.startAt,
+                                service_started_at:m.service_started_at,scheduled_at:m.scheduled_at,origin_lang:m.origin_lang,
+                                dest_lang:m.dest_lang,car:m.car,party:m.party,notesType:typeof m.notes
+                            })):d;
+                        }catch(e){out.apiError=String(e)}
+                    }
+                    return out;
+                }''')
+                debug['pageErrors'] = errors
+                raise AssertionError('Cancellation control missing: ' + json.dumps(debug, ensure_ascii=False)) from error
             mission = await api(ctx.request, 'GET', f'/translator/missions/{rid}', token)
             if not mission['arrived_at']:
                 arrival = page.locator('#missions-list').get_by_role('button', name='رسیدم به محل ملاقات', exact=True)
