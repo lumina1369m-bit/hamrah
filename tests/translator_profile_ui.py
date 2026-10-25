@@ -31,9 +31,9 @@ async def scenario(browser, width):
         await expect(panel.locator('#profile-title')).to_have_text('نمایهٔ مترجم')
         await expect(panel.locator('[data-tr-name]')).to_have_text('علی رضایی')
         note = panel.locator('#profile-data-note')
-        await expect(note).to_contain_text('همین مرورگر')
+        await expect(note).to_contain_text('دادهٔ ذخیره‌شدهٔ حساب')
         await expect(note).to_contain_text('هویت تأییدشده را ثابت نمی‌کند')
-        await expect(note).to_contain_text('از حساب شما دریافت نشده‌اند')
+        await expect(note).to_contain_text('از حساب دریافت نشده‌اند')
         content = await panel.inner_text()
         for claim in FORBIDDEN:
             assert claim not in content, f'unsupported profile claim remains: {claim}'
